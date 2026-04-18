@@ -39,6 +39,7 @@ dependencies:
 
   # SHA-256 哈希，用于密码安全存储
   crypto: ^3.0.6
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

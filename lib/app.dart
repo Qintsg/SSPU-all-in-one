@@ -13,6 +13,7 @@ import 'pages/academic_page.dart';
 import 'pages/info_page.dart';
 import 'pages/quick_links_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/about_page.dart';
 
 /// 应用主体骨架
 /// 管理侧边栏导航与各页面的切换及过渡动画
@@ -74,6 +75,11 @@ class _AppShellState extends State<AppShell> {
             icon: const Icon(FluentIcons.settings),
             title: const Text('设置'),
             body: SettingsPage(onLock: widget.onLock),
+          ),
+          PaneItem(
+            icon: const Icon(FluentIcons.info_solid),
+            title: const Text('关于'),
+            body: const AboutPage(),
           ),
         ],
       ),

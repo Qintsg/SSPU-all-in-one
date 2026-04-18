@@ -405,32 +405,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        // 关于卡片
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '关于',
-                  style: FluentTheme.of(context).typography.subtitle,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'SSPU All-in-One v0.0.1-alpha',
-                  style: FluentTheme.of(context).typography.body,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '上海第二工业大学校园综合服务应用\n所有数据仅保留在本地，不上传至任何云端服务。',
-                  style: FluentTheme.of(context).typography.caption,
-                ),
-              ],
-            ),
-          ),
-        ),
+
       ],
     );
   }
