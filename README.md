@@ -1,6 +1,6 @@
 # SSPU All-in-One
 
-> 上海电力大学校园综合服务应用
+> 上海第二工业大学校园综合服务应用
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
@@ -8,7 +8,13 @@
 
 ## 简介
 
-SSPU All-in-One 是一款面向上海电力大学师生的校园综合服务应用，基于 Flutter 构建，支持 Android、iOS、macOS、Linux、Windows 和 Web 全平台。
+SSPU All-in-One 是一款面向上海第二工业大学师生的校园综合服务应用，基于 Flutter 构建，支持 Android、iOS、macOS、Linux、Windows 和 Web 全平台。
+
+主要功能：
+
+- 聚合 SSPU 各官网、微信公众号等渠道的信息获取
+- 学生服务聚合（课表、成绩、通知、活动等）
+- **全部数据保留在本地，不上传至任何云端服务**
 
 ## 技术栈
 

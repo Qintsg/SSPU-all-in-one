@@ -1,5 +1,5 @@
 name: sspu_all_in_one
-description: "SSPU All-in-One — 上海电力大学校园综合服务应用"
+description: "SSPU All-in-One — 上海第二工业大学校园综合服务应用"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
