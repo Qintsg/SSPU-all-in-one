@@ -13,6 +13,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 const String kAgreementText = '''
 SSPU All-in-One 使用协议
 
+开发者：Qintsg
 最后更新日期：2026年4月18日
 
 请在使用本软件前仔细阅读以下条款。使用本软件即表示您已阅读并同意以下全部内容。

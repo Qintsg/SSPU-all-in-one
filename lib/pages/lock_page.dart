@@ -176,12 +176,12 @@ class _LockPageState extends State<LockPage>
                 // 应用名称
                 Text(
                   'SSPU All-in-One',
-                  style: theme.typography.title,
+                  style: theme.typography.subtitle,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '应用已锁定',
-                  style: theme.typography.body?.copyWith(
+                  style: theme.typography.bodyLarge?.copyWith(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.6)
                         : Colors.black.withValues(alpha: 0.6),
@@ -217,9 +217,8 @@ class _LockPageState extends State<LockPage>
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
                               _errorMessage!,
-                              style: TextStyle(
+                              style: theme.typography.caption?.copyWith(
                                 color: Colors.red,
-                                fontSize: 12,
                               ),
                             ),
                           ),

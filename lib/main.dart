@@ -42,6 +42,9 @@ class _SSPUAppState extends State<SSPUApp> {
   /// 是否已接受 EULA
   bool _eulaAccepted = false;
 
+  /// 防止 EULA 弹窗重复弹出
+  bool _eulaDialogShowing = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,8 +69,11 @@ class _SSPUAppState extends State<SSPUApp> {
     setState(() => _isUnlocked = false);
   }
 
-  /// 显示首次启动的 EULA 弹窗
+  /// 显示首次启动的 EULA 弹窗（仅弹出一次）
   void _showEulaDialog(BuildContext context) {
+    if (_eulaDialogShowing) return;
+    _eulaDialogShowing = true;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showDialog<bool>(
         context: context,
@@ -75,9 +81,9 @@ class _SSPUAppState extends State<SSPUApp> {
         builder: (dialogContext) {
           return ContentDialog(
             title: const Text('使用协议'),
+            constraints: const BoxConstraints(maxWidth: 680),
             content: SizedBox(
-              width: 500,
-              height: 400,
+              height: 420,
               child: SingleChildScrollView(
                 child: SelectableText(
                   kAgreementText.trim(),
@@ -103,6 +109,7 @@ class _SSPUAppState extends State<SSPUApp> {
           );
         },
       ).then((accepted) async {
+        _eulaDialogShowing = false;
         if (accepted == true) {
           await StorageService.acceptEula();
           if (mounted) {

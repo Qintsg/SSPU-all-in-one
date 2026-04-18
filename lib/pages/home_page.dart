@@ -26,12 +26,12 @@ class HomePage extends StatelessWidget {
               children: [
                 Text(
                   '欢迎使用 SSPU All-in-One',
-                  style: FluentTheme.of(context).typography.title,
+                  style: FluentTheme.of(context).typography.subtitle,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   '上海第二工业大学校园综合服务应用',
-                  style: FluentTheme.of(context).typography.body,
+                  style: FluentTheme.of(context).typography.bodyLarge,
                 ),
                 const SizedBox(height: 20),
                 // 功能概览卡片区域（占位）
