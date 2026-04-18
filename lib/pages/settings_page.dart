@@ -8,9 +8,10 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import '../services/password_service.dart';
+import '../services/storage_service.dart';
 
 /// 设置页面
-/// 包含密码保护开关、密码设置/修改/移除功能、手动上锁
+/// 包含密码保护开关、密码设置/修改/移除功能、手动上锁、窗口行为设置
 class SettingsPage extends StatefulWidget {
   /// 手动上锁回调
   final VoidCallback? onLock;
@@ -28,18 +29,23 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 是否正在加载状态
   bool _isLoading = true;
 
+  /// 关闭按钮行为偏好（ask / minimize / exit）
+  String _closeBehavior = 'ask';
+
   @override
   void initState() {
     super.initState();
-    _loadPasswordState();
+    _loadSettings();
   }
 
-  /// 从本地存储加载密码保护状态
-  Future<void> _loadPasswordState() async {
+  /// 从本地存储加载密码保护状态和窗口行为偏好
+  Future<void> _loadSettings() async {
     final isSet = await PasswordService.isPasswordSet();
+    final behavior = await StorageService.getCloseBehavior();
     if (mounted) {
       setState(() {
         _isPasswordEnabled = isSet;
+        _closeBehavior = behavior;
         _isLoading = false;
       });
     }
@@ -406,6 +412,71 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
 
+        const SizedBox(height: 16),
+
+        // 窗口行为设置卡片
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '窗口行为',
+                  style: FluentTheme.of(context).typography.subtitle,
+                ),
+                const SizedBox(height: 16),
+                // 关闭按钮行为下拉选择
+                Row(
+                  children: [
+                    const Icon(FluentIcons.chrome_close, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '关闭按钮行为',
+                            style:
+                                FluentTheme.of(context).typography.bodyStrong,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '选择点击窗口关闭按钮时的操作',
+                            style: FluentTheme.of(context).typography.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    ComboBox<String>(
+                      value: _closeBehavior,
+                      items: const [
+                        ComboBoxItem(
+                          value: 'ask',
+                          child: Text('每次询问'),
+                        ),
+                        ComboBoxItem(
+                          value: 'minimize',
+                          child: Text('最小化到托盘'),
+                        ),
+                        ComboBoxItem(
+                          value: 'exit',
+                          child: Text('直接退出'),
+                        ),
+                      ],
+                      onChanged: (value) async {
+                        if (value != null) {
+                          await StorageService.setCloseBehavior(value);
+                          setState(() => _closeBehavior = value);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }

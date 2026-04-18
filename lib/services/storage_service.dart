@@ -22,6 +22,9 @@ class StorageKeys {
 
   /// EULA 接受状态
   static const String eulaAccepted = 'eula_accepted';
+
+  /// 关闭行为偏好（ask / minimize / exit）
+  static const String closeBehavior = 'close_behavior';
 }
 
 /// 统一数据存储服务
@@ -128,5 +131,18 @@ class StorageService {
   /// 标记 EULA 已接受（永久生效）
   static Future<void> acceptEula() async {
     await setBool(StorageKeys.eulaAccepted, true);
+  }
+
+  // ==================== 窗口行为相关 ====================
+
+  /// 获取关闭按钮行为偏好，默认每次询问
+  static Future<String> getCloseBehavior() async {
+    return (await getString(StorageKeys.closeBehavior)) ?? 'ask';
+  }
+
+  /// 设置关闭按钮行为偏好
+  /// [behavior] 可选值：ask（每次询问）、minimize（最小化到托盘）、exit（直接退出）
+  static Future<void> setCloseBehavior(String behavior) async {
+    await setString(StorageKeys.closeBehavior, behavior);
   }
 }
