@@ -116,6 +116,7 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final typography = FluentTheme.of(context).typography;
+    final isDark = FluentTheme.of(context).brightness == Brightness.dark;
 
     return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('关于')),
@@ -129,7 +130,9 @@ class AboutPage extends StatelessWidget {
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F3F3),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : const Color(0xFFF3F3F3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Image.asset(
