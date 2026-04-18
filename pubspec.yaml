@@ -63,17 +63,14 @@ flutter:
   uses-material-design: true
 
   fonts:
-    - family: JetBrains Mono Nerd
+    - family: MiSans
       fonts:
-        - asset: assets/fonts/JetBrainsMonoNerdFontMono-Regular.ttf
-        - asset: assets/fonts/JetBrainsMonoNerdFontMono-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/JetBrainsMonoNerdFontMono-Medium.ttf
+        - asset: assets/fonts/MiSans-Regular.ttf
+        - asset: assets/fonts/MiSans-Medium.ttf
           weight: 500
-        - asset: assets/fonts/JetBrainsMonoNerdFontMono-Light.ttf
-          weight: 300
-        - asset: assets/fonts/JetBrainsMonoNerdFontMono-Italic.ttf
-          style: italic
-        - asset: assets/fonts/JetBrainsMonoNerdFontMono-BoldItalic.ttf
+        - asset: assets/fonts/MiSans-Bold.ttf
           weight: 700
-          style: italic
+        - asset: assets/fonts/MiSans-Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/MiSans-Light.ttf
+          weight: 300

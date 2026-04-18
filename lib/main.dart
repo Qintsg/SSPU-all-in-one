@@ -12,7 +12,7 @@ import 'pages/lock_page.dart';
 import 'services/password_service.dart';
 
 /// 全局字体族名称
-const String kFontFamily = 'JetBrains Mono Nerd';
+const String kFontFamily = 'MiSans';
 
 void main() {
   // 确保 Flutter 引擎绑定初始化完成

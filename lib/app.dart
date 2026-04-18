@@ -30,9 +30,6 @@ class _AppShellState extends State<AppShell> {
   /// 当前选中的导航项索引
   int _selectedIndex = 0;
 
-  /// 导航栏是否处于展开模式（桌面端手动切换）
-  bool _isPaneOpen = true;
-
   @override
   Widget build(BuildContext context) {
     return NavigationView(
@@ -45,30 +42,8 @@ class _AppShellState extends State<AppShell> {
       pane: NavigationPane(
         selected: _selectedIndex,
         onChanged: (index) => setState(() => _selectedIndex = index),
-        // 手动控制展开/折叠
-        displayMode: _isPaneOpen ? PaneDisplayMode.expanded : PaneDisplayMode.compact,
-        // 导航栏头部区域：收起/展开按钮
-        header: Padding(
-          padding: const EdgeInsets.only(left: 12.0, top: 8.0),
-          child: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  _isPaneOpen ? FluentIcons.collapse_menu : FluentIcons.expand_menu,
-                  size: 16,
-                ),
-                onPressed: () => setState(() => _isPaneOpen = !_isPaneOpen),
-              ),
-              if (_isPaneOpen) ...[
-                const SizedBox(width: 8),
-                Text(
-                  'SSPU',
-                  style: FluentTheme.of(context).typography.bodyStrong,
-                ),
-              ],
-            ],
-          ),
-        ),
+        // 自动响应屏幕宽度切换显示模式，内建 toggle 按钮
+        displayMode: PaneDisplayMode.auto,
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.home),
