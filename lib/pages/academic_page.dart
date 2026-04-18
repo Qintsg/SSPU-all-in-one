@@ -15,8 +15,6 @@ class AcademicPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-
     return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('教务中心')),
       children: [
