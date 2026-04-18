@@ -15,3 +15,8 @@
 - AGENTS.md 代理工作规范
 - docs/ 文档目录（API.md、CHANGELOG.md）
 - .gitignore 版本控制忽略规则
+- Fluent 2 设计风格前端页面驾架（主页、教务中心、信息中心、快速跳转、设置）
+- NavigationView 侧边栏导航 + EntrancePageTransition 页面切换动画
+- 密码保护功能（SHA-256 哈希本地存储，设置/修改/移除）
+- 1Password 风格锁定页（抨动动画、自动聚焦）
+- 深色/浅色主题自动跟随系统
