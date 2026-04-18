@@ -47,7 +47,7 @@ dependencies:
   dio: ^5.8.0+1
 
   # Windows 系统通知推送
-  flutter_local_notifications: ^18.0.1
+  local_notifier: ^0.1.6
 
   # HTML 解析，用于网页内容提取
   html: ^0.15.5

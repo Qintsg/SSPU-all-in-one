@@ -74,10 +74,10 @@ const List<_OpenSourceProject> _openSourceProjects = [
     url: 'https://pub.dev/packages/dio',
   ),
   _OpenSourceProject(
-    name: 'flutter_local_notifications',
-    description: '本地系统通知推送',
-    license: 'BSD-3-Clause',
-    url: 'https://pub.dev/packages/flutter_local_notifications',
+    name: 'local_notifier',
+    description: 'Windows 本地系统通知推送',
+    license: 'MIT',
+    url: 'https://pub.dev/packages/local_notifier',
   ),
   _OpenSourceProject(
     name: 'html',
