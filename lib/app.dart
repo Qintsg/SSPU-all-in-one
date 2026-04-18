@@ -32,7 +32,9 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationView(
+    // 规避 Flutter Windows 引擎已知的 AXTree 更新报错
+    return ExcludeSemantics(
+      child: NavigationView(
       transitionBuilder: (child, animation) {
         return EntrancePageTransition(
           animation: animation,
@@ -74,6 +76,7 @@ class _AppShellState extends State<AppShell> {
             body: SettingsPage(onLock: widget.onLock),
           ),
         ],
+      ),
       ),
     );
   }
