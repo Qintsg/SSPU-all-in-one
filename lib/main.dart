@@ -277,12 +277,28 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
         brightness: Brightness.light,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: kFontFamily,
+        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
+        typography: Typography.fromBrightness(
+          brightness: Brightness.light,
+          color: Colors.black,
+        ).apply(fontFamily: kFontFamily),
+        navigationPaneTheme: const NavigationPaneThemeData(
+          backgroundColor: Colors.white,
+        ),
       ),
       darkTheme: FluentThemeData(
         accentColor: Colors.blue,
         brightness: Brightness.dark,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: kFontFamily,
+        scaffoldBackgroundColor: const Color(0xFF202020),
+        typography: Typography.fromBrightness(
+          brightness: Brightness.dark,
+          color: Colors.white,
+        ).apply(fontFamily: kFontFamily),
+        navigationPaneTheme: const NavigationPaneThemeData(
+          backgroundColor: Color(0xFF2D2D2D),
+        ),
       ),
       themeMode: ThemeMode.system,
       localizationsDelegates: FluentLocalizations.localizationsDelegates,
