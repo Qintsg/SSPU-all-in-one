@@ -47,16 +47,10 @@ dependencies:
   dio: ^5.8.0+1
 
   # Windows 系统通知推送
-  local_notifier: ^0.1.6
+  flutter_local_notifications: ^18.0.1
 
   # HTML 解析，用于网页内容提取
   html: ^0.15.5
-
-  # 声明式动画，用于页面入场与交互微动效
-  flutter_animate: ^4.5.2
-
-  # Windows 内嵌 WebView（基于 Edge WebView2）
-  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   flutter_test:
