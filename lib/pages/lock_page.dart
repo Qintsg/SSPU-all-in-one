@@ -165,11 +165,11 @@ class _LockPageState extends State<LockPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 应用图标
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 80,
-                  height: 80,
+                // 锁图标
+                Icon(
+                  FluentIcons.lock,
+                  size: 64,
+                  color: theme.accentColor,
                 ),
                 const SizedBox(height: 24),
 
