@@ -1,13 +1,13 @@
-<mxfile host="app.diagrams.net" modified="2026-04-18T23:55:00.000Z" agent="SSPU-all-in-one" version="24.0.0" etag="sspu-ico-v3" type="device">
+<mxfile host="app.diagrams.net" modified="2026-04-19T00:10:00.000Z" agent="SSPU-all-in-one" version="24.0.0" etag="sspu-ico-v4" type="device">
   <diagram name="SSPU-ICO-Campus" id="sspu-ico-campus">
     <mxGraphModel dx="600" dy="600" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="512" pageHeight="512" math="0" shadow="0" background="none">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
 
-        <!-- 主教学楼底座，浅蓝 -->
+        <!-- 主教学楼底座，加宽 -->
         <mxCell id="base" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4DA8E8;strokeColor=none;shadow=0;" vertex="1" parent="1">
-          <mxGeometry x="56" y="320" width="400" height="140" as="geometry"/>
+          <mxGeometry x="16" y="320" width="480" height="140" as="geometry"/>
         </mxCell>
 
         <!-- 主楼入口台阶 -->
@@ -23,35 +23,47 @@
           <mxGeometry x="216" y="370" width="80" height="90" as="geometry"/>
         </mxCell>
 
-        <!-- 窗户第一排 -->
+        <!-- 窗户第一排，左侧向外扩 -->
         <mxCell id="win1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="86" y="340" width="30" height="35" as="geometry"/>
+          <mxGeometry x="40" y="340" width="30" height="35" as="geometry"/>
         </mxCell>
         <mxCell id="win2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="136" y="340" width="30" height="35" as="geometry"/>
+          <mxGeometry x="90" y="340" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win2b" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="140" y="340" width="30" height="35" as="geometry"/>
         </mxCell>
         <mxCell id="win3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="346" y="340" width="30" height="35" as="geometry"/>
+          <mxGeometry x="342" y="340" width="30" height="35" as="geometry"/>
         </mxCell>
         <mxCell id="win4" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="396" y="340" width="30" height="35" as="geometry"/>
+          <mxGeometry x="392" y="340" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win4b" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="442" y="340" width="30" height="35" as="geometry"/>
         </mxCell>
 
         <!-- 窗户第二排 -->
         <mxCell id="win5" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="86" y="400" width="30" height="35" as="geometry"/>
+          <mxGeometry x="40" y="400" width="30" height="35" as="geometry"/>
         </mxCell>
         <mxCell id="win6" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="136" y="400" width="30" height="35" as="geometry"/>
+          <mxGeometry x="90" y="400" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win6b" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="140" y="400" width="30" height="35" as="geometry"/>
         </mxCell>
         <mxCell id="win7" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="346" y="400" width="30" height="35" as="geometry"/>
+          <mxGeometry x="342" y="400" width="30" height="35" as="geometry"/>
         </mxCell>
         <mxCell id="win8" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
-          <mxGeometry x="396" y="400" width="30" height="35" as="geometry"/>
+          <mxGeometry x="392" y="400" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win8b" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="442" y="400" width="30" height="35" as="geometry"/>
         </mxCell>
 
-        <!-- 中央塔楼，浅蓝 -->
+        <!-- 中央塔楼 -->
         <mxCell id="tower" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4DA8E8;strokeColor=none;" vertex="1" parent="1">
           <mxGeometry x="196" y="160" width="120" height="160" as="geometry"/>
         </mxCell>
@@ -64,7 +76,7 @@
           <mxGeometry x="236" y="265" width="40" height="30" as="geometry"/>
         </mxCell>
 
-        <!-- 塔楼尖顶，浅蓝深色 -->
+        <!-- 塔楼尖顶 -->
         <mxCell id="spire" value="" style="triangle;direction=north;whiteSpace=wrap;html=1;fillColor=#3A8FD6;strokeColor=none;" vertex="1" parent="1">
           <mxGeometry x="206" y="80" width="100" height="80" as="geometry"/>
         </mxCell>

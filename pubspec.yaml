@@ -65,6 +65,7 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/images/app_icon.png
 
   fonts:
     - family: MiSans
