@@ -44,6 +44,12 @@ const List<_OpenSourceProject> _openSourceProjects = [
     url: 'https://pub.dev/packages/url_launcher',
   ),
   _OpenSourceProject(
+    name: 'MiSans',
+    description: '小米全新系统字体，数字等宽',
+    license: 'MiSans EULA',
+    url: 'https://hyperos.mi.com/font/zh',
+  ),
+  _OpenSourceProject(
     name: 'WeWeRSS',
     description: '公众号/服务号文章获取思路参考',
     license: 'MIT',
@@ -89,6 +95,14 @@ class AboutPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 64,
+                  height: 64,
+                ),
+              ),
+              const SizedBox(height: 12),
               Text('SSPU All-in-One', style: typography.subtitle),
               const SizedBox(height: 4),
               Text('版本 0.0.1-alpha', style: typography.caption),
