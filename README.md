@@ -8,89 +8,41 @@
 
 ## 简介
 
-SSPU All-in-One 是一款面向上海第二工业大学师生的校园综合服务应用，基于 Flutter 构建，支持 Android、iOS、macOS、Linux、Windows 和 Web 全平台。
-
-主要功能：
-
-- 聚合 SSPU 各官网、微信公众号等渠道的信息获取
-- 学生服务聚合（课表、成绩、通知、活动等）
-- **全部数据保留在本地，不上传至任何云端服务**
-
-## 技术栈
-
-- **框架**：Flutter (Dart)
-- **目标平台**：Android / iOS / macOS / Linux / Windows / Web
-- **包管理**：pub
+SSPU All-in-One 是面向上海第二工业大学师生的校园综合服务应用，基于 Flutter + Fluent UI 构建，支持 Android / iOS / macOS / Linux / Windows / Web 全平台。所有数据仅保留在本地，不上传至任何云端服务。
 
 ## 快速开始
 
 ### 环境要求
 
 - Flutter SDK >= 3.11
-- Dart SDK >= 3.11
-- 各平台对应的开发工具（Android Studio / Xcode / Visual Studio 等）
+- 各平台对应的开发工具（详见 [使用文档](docs/USAGE.md)）
 
 ### 安装与运行
 
 ```bash
-# 克隆仓库
 git clone https://github.com/Qintsg/SSPU-all-in-one.git
 cd SSPU-all-in-one
-
-# 获取依赖
 flutter pub get
-
-# 运行（默认平台）
 flutter run
-
-# 指定平台运行
-flutter run -d chrome       # Web
-flutter run -d windows      # Windows
-flutter run -d macos        # macOS
-flutter run -d linux        # Linux
 ```
 
 ### 构建
 
 ```bash
 flutter build apk           # Android APK
-flutter build ios            # iOS
 flutter build web            # Web
 flutter build windows        # Windows
 flutter build macos          # macOS
 flutter build linux          # Linux
 ```
 
-## 项目结构
-
-```
-SSPU-all-in-one/
-├── lib/                     # Dart 源码
-│   └── main.dart            # 应用入口
-├── test/                    # 测试
-├── android/                 # Android 平台配置
-├── ios/                     # iOS 平台配置
-├── macos/                   # macOS 平台配置
-├── linux/                   # Linux 平台配置
-├── windows/                 # Windows 平台配置
-├── web/                     # Web 平台配置
-├── docs/                    # 项目文档
-│   ├── API.md               # API 文档
-│   └── CHANGELOG.md         # 变更日志
-├── AGENTS.md                # 代理工作规范
-├── LICENSE                  # MIT 许可证
-└── pubspec.yaml             # 项目配置与依赖
-```
-
 ## 文档
 
+- [设计文档](docs/DESIGN.md) — 架构、功能设计、技术选型
+- [使用文档](docs/USAGE.md) — 开发环境、运行、测试、构建
 - [API 文档](docs/API.md)
 - [变更日志](docs/CHANGELOG.md)
 
 ## 许可证
 
-本项目基于 [MIT 许可证](LICENSE) 开源。
-
-## 作者
-
-- [Qintsg](https://github.com/Qintsg)
+[MIT](LICENSE) © [Qintsg](https://github.com/Qintsg)
