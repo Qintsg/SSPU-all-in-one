@@ -24,6 +24,16 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 80,
+                      height: 80,
+                    ),
+                  ),
+                ),
                 Text(
                   '欢迎使用 SSPU All-in-One',
                   style: FluentTheme.of(context).typography.subtitle,

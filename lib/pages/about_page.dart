@@ -95,6 +95,16 @@ class AboutPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 96,
+                    height: 96,
+                  ),
+                ),
+              ),
               Text('SSPU All-in-One', style: typography.subtitle),
               const SizedBox(height: 4),
               Text('版本 0.0.1-alpha', style: typography.caption),
