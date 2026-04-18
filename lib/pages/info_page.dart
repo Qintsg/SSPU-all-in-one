@@ -16,7 +16,6 @@ class InfoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('信息中心')),
