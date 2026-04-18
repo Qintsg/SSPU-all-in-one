@@ -1,0 +1,85 @@
+<mxfile host="app.diagrams.net" modified="2026-04-18T23:55:00.000Z" agent="SSPU-all-in-one" version="24.0.0" etag="sspu-ico-v3" type="device">
+  <diagram name="SSPU-ICO-Campus" id="sspu-ico-campus">
+    <mxGraphModel dx="600" dy="600" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="512" pageHeight="512" math="0" shadow="0" background="none">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- 主教学楼底座，浅蓝 -->
+        <mxCell id="base" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4DA8E8;strokeColor=none;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="56" y="320" width="400" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- 主楼入口台阶 -->
+        <mxCell id="steps1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#3A8FD6;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="146" y="460" width="220" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="steps2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#2B6FAA;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="166" y="476" width="180" height="12" as="geometry"/>
+        </mxCell>
+
+        <!-- 大门 -->
+        <mxCell id="door" value="" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#2B6FAA;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="216" y="370" width="80" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- 窗户第一排 -->
+        <mxCell id="win1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="86" y="340" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="136" y="340" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="346" y="340" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win4" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="396" y="340" width="30" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- 窗户第二排 -->
+        <mxCell id="win5" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="86" y="400" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win6" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="136" y="400" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win7" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="346" y="400" width="30" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="win8" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="396" y="400" width="30" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- 中央塔楼，浅蓝 -->
+        <mxCell id="tower" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4DA8E8;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="196" y="160" width="120" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- 塔楼窗户 -->
+        <mxCell id="twin1" value="" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=70;" vertex="1" parent="1">
+          <mxGeometry x="226" y="195" width="60" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="twin2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="236" y="265" width="40" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- 塔楼尖顶，浅蓝深色 -->
+        <mxCell id="spire" value="" style="triangle;direction=north;whiteSpace=wrap;html=1;fillColor=#3A8FD6;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="206" y="80" width="100" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- 塔顶小球 -->
+        <mxCell id="top-ball" value="" style="ellipse;fillColor=#FFD700;strokeColor=none;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="244" y="68" width="24" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- 地面 -->
+        <mxCell id="ground" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#8DC8F0;strokeColor=none;opacity=30;" vertex="1" parent="1">
+          <mxGeometry y="488" width="512" height="24" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
