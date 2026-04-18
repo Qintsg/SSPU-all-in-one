@@ -24,24 +24,40 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Image.asset(
-                      'assets/images/logo.png',
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
                       width: 80,
                       height: 80,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F3F3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 80,
+                        height: 80,
+                      ),
                     ),
-                  ),
-                ),
-                Text(
-                  '欢迎使用 SSPU All-in-One',
-                  style: FluentTheme.of(context).typography.subtitle,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '上海第二工业大学校园综合服务应用',
-                  style: FluentTheme.of(context).typography.bodyLarge,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '欢迎使用 SSPU All-in-One',
+                            style: FluentTheme.of(context).typography.subtitle,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '上海第二工业大学校园综合服务应用',
+                            style: FluentTheme.of(context).typography.bodyLarge,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 // 功能概览卡片区域（占位）

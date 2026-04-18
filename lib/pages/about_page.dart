@@ -92,26 +92,37 @@ class AboutPage extends StatelessWidget {
       children: [
         // 软件信息
         Card(
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 96,
-                    height: 96,
-                  ),
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F3F3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 96,
+                  height: 96,
                 ),
               ),
-              Text('SSPU All-in-One', style: typography.subtitle),
-              const SizedBox(height: 4),
-              Text('版本 0.0.1-alpha', style: typography.caption),
-              const SizedBox(height: 16),
-              _buildInfoRow(context, '著作人', 'Qintsg'),
-              const SizedBox(height: 8),
-              _buildInfoRow(context, '许可证', 'MIT License'),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SSPU All-in-One', style: typography.subtitle),
+                    const SizedBox(height: 4),
+                    Text('版本 0.0.1-alpha', style: typography.caption),
+                    const SizedBox(height: 16),
+                    _buildInfoRow(context, '著作人', 'Qintsg'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(context, '许可证', 'MIT License'),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
