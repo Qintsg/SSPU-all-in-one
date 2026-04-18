@@ -17,7 +17,10 @@ import 'pages/settings_page.dart';
 /// 应用主体骨架
 /// 管理侧边栏导航与各页面的切换及过渡动画
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  /// 手动上锁回调
+  final VoidCallback? onLock;
+
+  const AppShell({super.key, this.onLock});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -26,6 +29,9 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   /// 当前选中的导航项索引
   int _selectedIndex = 0;
+
+  /// 导航栏是否处于展开模式（桌面端手动切换）
+  bool _isPaneOpen = true;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +45,30 @@ class _AppShellState extends State<AppShell> {
       pane: NavigationPane(
         selected: _selectedIndex,
         onChanged: (index) => setState(() => _selectedIndex = index),
-        // 自动响应屏幕宽度切换显示模式（展开/折叠/最小化）
-        displayMode: PaneDisplayMode.auto,
+        // 手动控制展开/折叠
+        displayMode: _isPaneOpen ? PaneDisplayMode.expanded : PaneDisplayMode.compact,
+        // 导航栏头部区域：收起/展开按钮
+        header: Padding(
+          padding: const EdgeInsets.only(left: 12.0, top: 8.0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  _isPaneOpen ? FluentIcons.collapse_menu : FluentIcons.expand_menu,
+                  size: 16,
+                ),
+                onPressed: () => setState(() => _isPaneOpen = !_isPaneOpen),
+              ),
+              if (_isPaneOpen) ...[
+                const SizedBox(width: 8),
+                Text(
+                  'SSPU',
+                  style: FluentTheme.of(context).typography.bodyStrong,
+                ),
+              ],
+            ],
+          ),
+        ),
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.home),
@@ -68,7 +96,7 @@ class _AppShellState extends State<AppShell> {
           PaneItem(
             icon: const Icon(FluentIcons.settings),
             title: const Text('设置'),
-            body: const SettingsPage(),
+            body: SettingsPage(onLock: widget.onLock),
           ),
         ],
       ),

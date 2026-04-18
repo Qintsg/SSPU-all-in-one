@@ -11,6 +11,9 @@ import 'app.dart';
 import 'pages/lock_page.dart';
 import 'services/password_service.dart';
 
+/// 全局字体族名称
+const String kFontFamily = 'JetBrains Mono Nerd';
+
 void main() {
   // 确保 Flutter 引擎绑定初始化完成
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +54,11 @@ class _SSPUAppState extends State<SSPUApp> {
     }
   }
 
+  /// 手动上锁，从设置页触发
+  void _lockApp() {
+    setState(() => _isUnlocked = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return FluentApp(
@@ -60,12 +68,14 @@ class _SSPUAppState extends State<SSPUApp> {
         accentColor: Colors.blue,
         brightness: Brightness.light,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: kFontFamily,
       ),
       // 深色主题
       darkTheme: FluentThemeData(
         accentColor: Colors.blue,
         brightness: Brightness.dark,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: kFontFamily,
       ),
       // 跟随系统主题模式
       themeMode: ThemeMode.system,
@@ -81,7 +91,7 @@ class _SSPUAppState extends State<SSPUApp> {
   Widget _buildHome() {
     // 初始化未完成时显示加载指示器
     if (!_isInitialized) {
-      return const NavigationView(
+      return const ScaffoldPage(
         content: Center(child: ProgressRing()),
       );
     }
@@ -96,6 +106,6 @@ class _SSPUAppState extends State<SSPUApp> {
     }
 
     // 已解锁，进入主界面
-    return const AppShell();
+    return AppShell(onLock: _lockApp);
   }
 }

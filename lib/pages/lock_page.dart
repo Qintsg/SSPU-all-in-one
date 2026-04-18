@@ -24,7 +24,7 @@ class LockPage extends StatefulWidget {
 }
 
 class _LockPageState extends State<LockPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
@@ -39,6 +39,15 @@ class _LockPageState extends State<LockPage>
 
   /// 抖动偏移动画
   late Animation<double> _shakeAnimation;
+
+  /// 解锁动画控制器（成功验证后播放）
+  late AnimationController _unlockController;
+
+  /// 解锁缩放动画
+  late Animation<double> _unlockScale;
+
+  /// 解锁透明度动画
+  late Animation<double> _unlockOpacity;
 
   @override
   void initState() {
@@ -59,17 +68,32 @@ class _LockPageState extends State<LockPage>
       curve: Curves.easeInOut,
     ));
 
+    // 初始化解锁动画（缩放 + 淡出）
+    _unlockController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _unlockScale = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _unlockController, curve: Curves.easeOut),
+    );
+    _unlockOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _unlockController, curve: Curves.easeIn),
+    );
+
     // 自动聚焦到密码输入框
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
     });
   }
 
   @override
   void dispose() {
+    _shakeController.dispose();
+    _unlockController.dispose();
     _passwordController.dispose();
     _focusNode.dispose();
-    _shakeController.dispose();
     super.dispose();
   }
 
@@ -94,8 +118,12 @@ class _LockPageState extends State<LockPage>
     if (!mounted) return;
 
     if (isCorrect) {
-      // 密码正确，解锁
-      widget.onUnlocked();
+      // 密码正确，播放解锁动画后回调
+      _unlockController.forward().then((_) {
+        if (mounted) {
+          widget.onUnlocked();
+        }
+      });
     } else {
       // 密码错误，显示错误提示并触发抖动动画
       setState(() {
@@ -118,91 +146,106 @@ class _LockPageState extends State<LockPage>
     final theme = FluentTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return NavigationView(
-      content: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 锁图标
-              Icon(
-                FluentIcons.lock,
-                size: 64,
-                color: theme.accentColor,
-              ),
-              const SizedBox(height: 24),
-
-              // 应用名称
-              Text(
-                'SSPU All-in-One',
-                style: theme.typography.title,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '应用已锁定',
-                style: theme.typography.body?.copyWith(
-                  color: isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.6),
+    // 使用 ScaffoldPage 替代 NavigationView，避免 FocusNode 生命周期冲突
+    return AnimatedBuilder(
+      animation: Listenable.merge([_unlockScale, _unlockOpacity]),
+      builder: (context, child) {
+        return Opacity(
+          opacity: _unlockOpacity.value,
+          child: Transform.scale(
+            scale: _unlockScale.value,
+            child: child,
+          ),
+        );
+      },
+      child: ScaffoldPage(
+        content: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 锁图标
+                Icon(
+                  FluentIcons.lock,
+                  size: 64,
+                  color: theme.accentColor,
                 ),
-              ),
-              const SizedBox(height: 40),
+                const SizedBox(height: 24),
 
-              // 密码输入区域（带抖动动画）
-              AnimatedBuilder(
-                animation: _shakeAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(_shakeAnimation.value, 0),
-                    child: child,
-                  );
-                },
-                child: SizedBox(
-                  width: 320,
-                  child: Column(
-                    children: [
-                      PasswordBox(
-                        controller: _passwordController,
-                        placeholder: '输入密码以解锁',
-                        focusNode: _focusNode,
-                        revealMode: PasswordRevealMode.peekAlways,
-                        onSubmitted: (_) => _handleUnlock(),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // 错误提示
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 8),
-
-                      // 解锁按钮
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: _isVerifying ? null : _handleUnlock,
-                          child: _isVerifying
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: ProgressRing(strokeWidth: 2),
-                                )
-                              : const Text('解锁'),
-                        ),
-                      ),
-                    ],
+                // 应用名称
+                Text(
+                  'SSPU All-in-One',
+                  style: theme.typography.title,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '应用已锁定',
+                  style: theme.typography.body?.copyWith(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.6),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 40),
+
+                // 密码输入区域（带抖动动画）
+                AnimatedBuilder(
+                  animation: _shakeAnimation,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(_shakeAnimation.value, 0),
+                      child: child,
+                    );
+                  },
+                  child: SizedBox(
+                    width: 320,
+                    child: Column(
+                      children: [
+                        PasswordBox(
+                          controller: _passwordController,
+                          placeholder: '输入密码以解锁',
+                          focusNode: _focusNode,
+                          revealMode: PasswordRevealMode.peekAlways,
+                          onSubmitted: (_) => _handleUnlock(),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // 错误提示
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 8),
+
+                        // 解锁按钮
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: _isVerifying ? null : _handleUnlock,
+                            child: _isVerifying
+                                ? const SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: ProgressRing(strokeWidth: 2),
+                                  )
+                                : const Text('解锁'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
