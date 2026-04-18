@@ -144,6 +144,16 @@ docs(api): 补充用户详情接口响应字段说明
 chore(repo): 任务开始前保存未提交内容
 ```
 
+### 4.3.1 外部引用限制
+
+commit message、代码注释、文档中，禁止包含：
+
+- 外部 GitHub issue 引用格式 `owner/repo#number`（如 `flutter/flutter#12345`）
+- 外部 GitHub issue / PR 的完整 URL
+- 其他外部仓库的引用链接
+
+原因：GitHub 会自动在被引用的 issue 页面创建 cross-reference 记录，且无法删除。
+
 ### 4.4 默认禁止的 Git 动作
 
 除非用户明确要求，否则不主动执行：
