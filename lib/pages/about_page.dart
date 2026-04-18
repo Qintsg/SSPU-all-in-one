@@ -55,6 +55,36 @@ const List<_OpenSourceProject> _openSourceProjects = [
     license: 'MIT',
     url: 'https://github.com/cooderl/wewe-rss',
   ),
+  _OpenSourceProject(
+    name: 'window_manager',
+    description: 'Flutter 桌面窗口管理',
+    license: 'MIT',
+    url: 'https://pub.dev/packages/window_manager',
+  ),
+  _OpenSourceProject(
+    name: 'tray_manager',
+    description: '系统托盘图标管理',
+    license: 'MIT',
+    url: 'https://pub.dev/packages/tray_manager',
+  ),
+  _OpenSourceProject(
+    name: 'dio',
+    description: '强大的 HTTP 客户端库',
+    license: 'MIT',
+    url: 'https://pub.dev/packages/dio',
+  ),
+  _OpenSourceProject(
+    name: 'flutter_local_notifications',
+    description: '本地系统通知推送',
+    license: 'BSD-3-Clause',
+    url: 'https://pub.dev/packages/flutter_local_notifications',
+  ),
+  _OpenSourceProject(
+    name: 'html',
+    description: 'HTML 解析库',
+    license: 'MIT',
+    url: 'https://pub.dev/packages/html',
+  ),
 ];
 
 class _OpenSourceProject {

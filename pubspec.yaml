@@ -43,6 +43,15 @@ dependencies:
   window_manager: ^0.4.3
   tray_manager: ^0.5.1
 
+  # HTTP 客户端，用于网络请求
+  dio: ^5.8.0+1
+
+  # Windows 系统通知推送
+  flutter_local_notifications: ^18.0.1
+
+  # HTML 解析，用于网页内容提取
+  html: ^0.15.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
