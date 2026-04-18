@@ -1,0 +1,50 @@
+<mxfile host="app.diagrams.net" modified="2026-04-18T23:15:00.000Z" agent="SSPU-all-in-one" version="24.0.0" etag="sspu-logo-v12" type="device">
+  <diagram name="SSPU-AIO-Fluent-v8" id="sspu-fluent-v12">
+    <mxGraphModel dx="900" dy="900" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="600" pageHeight="600" math="0" shadow="0" background="none">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- 深灰半透明圆形背景，缩小留边 -->
+        <mxCell id="bg-circle" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0E0E0;strokeColor=none;aspect=fixed;shadow=0;opacity=80;" vertex="1" parent="1">
+          <mxGeometry x="25" y="25" width="550" height="550" as="geometry"/>
+        </mxCell>
+
+        <!-- 外侧粗圆环 -->
+        <mxCell id="outer-ring" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#8DC8F0;strokeWidth=24;aspect=fixed;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="25" y="25" width="550" height="550" as="geometry"/>
+        </mxCell>
+
+        <!-- 内侧细圆环 -->
+        <mxCell id="inner-ring" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#8DC8F0;strokeWidth=1;aspect=fixed;opacity=25;" vertex="1" parent="1">
+          <mxGeometry x="55" y="55" width="490" height="490" as="geometry"/>
+        </mxCell>
+
+        <!-- 分隔线 -->
+        <mxCell id="sep-line" value="" style="line;strokeWidth=1;fillColor=none;strokeColor=#8DC8F0;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="135" y="275" width="330" height="1" as="geometry"/>
+        </mxCell>
+
+        <!-- SSPU 文字，加大至 95 -->
+        <mxCell id="text-sspu" value="SSPU" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=95;fontFamily=Playfair Display,Georgia,serif;fontStyle=3;fontColor=#0078D4;letterSpacing=6;opacity=65;" vertex="1" parent="1">
+          <mxGeometry x="60" y="105" width="480" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- All-in-One 文字 -->
+        <mxCell id="text-aio" value="All-in-One" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=88;fontFamily=Playfair Display,Georgia,serif;fontStyle=3;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="45" y="295" width="510" height="145" as="geometry"/>
+        </mxCell>
+
+        <!-- 装饰点 -->
+        <mxCell id="dot-left" value="" style="ellipse;fillColor=#8DC8F0;strokeColor=none;aspect=fixed;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="95" y="272" width="8" height="8" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="dot-right" value="" style="ellipse;fillColor=#8DC8F0;strokeColor=none;aspect=fixed;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="497" y="272" width="8" height="8" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
