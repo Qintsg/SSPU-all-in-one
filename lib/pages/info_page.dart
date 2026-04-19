@@ -9,12 +9,12 @@
 
 import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/message_item.dart';
 import '../services/sspu_news_service.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
+import 'webview_page.dart';
 
 /// 信息中心页面
 /// 统一大列表展示所有渠道消息，支持搜索/筛选/已读未读/分页
@@ -269,14 +269,21 @@ class _InfoPageState extends State<InfoPage> {
   int get _totalPages =>
       (_filteredMessages.length / _pageSize).ceil().clamp(1, 9999);
 
-  /// 打开消息链接并标记为已读
+  /// 打开消息：标记已读并在内嵌 WebView 中打开
+  /// WebView 初始化失败时自动 fallback 到外部浏览器
   Future<void> _openMessage(MessageItem message) async {
     await _stateService.markAsRead(message.id);
-    final uri = Uri.tryParse(message.url);
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (mounted) {
+      Navigator.of(context).push(
+        FluentPageRoute(
+          builder: (_) => WebViewPage(
+            url: message.url,
+            initialTitle: message.title,
+          ),
+        ),
+      );
+      setState(() {});
     }
-    setState(() {});
   }
 
   @override
