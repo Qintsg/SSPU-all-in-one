@@ -175,6 +175,15 @@ class _InfoPageState extends State<InfoPage> {
       );
     }
 
+    // 预加载子分类启用状态（仅有多子分类的渠道）
+    final categoryEnabledCache = <String, bool>{};
+    for (final entry in channelSubcategories.entries) {
+      for (final sub in entry.value) {
+        categoryEnabledCache[sub.category.name] =
+            await _stateService.isCategoryEnabled(sub.category.name);
+      }
+    }
+
     // 微信渠道单独检查（使用专有方法）
     final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
     final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
@@ -192,7 +201,14 @@ class _InfoPageState extends State<InfoPage> {
       // 其他渠道按 category → channelId 映射判断
       final channelId = _categoryToChannelId[msg.category];
       if (channelId != null) {
-        return !(enabledCache[channelId] ?? false);
+        // 渠道级检查 — 渠道关闭则直接过滤
+        if (!(enabledCache[channelId] ?? false)) return true;
+        // 子分类级检查 — 渠道启用但子分类关闭时过滤
+        final catName = msg.category.name;
+        if (categoryEnabledCache.containsKey(catName)) {
+          return !categoryEnabledCache[catName]!;
+        }
+        return false;
       }
 
       // 未在映射表中的分类保留显示

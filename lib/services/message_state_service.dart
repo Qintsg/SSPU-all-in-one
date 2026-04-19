@@ -218,6 +218,38 @@ class MessageStateService {
     );
   }
 
+  // ==================== 子分类（tag3）开关管理 ====================
+
+  /// 生成子分类启用状态的存储键名
+  /// [categoryName] MessageCategory 枚举的 .name 值
+  static String _categoryEnabledKey(String categoryName) =>
+      'category_${categoryName}_enabled';
+
+  /// 获取指定子分类是否启用
+  /// 默认为 true（渠道启用时所有子分类默认开启）
+  /// [categoryName] MessageCategory 枚举的 .name 值
+  /// [defaultValue] 未设置时的默认值
+  /// :return: 子分类启用状态
+  Future<bool> isCategoryEnabled(
+    String categoryName, {
+    bool defaultValue = true,
+  }) async {
+    return await StorageService.getBool(
+      _categoryEnabledKey(categoryName),
+      defaultValue: defaultValue,
+    );
+  }
+
+  /// 设置指定子分类的启用状态
+  /// [categoryName] MessageCategory 枚举的 .name 值
+  /// [enabled] 是否启用
+  Future<void> setCategoryEnabled(String categoryName, bool enabled) async {
+    await StorageService.setBool(
+      _categoryEnabledKey(categoryName),
+      enabled,
+    );
+  }
+
   /// 获取指定渠道的自动刷新间隔
   /// [channelId] 渠道唯一标识
   /// [defaultValue] 默认间隔（分钟，0 = 关闭）

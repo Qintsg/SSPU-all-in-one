@@ -8,6 +8,7 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import '../models/channel_config.dart';
+import '../models/message_item.dart';
 import '../services/message_state_service.dart';
 import '../services/auto_refresh_service.dart';
 import 'settings_widgets.dart';
@@ -45,6 +46,9 @@ class _ChannelListSectionState extends State<ChannelListSection> {
   /// 各渠道刷新间隔缓存（channelId → minutes）
   final Map<String, int> _intervalMap = {};
 
+  /// 各子分类启用状态缓存（categoryName → enabled）
+  final Map<String, bool> _categoryEnabledMap = {};
+
   /// 当前正在查看详情的渠道 ID（null 表示在列表页）
   String? _detailChannelId;
 
@@ -68,6 +72,16 @@ class _ChannelListSectionState extends State<ChannelListSection> {
         channel.id,
         defaultValue: channel.defaultInterval,
       );
+    }
+    // 加载子分类启用状态
+    for (final channel in widget.channels) {
+      final subcats = channelSubcategories[channel.id];
+      if (subcats != null) {
+        for (final sub in subcats) {
+          _categoryEnabledMap[sub.category.name] =
+              await _messageState.isCategoryEnabled(sub.category.name);
+        }
+      }
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -218,6 +232,11 @@ class _ChannelListSectionState extends State<ChannelListSection> {
                     onChanged: (minutes) =>
                         _onIntervalChanged(channel, minutes),
                   ),
+                  // 子分类开关（仅有多子分类的渠道显示）
+                  if (channelSubcategories.containsKey(channel.id)) ...[
+                    const SizedBox(height: 16),
+                    _buildSubcategoryToggles(context, channel),
+                  ],
                 ],
                 if (!channel.implemented) ...[
                   const SizedBox(height: 16),
@@ -279,5 +298,63 @@ class _ChannelListSectionState extends State<ChannelListSection> {
     if (channel.implemented) {
       await _autoRefresh.reloadChannel(channel.id);
     }
+  }
+
+  /// 构建子分类开关区域
+  /// 显示渠道下所有子分类的独立开关
+  Widget _buildSubcategoryToggles(
+    BuildContext context,
+    ChannelConfig channel,
+  ) {
+    final theme = FluentTheme.of(context);
+    final subcats = channelSubcategories[channel.id]!;
+    final channelEnabled = _enabledMap[channel.id] ?? false;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 区域标题
+        Text('内容分类', style: theme.typography.bodyStrong),
+        const SizedBox(height: 4),
+        Text(
+          '单独控制每个分类的显示，关闭后该分类消息将不再展示',
+          style: theme.typography.caption,
+        ),
+        const SizedBox(height: 8),
+        // 每个子分类一行（名称 + 开关）
+        ...subcats.map((sub) {
+          final catEnabled =
+              _categoryEnabledMap[sub.category.name] ?? true;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(sub.name, style: theme.typography.body),
+                ),
+                ToggleSwitch(
+                  checked: catEnabled,
+                  // 渠道未启用时子分类开关置灰不可操作
+                  onChanged: channelEnabled
+                      ? (value) => _onCategoryToggled(sub.category, value)
+                      : null,
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  /// 子分类开关变更处理
+  /// [category] 消息分类枚举值
+  /// [enabled] 新的启用状态
+  Future<void> _onCategoryToggled(
+    MessageCategory category,
+    bool enabled,
+  ) async {
+    await _messageState.setCategoryEnabled(category.name, enabled);
+    setState(() => _categoryEnabledMap[category.name] = enabled);
   }
 }
