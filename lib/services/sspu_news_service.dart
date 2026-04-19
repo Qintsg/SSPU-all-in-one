@@ -13,6 +13,7 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
+import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// SSPU 信息公开网解析服务（单例）
@@ -124,9 +125,9 @@ class SspuNewsService {
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取日期
+        // 提取日期并规范化格式
         final dateMeta = item.querySelector('span.news_meta');
-        final date = dateMeta?.text.trim() ?? '';
+        final date = normalizeDate(dateMeta?.text.trim() ?? '');
 
         // 生成唯一 ID（基于 URL 的 MD5 哈希，确保去重）
         final messageId = _generateId(fullUrl);

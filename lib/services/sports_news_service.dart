@@ -13,6 +13,7 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
+import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 体育部消息解析服务（单例）
@@ -116,9 +117,9 @@ class SportsNewsService {
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取日期
+        // 提取日期并规范化格式
         final dateSpan = item.querySelector('span');
-        final date = dateSpan?.text.trim() ?? '';
+        final date = normalizeDate(dateSpan?.text.trim() ?? '');
 
         final messageId = _generateId(fullUrl);
 

@@ -13,6 +13,7 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
+import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 保卫处消息解析服务（单例）
@@ -114,11 +115,12 @@ class SecurityNewsService {
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取日期
+        // 提取日期并规范化格式
         final dateSpan = item.querySelector('span');
-        final date = dateSpan?.text.trim() ?? '';
+        final rawDate = dateSpan?.text.trim() ?? '';
         // 跳过非日期格式的项（导航等杂项）
-        if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(date)) continue;
+        if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(rawDate)) continue;
+        final date = normalizeDate(rawDate);
 
         final messageId = _generateId(fullUrl);
 
