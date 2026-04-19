@@ -14,7 +14,6 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
-import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 学生处消息解析服务（单例）
@@ -56,6 +55,7 @@ class StudentAffairsService {
 
       final listItems = document.querySelectorAll(selector);
       final messages = <MessageItem>[];
+      final currentYear = DateTime.now().year;
 
       for (final item in listItems) {
         // 提取链接和标题（在 span.news_title 内的 a 标签）
@@ -69,10 +69,10 @@ class StudentAffairsService {
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取日期（span.time 内为 MM-DD 格式，通过统一工具补全年份）
+        // 提取日期（span.time 内为 MM-DD 格式）
         final dateSpan = item.querySelector('span.time');
         final rawDate = dateSpan?.text.trim() ?? '';
-        final date = normalizeDate(rawDate);
+        final date = _normalizeDate(rawDate, currentYear);
 
         final messageId = _generateId(fullUrl);
 
@@ -93,6 +93,24 @@ class StudentAffairsService {
     }
   }
 
+  /// 将 MM-DD 格式日期补全为 YYYY-MM-DD
+  /// 如果月份大于当前月份，视为去年的日期
+  String _normalizeDate(String rawDate, int currentYear) {
+    final match = RegExp(r'(\d{1,2})-(\d{1,2})').firstMatch(rawDate);
+    if (match == null) return rawDate;
+
+    final month = int.parse(match.group(1)!);
+    final day = int.parse(match.group(2)!);
+    final now = DateTime.now();
+
+    // 如果月份大于当前月，可能是上一年的消息
+    var year = currentYear;
+    if (month > now.month || (month == now.month && day > now.day)) {
+      year = currentYear - 1;
+    }
+
+    return '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+  }
 
   /// 基于 URL 生成稳定的消息唯一 ID
   String _generateId(String url) {
