@@ -31,6 +31,9 @@ class _InfoPageState extends State<InfoPage> {
   /// 经过搜索和筛选后的消息
   List<MessageItem> _filteredMessages = [];
 
+  /// 是否已经执行过首次自动刷新
+  bool _hasAutoRefreshed = false;
+
   /// 是否正在加载
   bool _isLoading = false;
 
@@ -76,10 +79,14 @@ class _InfoPageState extends State<InfoPage> {
     super.dispose();
   }
 
-  /// 初始化状态服务并加载消息
+  /// 初始化状态服务，首次进入时自动刷新
   Future<void> _initAndLoad() async {
     await _stateService.init();
-    await _refreshSchoolWebsite();
+    // 仅首次进入信息中心时自动弹出刷新对话框
+    if (!_hasAutoRefreshed) {
+      _hasAutoRefreshed = true;
+      await _refreshSchoolWebsite();
+    }
   }
 
   /// 刷新官网消息（根据渠道开关加载启用的栏目）
@@ -385,8 +392,13 @@ class _InfoPageState extends State<InfoPage> {
     );
   }
 
-  /// 构建筛选栏：来源类型 + 来源名称 + 内容分类 + 未读筛选
+  /// 构建筛选栏：来源类型 + 来源名称（级联） + 内容分类（级联） + 未读筛选
   Widget _buildFilterBar(FluentThemeData theme, bool isDark) {
+    // 根据当前选中的来源类型，决定可选的来源名称
+    final availableSourceNames = _getAvailableSourceNames();
+    // 根据当前选中的来源名称，决定可选的内容分类
+    final availableCategories = _getAvailableCategories();
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -399,25 +411,30 @@ class _InfoPageState extends State<InfoPage> {
           itemLabel: (item) => item.label,
           onChanged: (value) {
             _filterSourceType = value;
+            // 级联重置：父级变化时清空子级选择
+            _filterSourceName = null;
+            _filterCategory = null;
             _applyFilters();
           },
         ),
-        // 来源名称筛选
+        // 来源名称筛选（依赖来源类型）
         _buildFilterCombo<MessageSourceName>(
           label: '来源名称',
           value: _filterSourceName,
-          items: MessageSourceName.values,
+          items: availableSourceNames,
           itemLabel: (item) => item.label,
           onChanged: (value) {
             _filterSourceName = value;
+            // 级联重置：来源名称变化时清空内容分类
+            _filterCategory = null;
             _applyFilters();
           },
         ),
-        // 内容分类筛选
+        // 内容分类筛选（依赖来源名称）
         _buildFilterCombo<MessageCategory>(
           label: '内容分类',
           value: _filterCategory,
-          items: MessageCategory.values,
+          items: availableCategories,
           itemLabel: (item) => item.label,
           onChanged: (value) {
             _filterCategory = value;
@@ -435,6 +452,32 @@ class _InfoPageState extends State<InfoPage> {
         ),
       ],
     );
+  }
+
+  /// 根据当前来源类型获取可选的来源名称列表
+  List<MessageSourceName> _getAvailableSourceNames() {
+    if (_filterSourceType == null) return MessageSourceName.values;
+    switch (_filterSourceType!) {
+      case MessageSourceType.schoolWebsite:
+        return [MessageSourceName.infoDisclosure];
+      case MessageSourceType.wechatPublic:
+        return [MessageSourceName.wechatPublicPlaceholder];
+      case MessageSourceType.wechatService:
+        return [MessageSourceName.wechatServicePlaceholder];
+    }
+  }
+
+  /// 根据当前来源名称获取可选的内容分类列表
+  List<MessageCategory> _getAvailableCategories() {
+    if (_filterSourceName == null) return MessageCategory.values;
+    switch (_filterSourceName!) {
+      case MessageSourceName.infoDisclosure:
+        return [MessageCategory.latestInfo, MessageCategory.notice];
+      case MessageSourceName.wechatPublicPlaceholder:
+        return [MessageCategory.wechatArticle];
+      case MessageSourceName.wechatServicePlaceholder:
+        return [MessageCategory.wechatArticle];
+    }
   }
 
   /// 构建筛选下拉框通用方法
