@@ -515,6 +515,12 @@ class _InfoPageState extends State<InfoPage> {
     switch (_filterSourceName!) {
       case MessageSourceName.infoDisclosure:
         return [MessageCategory.latestInfo, MessageCategory.notice];
+      case MessageSourceName.jwc:
+        return [MessageCategory.jwcStudent, MessageCategory.jwcTeacher];
+      case MessageSourceName.itc:
+        return [MessageCategory.itcNews];
+      case MessageSourceName.sspuOfficial:
+        return [MessageCategory.sspuNotice, MessageCategory.sspuActivity];
       case MessageSourceName.wechatPublicPlaceholder:
         return [MessageCategory.wechatArticle];
       case MessageSourceName.wechatServicePlaceholder:
