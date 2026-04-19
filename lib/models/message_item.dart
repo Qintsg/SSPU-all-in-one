@@ -29,6 +29,15 @@ enum MessageSourceName {
   /// 信息公开网
   infoDisclosure('信息公开网'),
 
+  /// 教务处
+  jwc('教务处'),
+
+  /// 信息技术中心
+  itc('信息技术中心'),
+
+  /// 学校官网（通知公告/学术活动）
+  sspuOfficial('学校官网'),
+
   /// 微信公众号占位
   wechatPublicPlaceholder('微信公众号'),
 
@@ -48,6 +57,21 @@ enum MessageCategory {
 
   /// 通知公示 (3149)
   notice('通知公示'),
+
+  /// 教务处学生专栏 (897)
+  jwcStudent('教务处学生专栏'),
+
+  /// 教务处教师专栏 (898)
+  jwcTeacher('教务处教师专栏'),
+
+  /// 信息技术中心资讯 (zxxx)
+  itcNews('信息技术中心'),
+
+  /// 学校官网通知公告 (2965)
+  sspuNotice('学校通知公告'),
+
+  /// 学校官网学术活动讲座 (xsjz)
+  sspuActivity('学术活动讲座'),
 
   /// 微信推文占位
   wechatArticle('微信推文');
