@@ -1,6 +1,7 @@
 /*
  * SSPU 信息公开网解析服务 — 抓取并解析学校信息公开网站的消息列表
  * 支持 3148（最新公开信息）和 3149（通知公示）两个栏目
+ * 支持自动翻页，当单页不足目标条数时继续抓取下一页
  * @Project : SSPU-all-in-one
  * @File : sspu_news_service.dart
  * @Author : Qintsg
@@ -24,20 +25,20 @@ class SspuNewsService {
   /// 信息公开网基础 URL
   static const String _baseUrl = 'https://xxgk.sspu.edu.cn';
 
-  /// 最新公开信息栏目 URL 模板，{page} 为页码
-  static const String _latestInfoUrl = '$_baseUrl/3148/list.htm';
+  /// 最新公开信息栏目基础路径
+  static const String _latestInfoPath = '/3148';
 
-  /// 通知公示栏目 URL 模板
-  static const String _noticeUrl = '$_baseUrl/3149/list.htm';
+  /// 通知公示栏目基础路径
+  static const String _noticePath = '/3149';
 
   final HttpService _http = HttpService.instance;
 
   /// 获取最新公开信息（3148 栏目）
   /// [maxCount] 最大获取条数，默认 20 条
-  /// 返回解析后的消息列表
+  /// 若当前页不足 maxCount，会自动翻页继续获取
   Future<List<MessageItem>> fetchLatestInfo({int maxCount = 20}) async {
     return _fetchFromColumn(
-      url: _latestInfoUrl,
+      columnPath: _latestInfoPath,
       category: MessageCategory.latestInfo,
       maxCount: maxCount,
     );
@@ -47,32 +48,69 @@ class SspuNewsService {
   /// [maxCount] 最大获取条数，默认 20 条
   Future<List<MessageItem>> fetchNotices({int maxCount = 20}) async {
     return _fetchFromColumn(
-      url: _noticeUrl,
+      columnPath: _noticePath,
       category: MessageCategory.notice,
       maxCount: maxCount,
     );
   }
 
-  /// 从指定栏目页抓取并解析消息列表
-  /// [url] 栏目列表页 URL
+  /// 根据页码生成栏目列表页 URL
+  /// 第 1 页: /xxxx/list.htm
+  /// 第 N 页 (N>=2): /xxxx/listN.htm
+  String _buildPageUrl(String columnPath, int page) {
+    if (page <= 1) return '$_baseUrl$columnPath/list.htm';
+    return '$_baseUrl$columnPath/list$page.htm';
+  }
+
+  /// 从指定栏目抓取消息，支持自动翻页
+  /// [columnPath] 栏目基础路径（如 /3148）
   /// [category] 内容分类
-  /// [maxCount] 最大获取条数
+  /// [maxCount] 目标获取条数
+  /// [maxPages] 最大访问页数上限（安全保护，避免无限循环）
   Future<List<MessageItem>> _fetchFromColumn({
-    required String url,
+    required String columnPath,
     required MessageCategory category,
     required int maxCount,
+    int maxPages = 20,
+  }) async {
+    final messages = <MessageItem>[];
+    var currentPage = 1;
+
+    // 持续翻页直到达到目标条数、页面无数据或达到最大页数
+    while (messages.length < maxCount && currentPage <= maxPages) {
+      final pageMessages = await _fetchSinglePage(
+        url: _buildPageUrl(columnPath, currentPage),
+        category: category,
+      );
+
+      // 当前页无数据，说明已到末尾
+      if (pageMessages.isEmpty) break;
+
+      for (final msg in pageMessages) {
+        if (messages.length >= maxCount) break;
+        messages.add(msg);
+      }
+
+      currentPage++;
+    }
+
+    return messages;
+  }
+
+  /// 抓取单页内所有消息项
+  /// 返回该页全部解析结果，不做数量截断
+  Future<List<MessageItem>> _fetchSinglePage({
+    required String url,
+    required MessageCategory category,
   }) async {
     try {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      // 选取消息列表项：每项为 <li class="news"> 内含标题和日期
       final newsItems = document.querySelectorAll('ul.news_list li.news');
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
-        if (messages.length >= maxCount) break;
-
         // 提取标题和链接
         final anchor = item.querySelector('span.news_title a');
         if (anchor == null) continue;
@@ -83,7 +121,7 @@ class SspuNewsService {
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
-        // 拼接完整 URL（相对路径需补全域名）
+        // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
         // 提取日期
