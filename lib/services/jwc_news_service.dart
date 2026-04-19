@@ -1,7 +1,7 @@
 /*
  * 教务处消息解析服务 — 抓取并解析教务处网站的消息列表
  * 支持 897（学生专栏）和 898（教师专栏）两个栏目
- * 与信息公开网使用相同 CMS，共用 .col_news_con ul.news_list 解析模式
+ * 与信息公开网使用相同 CMS，共用 ul.news_list 解析模式
  * @Project : SSPU-all-in-one
  * @File : jwc_news_service.dart
  * @Author : Qintsg
@@ -13,7 +13,6 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
-import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 教务处消息解析服务（单例）
@@ -104,7 +103,7 @@ class JwcNewsService {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
+      final newsItems = document.querySelectorAll('ul.news_list li.news');
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
@@ -120,9 +119,9 @@ class JwcNewsService {
         // 拼接完整 URL（相对路径补全域名）
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取发布日期并规范化格式
+        // 提取发布日期
         final dateMeta = item.querySelector('span.news_meta');
-        final date = normalizeDate(dateMeta?.text.trim() ?? '');
+        final date = dateMeta?.text.trim() ?? '';
 
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);

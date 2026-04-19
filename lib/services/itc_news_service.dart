@@ -13,7 +13,6 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
-import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 信息技术中心消息解析服务（单例）
@@ -104,9 +103,9 @@ class ItcNewsService {
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取日期（span 元素中的文本）并规范化格式
+        // 提取日期（span 元素中的文本）
         final dateSpan = item.querySelector('span');
-        final date = normalizeDate(dateSpan?.text.trim() ?? '');
+        final date = dateSpan?.text.trim() ?? '';
 
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);

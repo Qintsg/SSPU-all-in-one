@@ -92,6 +92,9 @@ const List<ChannelConfig> departmentChannels = [
     description: '教务管理通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.department,
+    implemented: true,
+    defaultInterval: 60,
+    defaultEnabled: true,
   ),
   ChannelConfig(
     id: 'itc',
@@ -99,6 +102,9 @@ const List<ChannelConfig> departmentChannels = [
     description: '校园网与信息系统公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.department,
+    implemented: true,
+    defaultInterval: 60,
+    defaultEnabled: true,
   ),
   ChannelConfig(
     id: 'sports',
@@ -134,6 +140,26 @@ const List<ChannelConfig> departmentChannels = [
     description: '学生管理与服务通知',
     icon: FluentIcons.mail,
     group: ChannelGroup.department,
+  ),
+  ChannelConfig(
+    id: 'sspu_notice',
+    name: '学校通知公告',
+    description: '学校官网 — 通知公告',
+    icon: FluentIcons.megaphone,
+    group: ChannelGroup.department,
+    implemented: true,
+    defaultInterval: 60,
+    defaultEnabled: true,
+  ),
+  ChannelConfig(
+    id: 'sspu_activity',
+    name: '学术活动讲座',
+    description: '学校官网 — 学术活动与讲座预告',
+    icon: FluentIcons.event,
+    group: ChannelGroup.department,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
 ];
 
