@@ -77,13 +77,19 @@ class _InfoPageState extends State<InfoPage> {
     super.dispose();
   }
 
-  /// 初始化状态服务并加载消息
+  /// 初始化状态服务，从本地存储加载消息并根据渠道开关过滤显示
   Future<void> _initAndLoad() async {
     await _stateService.init();
-    await _refreshSchoolWebsite();
+    // 从本地存储加载已有消息，不弹刷新对话框
+    final persisted = await _stateService.loadMessages();
+    _allMessages
+      ..clear()
+      ..addAll(persisted);
+    // 根据渠道开关过滤并排序
+    await _filterByEnabledChannels();
   }
 
-  /// 刷新官网消息（根据渠道开关加载启用的栏目）
+  /// 刷新官网消息：抓取新数据并与已有数据合并持久化
   /// [maxCount] 每个栏目获取的条数，null 则弹出输入框
   Future<void> _refreshSchoolWebsite({int? maxCount}) async {
     // 弹出条数选择对话框
@@ -93,11 +99,6 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 清除旧的官网消息
-      _allMessages.removeWhere(
-        (msg) => msg.sourceType == MessageSourceType.schoolWebsite,
-      );
-
       final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
       final noticeEnabled = await _stateService.isNoticeEnabled();
 
@@ -111,18 +112,58 @@ class _InfoPageState extends State<InfoPage> {
       }
 
       final results = await Future.wait(futures);
+      final newMessages = <MessageItem>[];
       for (final messages in results) {
-        _allMessages.addAll(messages);
+        newMessages.addAll(messages);
       }
 
-      // 按日期倒序排列
-      _allMessages.sort((a, b) => b.date.compareTo(a.date));
-      _applyFilters();
+      // 与已有消息合并（不丢失旧数据）
+      final merged = _stateService.mergeMessages(_allMessages, newMessages);
+      _allMessages
+        ..clear()
+        ..addAll(merged);
+
+      // 持久化合并后的全部消息
+      await _stateService.saveMessages(_allMessages);
+
+      // 根据渠道开关过滤并排序
+      await _filterByEnabledChannels();
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// 根据渠道开关过滤消息并排序
+  Future<void> _filterByEnabledChannels() async {
+    final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
+    final noticeEnabled = await _stateService.isNoticeEnabled();
+    final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
+    final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
+
+    // 过滤掉已关闭渠道的消息
+    _allMessages.removeWhere((msg) {
+      if (msg.category == MessageCategory.latestInfo && !latestInfoEnabled) {
+        return true;
+      }
+      if (msg.category == MessageCategory.notice && !noticeEnabled) {
+        return true;
+      }
+      if (msg.sourceType == MessageSourceType.wechatPublic &&
+          !wechatPublicEnabled) {
+        return true;
+      }
+      if (msg.sourceType == MessageSourceType.wechatService &&
+          !wechatServiceEnabled) {
+        return true;
+      }
+      return false;
+    });
+
+    // 按日期倒序排列
+    _allMessages.sort((a, b) => b.date.compareTo(a.date));
+    _applyFilters();
   }
 
   /// 弹出获取条数输入对话框
@@ -393,8 +434,13 @@ class _InfoPageState extends State<InfoPage> {
     );
   }
 
-  /// 构建筛选栏：来源类型 + 来源名称 + 内容分类 + 未读筛选
+  /// 构建筛选栏：来源类型 + 来源名称（级联） + 内容分类（级联） + 未读筛选
   Widget _buildFilterBar(FluentThemeData theme, bool isDark) {
+    // 根据当前选中的来源类型，决定可选的来源名称
+    final availableSourceNames = _getAvailableSourceNames();
+    // 根据当前选中的来源名称，决定可选的内容分类
+    final availableCategories = _getAvailableCategories();
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -407,25 +453,30 @@ class _InfoPageState extends State<InfoPage> {
           itemLabel: (item) => item.label,
           onChanged: (value) {
             _filterSourceType = value;
+            // 级联重置：父级变化时清空子级选择
+            _filterSourceName = null;
+            _filterCategory = null;
             _applyFilters();
           },
         ),
-        // 来源名称筛选
+        // 来源名称筛选（依赖来源类型）
         _buildFilterCombo<MessageSourceName>(
           label: '来源名称',
           value: _filterSourceName,
-          items: MessageSourceName.values,
+          items: availableSourceNames,
           itemLabel: (item) => item.label,
           onChanged: (value) {
             _filterSourceName = value;
+            // 级联重置：来源名称变化时清空内容分类
+            _filterCategory = null;
             _applyFilters();
           },
         ),
-        // 内容分类筛选
+        // 内容分类筛选（依赖来源名称）
         _buildFilterCombo<MessageCategory>(
           label: '内容分类',
           value: _filterCategory,
-          items: MessageCategory.values,
+          items: availableCategories,
           itemLabel: (item) => item.label,
           onChanged: (value) {
             _filterCategory = value;
@@ -443,6 +494,38 @@ class _InfoPageState extends State<InfoPage> {
         ),
       ],
     );
+  }
+
+  /// 根据当前来源类型获取可选的来源名称列表
+  List<MessageSourceName> _getAvailableSourceNames() {
+    if (_filterSourceType == null) return MessageSourceName.values;
+    switch (_filterSourceType!) {
+      case MessageSourceType.schoolWebsite:
+        return [MessageSourceName.infoDisclosure];
+      case MessageSourceType.wechatPublic:
+        return [MessageSourceName.wechatPublicPlaceholder];
+      case MessageSourceType.wechatService:
+        return [MessageSourceName.wechatServicePlaceholder];
+    }
+  }
+
+  /// 根据当前来源名称获取可选的内容分类列表
+  List<MessageCategory> _getAvailableCategories() {
+    if (_filterSourceName == null) return MessageCategory.values;
+    switch (_filterSourceName!) {
+      case MessageSourceName.infoDisclosure:
+        return [MessageCategory.latestInfo, MessageCategory.notice];
+      case MessageSourceName.jwc:
+        return [MessageCategory.jwcStudent, MessageCategory.jwcTeacher];
+      case MessageSourceName.itc:
+        return [MessageCategory.itcNews];
+      case MessageSourceName.sspuOfficial:
+        return [MessageCategory.sspuNotice, MessageCategory.sspuActivity];
+      case MessageSourceName.wechatPublicPlaceholder:
+        return [MessageCategory.wechatArticle];
+      case MessageSourceName.wechatServicePlaceholder:
+        return [MessageCategory.wechatArticle];
+    }
   }
 
   /// 构建筛选下拉框通用方法

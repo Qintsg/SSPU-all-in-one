@@ -12,6 +12,9 @@ import 'dart:async';
 import '../models/message_item.dart';
 import 'message_state_service.dart';
 import 'sspu_news_service.dart';
+import 'jwc_news_service.dart';
+import 'itc_news_service.dart';
+import 'sspu_official_service.dart';
 import 'notification_service.dart';
 
 /// 自动刷新服务（单例）
@@ -23,6 +26,9 @@ class AutoRefreshService {
 
   final MessageStateService _stateService = MessageStateService.instance;
   final SspuNewsService _newsService = SspuNewsService.instance;
+  final JwcNewsService _jwcService = JwcNewsService.instance;
+  final ItcNewsService _itcService = ItcNewsService.instance;
+  final SspuOfficialService _officialService = SspuOfficialService.instance;
   final NotificationService _notificationService = NotificationService.instance;
 
   /// 各渠道的定时器，key 为渠道标识
@@ -58,6 +64,56 @@ class AutoRefreshService {
       getInterval: _stateService.getNoticeInterval,
       isEnabled: _stateService.isNoticeEnabled,
       fetchMessages: () => _newsService.fetchNotices(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 教务处学生专栏
+    await _setupTimer(
+      channelKey: 'jwcStudent',
+      getInterval: () => _stateService.getChannelInterval('jwc'),
+      isEnabled: () => _stateService.isChannelEnabled('jwc'),
+      fetchMessages: () => _jwcService.fetchStudentNews(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 教务处教师专栏
+    await _setupTimer(
+      channelKey: 'jwcTeacher',
+      getInterval: () => _stateService.getChannelInterval('jwc'),
+      isEnabled: () => _stateService.isChannelEnabled('jwc'),
+      fetchMessages: () => _jwcService.fetchTeacherNews(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 信息技术中心
+    await _setupTimer(
+      channelKey: 'itc',
+      getInterval: () => _stateService.getChannelInterval('itc'),
+      isEnabled: () => _stateService.isChannelEnabled('itc'),
+      fetchMessages: () => _itcService.fetchNews(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 学校官网通知公告
+    await _setupTimer(
+      channelKey: 'sspuNotice',
+      getInterval: () => _stateService.getChannelInterval('sspu_notice'),
+      isEnabled: () => _stateService.isChannelEnabled('sspu_notice'),
+      fetchMessages: () => _officialService.fetchNotices(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 学校官网学术活动讲座
+    await _setupTimer(
+      channelKey: 'sspuActivity',
+      getInterval: () => _stateService.getChannelInterval('sspu_activity'),
+      isEnabled: () => _stateService.isChannelEnabled('sspu_activity'),
+      fetchMessages: () => _officialService.fetchActivities(
         maxCount: _defaultFetchCount,
       ),
     );
@@ -162,6 +218,56 @@ class AutoRefreshService {
           ),
         );
         break;
+      case 'jwcStudent':
+        await _setupTimer(
+          channelKey: 'jwcStudent',
+          getInterval: () => _stateService.getChannelInterval('jwc'),
+          isEnabled: () => _stateService.isChannelEnabled('jwc'),
+          fetchMessages: () => _jwcService.fetchStudentNews(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'jwcTeacher':
+        await _setupTimer(
+          channelKey: 'jwcTeacher',
+          getInterval: () => _stateService.getChannelInterval('jwc'),
+          isEnabled: () => _stateService.isChannelEnabled('jwc'),
+          fetchMessages: () => _jwcService.fetchTeacherNews(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'itc':
+        await _setupTimer(
+          channelKey: 'itc',
+          getInterval: () => _stateService.getChannelInterval('itc'),
+          isEnabled: () => _stateService.isChannelEnabled('itc'),
+          fetchMessages: () => _itcService.fetchNews(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'sspuNotice':
+        await _setupTimer(
+          channelKey: 'sspuNotice',
+          getInterval: () => _stateService.getChannelInterval('sspu_notice'),
+          isEnabled: () => _stateService.isChannelEnabled('sspu_notice'),
+          fetchMessages: () => _officialService.fetchNotices(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'sspuActivity':
+        await _setupTimer(
+          channelKey: 'sspuActivity',
+          getInterval: () => _stateService.getChannelInterval('sspu_activity'),
+          isEnabled: () => _stateService.isChannelEnabled('sspu_activity'),
+          fetchMessages: () => _officialService.fetchActivities(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
       // 微信渠道占位
       default:
         break;
@@ -173,6 +279,11 @@ class AutoRefreshService {
   Future<void> reloadAll() async {
     await reloadChannel('latestInfo');
     await reloadChannel('notice');
+    await reloadChannel('jwcStudent');
+    await reloadChannel('jwcTeacher');
+    await reloadChannel('itc');
+    await reloadChannel('sspuNotice');
+    await reloadChannel('sspuActivity');
   }
 
   /// 销毁所有定时器
