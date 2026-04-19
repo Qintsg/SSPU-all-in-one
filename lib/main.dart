@@ -19,7 +19,10 @@ import 'services/notification_service.dart';
 import 'services/auto_refresh_service.dart';
 
 /// 全局字体族名称
-const String kFontFamily = 'MiSans';
+import 'theme/fluent_tokens.dart';
+
+/// 字体族常量（已迁移至 FluentTokenTheme.fontFamily，保留兼容引用）
+const String kFontFamily = FluentTokenTheme.fontFamily;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -278,34 +281,8 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
     return FluentApp(
       navigatorKey: _navigatorKey,
       title: 'SSPU All-in-One',
-      theme: FluentThemeData(
-        accentColor: Colors.blue,
-        brightness: Brightness.light,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: kFontFamily,
-        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
-        typography: Typography.fromBrightness(
-          brightness: Brightness.light,
-          color: Colors.black,
-        ).apply(fontFamily: kFontFamily),
-        navigationPaneTheme: const NavigationPaneThemeData(
-          backgroundColor: Colors.white,
-        ),
-      ),
-      darkTheme: FluentThemeData(
-        accentColor: Colors.blue,
-        brightness: Brightness.dark,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: kFontFamily,
-        scaffoldBackgroundColor: const Color(0xFF202020),
-        typography: Typography.fromBrightness(
-          brightness: Brightness.dark,
-          color: Colors.white,
-        ).apply(fontFamily: kFontFamily),
-        navigationPaneTheme: const NavigationPaneThemeData(
-          backgroundColor: Color(0xFF2D2D2D),
-        ),
-      ),
+      theme: FluentTokenTheme.light(),
+      darkTheme: FluentTokenTheme.dark(),
       themeMode: ThemeMode.system,
       localizationsDelegates: FluentLocalizations.localizationsDelegates,
       supportedLocales: FluentLocalizations.supportedLocales,
