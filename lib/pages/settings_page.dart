@@ -11,6 +11,8 @@ import '../services/password_service.dart';
 import '../services/storage_service.dart';
 import '../services/message_state_service.dart';
 import '../services/auto_refresh_service.dart';
+import '../widgets/password_dialogs.dart';
+import '../widgets/settings_widgets.dart';
 
 /// 设置页面
 /// 包含密码保护开关、密码设置/修改/移除功能、手动上锁、窗口行为设置
@@ -73,75 +75,6 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadSettings();
   }
 
-  /// 可选的自动刷新间隔（分钟 => 显示文本）
-  static const Map<int, String> _intervalOptions = {
-    0: '关闭',
-    15: '15 分钟',
-    30: '30 分钟',
-    60: '1 小时',
-    120: '2 小时',
-    360: '6 小时',
-    720: '12 小时',
-    1440: '24 小时',
-  };
-
-  /// 构建自动刷新间隔选择器
-  /// [currentValue] 当前间隔（分钟）
-  /// [enabled] 渠道是否启用（未启用时灰色不可点）
-  /// [onChanged] 选中新值后回调
-  Widget _buildIntervalSelector({
-    required int currentValue,
-    required bool enabled,
-    required Future<void> Function(int minutes) onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 32, top: 6),
-      child: Row(
-        children: [
-          Icon(
-            FluentIcons.sync,
-            size: 14,
-            color: enabled
-                ? FluentTheme.of(context).inactiveColor
-                : FluentTheme.of(context)
-                    .inactiveColor
-                    .withValues(alpha: 0.4),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '自动刷新：',
-            style: FluentTheme.of(context).typography.caption?.copyWith(
-                  color: enabled
-                      ? null
-                      : FluentTheme.of(context)
-                          .inactiveColor
-                          .withValues(alpha: 0.4),
-                ),
-          ),
-          const SizedBox(width: 4),
-          ComboBox<int>(
-            value: _intervalOptions.containsKey(currentValue)
-                ? currentValue
-                : 0,
-            items: _intervalOptions.entries
-                .map(
-                  (entry) => ComboBoxItem<int>(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  ),
-                )
-                .toList(),
-            onChanged: enabled
-                ? (value) {
-                    if (value != null) onChanged(value);
-                  }
-                : null,
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 从本地存储加载密码保护状态和窗口行为偏好
   Future<void> _loadSettings() async {
     final isSet = await PasswordService.isPasswordSet();
@@ -187,268 +120,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// 显示设置密码对话框
-  Future<void> _showSetPasswordDialog() async {
-    final passwordController = TextEditingController();
-    final confirmController = TextEditingController();
-    String? errorMessage;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (builderContext, setDialogState) {
-            return ContentDialog(
-              title: const Text('设置密码'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('设置密码后，每次重新打开应用时需要输入密码才能进入。'),
-                  const SizedBox(height: 16),
-                  InfoLabel(
-                    label: '输入密码',
-                    child: PasswordBox(
-                      controller: passwordController,
-                      placeholder: '请输入密码',
-                      revealMode: PasswordRevealMode.peekAlways,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InfoLabel(
-                    label: '确认密码',
-                    child: PasswordBox(
-                      controller: confirmController,
-                      placeholder: '请再次输入密码',
-                      revealMode: PasswordRevealMode.peekAlways,
-                    ),
-                  ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    InfoBar(
-                      title: Text(errorMessage!),
-                      severity: InfoBarSeverity.error,
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                Button(
-                  child: const Text('取消'),
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                ),
-                FilledButton(
-                  child: const Text('确认'),
-                  onPressed: () {
-                    final password = passwordController.text;
-                    final confirm = confirmController.text;
-                    if (password.isEmpty) {
-                      setDialogState(() => errorMessage = '密码不能为空');
-                      return;
-                    }
-                    if (password != confirm) {
-                      setDialogState(() => errorMessage = '两次输入的密码不一致');
-                      return;
-                    }
-                    Navigator.pop(dialogContext, true);
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result == true) {
-      await PasswordService.setPassword(passwordController.text);
-      if (mounted) {
-        setState(() => _isPasswordEnabled = true);
-        _showSuccessBar('密码已设置');
-      }
-    }
-
-    passwordController.dispose();
-    confirmController.dispose();
-  }
-
-  /// 显示移除密码的确认对话框
-  Future<void> _showRemovePasswordDialog() async {
-    final passwordController = TextEditingController();
-    String? errorMessage;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (builderContext, setDialogState) {
-            return ContentDialog(
-              title: const Text('移除密码'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('请输入当前密码以确认移除密码保护。'),
-                  const SizedBox(height: 16),
-                  InfoLabel(
-                    label: '当前密码',
-                    child: PasswordBox(
-                      controller: passwordController,
-                      placeholder: '请输入当前密码',
-                      revealMode: PasswordRevealMode.peekAlways,
-                    ),
-                  ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    InfoBar(
-                      title: Text(errorMessage!),
-                      severity: InfoBarSeverity.error,
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                Button(
-                  child: const Text('取消'),
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                ),
-                FilledButton(
-                  child: const Text('确认移除'),
-                  onPressed: () async {
-                    final isCorrect = await PasswordService.verifyPassword(
-                      passwordController.text,
-                    );
-                    if (isCorrect) {
-                      if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext, true);
-                      }
-                    } else {
-                      setDialogState(() => errorMessage = '密码错误');
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result == true) {
-      await PasswordService.removePassword();
-      if (mounted) {
-        setState(() => _isPasswordEnabled = false);
-        _showSuccessBar('密码保护已移除');
-      }
-    }
-
-    passwordController.dispose();
-  }
-
-  /// 显示修改密码对话框
-  Future<void> _showChangePasswordDialog() async {
-    final oldPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmController = TextEditingController();
-    String? errorMessage;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (builderContext, setDialogState) {
-            return ContentDialog(
-              title: const Text('修改密码'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InfoLabel(
-                    label: '当前密码',
-                    child: PasswordBox(
-                      controller: oldPasswordController,
-                      placeholder: '请输入当前密码',
-                      revealMode: PasswordRevealMode.peekAlways,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InfoLabel(
-                    label: '新密码',
-                    child: PasswordBox(
-                      controller: newPasswordController,
-                      placeholder: '请输入新密码',
-                      revealMode: PasswordRevealMode.peekAlways,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InfoLabel(
-                    label: '确认新密码',
-                    child: PasswordBox(
-                      controller: confirmController,
-                      placeholder: '请再次输入新密码',
-                      revealMode: PasswordRevealMode.peekAlways,
-                    ),
-                  ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    InfoBar(
-                      title: Text(errorMessage!),
-                      severity: InfoBarSeverity.error,
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                Button(
-                  child: const Text('取消'),
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                ),
-                FilledButton(
-                  child: const Text('确认修改'),
-                  onPressed: () async {
-                    final oldPassword = oldPasswordController.text;
-                    final newPassword = newPasswordController.text;
-                    final confirm = confirmController.text;
-
-                    final isOldCorrect =
-                        await PasswordService.verifyPassword(oldPassword);
-                    if (!isOldCorrect) {
-                      setDialogState(() => errorMessage = '当前密码错误');
-                      return;
-                    }
-                    if (newPassword.isEmpty) {
-                      setDialogState(() => errorMessage = '新密码不能为空');
-                      return;
-                    }
-                    if (newPassword != confirm) {
-                      setDialogState(() => errorMessage = '两次输入的新密码不一致');
-                      return;
-                    }
-
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext, true);
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result == true) {
-      await PasswordService.setPassword(newPasswordController.text);
-      if (mounted) {
-        _showSuccessBar('密码已修改');
-      }
-    }
-
-    oldPasswordController.dispose();
-    newPasswordController.dispose();
-    confirmController.dispose();
-  }
-
   /// 显示操作成功的提示条
   void _showSuccessBar(String message) {
     displayInfoBar(
@@ -477,13 +148,13 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                _buildNavTab(0, FluentIcons.lock, '安全'),
+                buildNavTab(context: context, index: 0, selectedIndex: _selectedTab, icon: FluentIcons.lock, label: '安全', onTap: () => setState(() => _selectedTab = 0)),
                 const SizedBox(width: 8),
-                _buildNavTab(1, FluentIcons.chrome_close, '窗口行为'),
+                buildNavTab(context: context, index: 1, selectedIndex: _selectedTab, icon: FluentIcons.chrome_close, label: '窗口行为', onTap: () => setState(() => _selectedTab = 1)),
                 const SizedBox(width: 8),
-                _buildNavTab(2, FluentIcons.news, '信息渠道'),
+                buildNavTab(context: context, index: 2, selectedIndex: _selectedTab, icon: FluentIcons.news, label: '信息渠道', onTap: () => setState(() => _selectedTab = 2)),
                 const SizedBox(width: 8),
-                _buildNavTab(3, FluentIcons.ringer, '消息推送'),
+                buildNavTab(context: context, index: 3, selectedIndex: _selectedTab, icon: FluentIcons.ringer, label: '消息推送', onTap: () => setState(() => _selectedTab = 3)),
               ],
             ),
           ),
@@ -535,9 +206,19 @@ class _SettingsPageState extends State<SettingsPage> {
                       checked: _isPasswordEnabled,
                       onChanged: (value) {
                         if (value) {
-                          _showSetPasswordDialog();
+                          showSetPasswordDialog(context).then((ok) {
+                            if (ok && mounted) {
+                              setState(() => _isPasswordEnabled = true);
+                              _showSuccessBar('密码已设置');
+                            }
+                          });
                         } else {
-                          _showRemovePasswordDialog();
+                          showRemovePasswordDialog(context).then((ok) {
+                            if (ok && mounted) {
+                              setState(() => _isPasswordEnabled = false);
+                              _showSuccessBar('密码保护已移除');
+                            }
+                          });
                         }
                       },
                     ),
@@ -550,7 +231,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       Button(
                         child: const Text('修改密码'),
-                        onPressed: () => _showChangePasswordDialog(),
+                        onPressed: () => showChangePasswordDialog(context).then((ok) {
+                          if (ok && mounted) _showSuccessBar('密码已修改');
+                        }),
                       ),
                       const SizedBox(width: 12),
                       FilledButton(
@@ -651,7 +334,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 // 最新公开信息 (3148)
-                _buildChannelToggle(
+                buildChannelToggle(
+                  context: context,
                   icon: FluentIcons.news,
                   title: '最新公开信息',
                   subtitle: '信息公开网 — 学校新闻动态',
@@ -664,7 +348,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     await _autoRefresh.reloadChannel('latestInfo');
                   },
                 ),
-                _buildIntervalSelector(
+                buildIntervalSelector(
+                  context: context,
                   currentValue: _latestInfoInterval,
                   enabled: _latestInfoEnabled,
                   onChanged: (minutes) async {
@@ -675,7 +360,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 12),
                 // 通知公示 (3149)
-                _buildChannelToggle(
+                buildChannelToggle(
+                  context: context,
                   icon: FluentIcons.megaphone,
                   title: '通知公示',
                   subtitle: '信息公开网 — 通知公告与公示',
@@ -687,7 +373,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     await _autoRefresh.reloadChannel('notice');
                   },
                 ),
-                _buildIntervalSelector(
+                buildIntervalSelector(
+                  context: context,
                   currentValue: _noticeInterval,
                   enabled: _noticeEnabled,
                   onChanged: (minutes) async {
@@ -698,7 +385,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 12),
                 // 微信公众号（占位）
-                _buildChannelToggle(
+                buildChannelToggle(
+                  context: context,
                   icon: FluentIcons.chat,
                   title: '微信公众号',
                   subtitle: '暂未接入',
@@ -709,7 +397,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     _showChannelChangedTip(value, '微信公众号');
                   },
                 ),
-                _buildIntervalSelector(
+                buildIntervalSelector(
+                  context: context,
                   currentValue: _wechatPublicInterval,
                   enabled: _wechatPublicEnabled,
                   onChanged: (minutes) async {
@@ -719,7 +408,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 12),
                 // 微信服务号（占位）
-                _buildChannelToggle(
+                buildChannelToggle(
+                  context: context,
                   icon: FluentIcons.chat,
                   title: '微信服务号',
                   subtitle: '暂未接入',
@@ -730,7 +420,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     _showChannelChangedTip(value, '微信服务号');
                   },
                 ),
-                _buildIntervalSelector(
+                buildIntervalSelector(
+                  context: context,
                   currentValue: _wechatServiceInterval,
                   enabled: _wechatServiceEnabled,
                   onChanged: (minutes) async {
@@ -854,7 +545,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     padding: const EdgeInsets.only(left: 32, top: 10),
                     child: Row(
                       children: [
-                        _buildTimePicker(
+                        buildTimePicker(
+                          context: context,
                           label: '开始',
                           hour: _dndStartHour,
                           minute: _dndStartMinute,
@@ -881,7 +573,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 .bodyStrong,
                           ),
                         ),
-                        _buildTimePicker(
+                        buildTimePicker(
+                          context: context,
                           label: '结束',
                           hour: _dndEndHour,
                           minute: _dndEndMinute,
@@ -911,139 +604,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
-    );
-  }
-
-  /// 构建设置分区导航栏按钮
-  /// [index] 分区索引
-  /// [icon] 图标
-  /// [label] 显示文本
-  Widget _buildNavTab(int index, IconData icon, String label) {
-    final isSelected = _selectedTab == index;
-    final theme = FluentTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Button(
-        style: ButtonStyle(
-          padding: WidgetStatePropertyAll(
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          ),
-          backgroundColor: WidgetStatePropertyAll(
-            isSelected
-                ? theme.accentColor.withValues(alpha: 0.1)
-                : Colors.transparent,
-          ),
-        ),
-        onPressed: () => setState(() => _selectedTab = index),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? theme.accentColor : null,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: isSelected
-                  ? theme.typography.bodyStrong
-                      ?.copyWith(color: theme.accentColor)
-                  : theme.typography.body,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建时间选择器（小时 + 分钟 ComboBox）
-  /// [label] 标签（如“开始”“结束”）
-  /// [hour] 当前小时（0–23）
-  /// [minute] 当前分钟（0/15/30/45）
-  /// [onChanged] 选中新值后回调
-  Widget _buildTimePicker({
-    required String label,
-    required int hour,
-    required int minute,
-    required Future<void> Function(int h, int m) onChanged,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '$label ',
-          style: FluentTheme.of(context).typography.caption,
-        ),
-        ComboBox<int>(
-          value: hour,
-          items: List.generate(
-            24,
-            (h) => ComboBoxItem<int>(
-              value: h,
-              child: Text(h.toString().padLeft(2, '0')),
-            ),
-          ),
-          onChanged: (h) {
-            if (h != null) onChanged(h, minute);
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            ':',
-            style: FluentTheme.of(context).typography.bodyStrong,
-          ),
-        ),
-        ComboBox<int>(
-          value: [0, 15, 30, 45].contains(minute) ? minute : 0,
-          items: const [
-            ComboBoxItem(value: 0, child: Text('00')),
-            ComboBoxItem(value: 15, child: Text('15')),
-            ComboBoxItem(value: 30, child: Text('30')),
-            ComboBoxItem(value: 45, child: Text('45')),
-          ],
-          onChanged: (m) {
-            if (m != null) onChanged(hour, m);
-          },
-        ),
-      ],
-    );
-  }
-
-  /// 构建信息渠道开关行
-  Widget _buildChannelToggle({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: FluentTheme.of(context).typography.bodyStrong,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: FluentTheme.of(context).typography.caption,
-              ),
-            ],
-          ),
-        ),
-        ToggleSwitch(
-          checked: value,
-          onChanged: onChanged,
-        ),
-      ],
     );
   }
 
