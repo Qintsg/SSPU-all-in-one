@@ -9,6 +9,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
+import '../services/message_state_service.dart';
 
 /// 设置页面
 /// 包含密码保护开关、密码设置/修改/移除功能、手动上锁、窗口行为设置
@@ -32,6 +33,15 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 关闭按钮行为偏好（ask / minimize / exit）
   String _closeBehavior = 'ask';
 
+  /// 信息渠道开关状态
+  bool _latestInfoEnabled = true;
+  bool _noticeEnabled = true;
+  bool _wechatPublicEnabled = false;
+  bool _wechatServiceEnabled = false;
+
+  /// 消息状态服务引用
+  final MessageStateService _messageState = MessageStateService.instance;
+
   @override
   void initState() {
     super.initState();
@@ -42,10 +52,20 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final isSet = await PasswordService.isPasswordSet();
     final behavior = await StorageService.getCloseBehavior();
+    // 加载信息渠道开关状态
+    await _messageState.init();
+    final latestInfo = await _messageState.isLatestInfoEnabled();
+    final notice = await _messageState.isNoticeEnabled();
+    final wechatPub = await _messageState.isWechatPublicEnabled();
+    final wechatSvc = await _messageState.isWechatServiceEnabled();
     if (mounted) {
       setState(() {
         _isPasswordEnabled = isSet;
         _closeBehavior = behavior;
+        _latestInfoEnabled = latestInfo;
+        _noticeEnabled = notice;
+        _wechatPublicEnabled = wechatPub;
+        _wechatServiceEnabled = wechatSvc;
         _isLoading = false;
       });
     }
@@ -476,6 +496,108 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // 信息渠道设置卡片
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '信息渠道',
+                  style: FluentTheme.of(context).typography.subtitle,
+                ),
+                const SizedBox(height: 16),
+                // 最新公开信息 (3148)
+                _buildChannelToggle(
+                  icon: FluentIcons.news,
+                  title: '最新公开信息',
+                  subtitle: '信息公开网 — 学校新闻动态',
+                  value: _latestInfoEnabled,
+                  onChanged: (value) async {
+                    await _messageState.setLatestInfoEnabled(value);
+                    setState(() => _latestInfoEnabled = value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                // 通知公示 (3149)
+                _buildChannelToggle(
+                  icon: FluentIcons.megaphone,
+                  title: '通知公示',
+                  subtitle: '信息公开网 — 通知公告与公示',
+                  value: _noticeEnabled,
+                  onChanged: (value) async {
+                    await _messageState.setNoticeEnabled(value);
+                    setState(() => _noticeEnabled = value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                // 微信公众号（占位）
+                _buildChannelToggle(
+                  icon: FluentIcons.chat,
+                  title: '微信公众号',
+                  subtitle: '暂未接入',
+                  value: _wechatPublicEnabled,
+                  onChanged: (value) async {
+                    await _messageState.setWechatPublicEnabled(value);
+                    setState(() => _wechatPublicEnabled = value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                // 微信服务号（占位）
+                _buildChannelToggle(
+                  icon: FluentIcons.chat,
+                  title: '微信服务号',
+                  subtitle: '暂未接入',
+                  value: _wechatServiceEnabled,
+                  onChanged: (value) async {
+                    await _messageState.setWechatServiceEnabled(value);
+                    setState(() => _wechatServiceEnabled = value);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建信息渠道开关行
+  Widget _buildChannelToggle({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: FluentTheme.of(context).typography.bodyStrong,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: FluentTheme.of(context).typography.caption,
+              ),
+            ],
+          ),
+        ),
+        ToggleSwitch(
+          checked: value,
+          onChanged: onChanged,
         ),
       ],
     );
