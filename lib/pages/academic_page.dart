@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/fluent_tokens.dart';
 
 /// 教务中心页面
@@ -27,7 +28,9 @@ class AcademicPage extends StatelessWidget {
           title: '课表查询',
           description: '查看本学期课程表，支持按周次、课程名筛选',
           items: ['本周课程', '完整课表', '课程搜索'],
-        ),
+        ).animate()
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.m),
         _buildServiceCard(
           context,
@@ -36,7 +39,9 @@ class AcademicPage extends StatelessWidget {
           title: '成绩查询',
           description: '查看历史成绩与绩点统计，支持按学期筛选',
           items: ['本学期成绩', '历史成绩', 'GPA 统计'],
-        ),
+        ).animate(delay: 80.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.m),
         _buildServiceCard(
           context,
@@ -45,7 +50,9 @@ class AcademicPage extends StatelessWidget {
           title: '考试安排',
           description: '查看即将到来的考试时间、地点、座位号',
           items: ['近期考试', '所有考试'],
-        ),
+        ).animate(delay: 160.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.m),
         _buildServiceCard(
           context,
@@ -54,7 +61,9 @@ class AcademicPage extends StatelessWidget {
           title: '教学评价',
           description: '在线完成教学评价，查看评价状态',
           items: ['待评价课程', '已完成评价'],
-        ),
+        ).animate(delay: 240.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
 

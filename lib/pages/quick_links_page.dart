@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/responsive_layout.dart';
@@ -109,7 +110,9 @@ class QuickLinksPage extends StatelessWidget {
               width: tileWidth,
             ),
           ],
-        ),
+        ).animate(delay: 0.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
 
@@ -177,7 +180,9 @@ class QuickLinksPage extends StatelessWidget {
               width: tileWidth,
             ),
           ],
-        ),
+        ).animate(delay: 100.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
 
@@ -333,7 +338,9 @@ class QuickLinksPage extends StatelessWidget {
               width: tileWidth,
             ),
           ],
-        ),
+        ).animate(delay: 200.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
 
@@ -360,7 +367,9 @@ class QuickLinksPage extends StatelessWidget {
               width: tileWidth,
             ),
           ],
-        ),
+        ).animate(delay: 300.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
 
