@@ -64,6 +64,13 @@ class QuickLinksPage extends StatelessWidget {
               url: 'https://mail.sspu.edu.cn',
               onTap: _openUrl,
             ),
+            _LinkTile(
+              icon: FluentIcons.open_file,
+              label: '信息公开网',
+              color: Colors.magenta,
+              url: 'https://xxgk.sspu.edu.cn',
+              onTap: _openUrl,
+            ),
           ],
         ),
 
