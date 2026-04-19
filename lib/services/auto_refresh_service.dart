@@ -120,17 +120,21 @@ class AutoRefreshService {
       final merged = _stateService.mergeMessages(existingMessages, fetched);
       await _stateService.saveMessages(merged);
 
-      // 推送系统通知
-      if (newMessages.length == 1) {
-        await _notificationService.show(
-          title: '新消息',
-          body: newMessages.first.title,
-        );
-      } else {
-        await _notificationService.show(
-          title: '${newMessages.length} 条新消息',
-          body: newMessages.take(3).map((m) => m.title).join('\n'),
-        );
+      // 推送系统通知（检查全局开关和勿扰时段）
+      final notifEnabled = await _stateService.isNotificationEnabled();
+      final inDnd = await _stateService.isInDndPeriod();
+      if (notifEnabled && !inDnd) {
+        if (newMessages.length == 1) {
+          await _notificationService.show(
+            title: '新消息',
+            body: newMessages.first.title,
+          );
+        } else {
+          await _notificationService.show(
+            title: '${newMessages.length} 条新消息',
+            body: newMessages.take(3).map((m) => m.title).join('\n'),
+          );
+        }
       }
     } catch (_) {
       // 静默失败，下次定时器触发会重试
