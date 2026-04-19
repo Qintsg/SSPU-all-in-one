@@ -22,6 +22,7 @@ import 'campus_news_service.dart';
 import 'student_affairs_service.dart';
 import 'college_news_service.dart';
 import 'notification_service.dart';
+import 'wechat_article_service.dart';
 
 /// 自动刷新服务（单例）
 /// 根据各渠道配置的间隔定时抓取新消息，发现新消息时推送系统通知
@@ -42,6 +43,7 @@ class AutoRefreshService {
   final StudentAffairsService _studentService = StudentAffairsService.instance;
   final CollegeNewsService _collegeService = CollegeNewsService.instance;
   final NotificationService _notificationService = NotificationService.instance;
+  final WechatArticleService _wechatService = WechatArticleService.instance;
 
   /// 各渠道的定时器，key 为渠道标识
   final Map<String, Timer> _timers = {};
@@ -227,8 +229,17 @@ class AutoRefreshService {
       );
     }
 
-    // 微信渠道占位 — 未来接入时取消注释
-    // await _setupTimer(channelKey: 'wechatPublic', ...);
+    // 微信公众号渠道（通过微信读书 API）
+    await _setupTimer(
+      channelKey: 'wechatPublic',
+      getInterval: () => _stateService.getChannelInterval('wechat_public'),
+      isEnabled: () => _stateService.isChannelEnabled('wechat_public'),
+      fetchMessages: () => _wechatService.fetchArticles(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 微信服务号占位 — 未来接入时取消注释
     // await _setupTimer(channelKey: 'wechatService', ...);
   }
 
@@ -294,6 +305,11 @@ class AutoRefreshService {
       if (await _stateService.isChannelEnabled(id)) {
         futures.add(_collegeService.fetchNews(id));
       }
+    }
+
+    // 微信公众号
+    if (await _stateService.isChannelEnabled('wechat_public')) {
+      futures.add(_wechatService.fetchArticles(maxCount: maxCount));
     }
 
     if (futures.isEmpty) return [];
@@ -561,7 +577,18 @@ class AutoRefreshService {
           fetchMessages: () => _collegeService.fetchNews(channelKey),
         );
         break;
-      // 微信渠道占位
+      // 微信公众号渠道
+      case 'wechatPublic':
+        await _setupTimer(
+          channelKey: 'wechatPublic',
+          getInterval: () => _stateService.getChannelInterval('wechat_public'),
+          isEnabled: () => _stateService.isChannelEnabled('wechat_public'),
+          fetchMessages: () => _wechatService.fetchArticles(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      // 其他渠道占位
       default:
         break;
     }
@@ -606,6 +633,8 @@ class AutoRefreshService {
     await reloadChannel('center_innov');
     await reloadChannel('graduate');
     await reloadChannel('lib_center');
+    // 微信公众号渠道
+    await reloadChannel('wechatPublic');
   }
 
   /// 销毁所有定时器
