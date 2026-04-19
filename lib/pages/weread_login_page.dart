@@ -112,44 +112,61 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
     }
   }
 
+  /// 最大重试次数（每次间隔递增，覆盖 Cookie 延迟写入场景）
+  static const int _maxRetries = 6;
+
   /// 通过 executeScript 提取 document.cookie 并保存
-  /// 注意：HttpOnly 的 Cookie 无法通过 JS 获取，但 wr_skey/wr_vid 通常可访问
+  /// wr_skey/wr_vid 在微信读书中非 HttpOnly，可通过 JS 获取
+  /// 采用多次重试策略应对 Cookie 延迟写入
   Future<void> _extractCookies() async {
     if (_extracting) return;
     setState(() => _extracting = true);
 
     try {
-      // 等待一小段时间确保 Cookie 已完全写入
-      await Future.delayed(const Duration(milliseconds: 1500));
+      String? lastCookie;
 
-      // 执行 JS 获取 document.cookie
-      final cookieString = await _controller.executeScript('document.cookie');
-      if (cookieString == null || cookieString.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _extracting = false;
-            _result = _CookieResult(
-              success: false,
-              message: 'Cookie 为空，可能因 HttpOnly 限制无法获取',
-            );
-          });
+      for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+        // 递增等待：1s, 2s, 3s, 4s, 5s, 6s — 总计最多 21s
+        await Future.delayed(Duration(seconds: attempt));
+        if (!mounted) return;
+
+        // 执行 JS 获取 document.cookie
+        final raw = await _controller.executeScript('document.cookie');
+        final cleaned = _cleanJsResult(raw ?? '');
+        lastCookie = cleaned;
+
+        // 检查关键字段是否已出现
+        if (cleaned.contains('wr_skey') && cleaned.contains('wr_vid')) {
+          // 关键字段就绪，尝试保存
+          final saved = await WereadAuthService.instance.saveCookies(cleaned);
+          if (saved && mounted) {
+            setState(() {
+              _extracting = false;
+              _result = _CookieResult(
+                success: true,
+                message: 'Cookie 提取并保存成功！',
+              );
+            });
+            return;
+          }
         }
-        return;
       }
 
-      // 清理返回值（executeScript 可能返回带引号的字符串）
-      final cleaned = _cleanJsResult(cookieString);
-
-      // 保存 Cookie
-      final saved = await WereadAuthService.instance.saveCookies(cleaned);
+      // 所有重试均未获取到完整 Cookie
       if (mounted) {
+        // 诊断信息：列出实际获取到的 Cookie 键
+        final keys = (lastCookie ?? '')
+            .split(';')
+            .map((p) => p.trim().split('=').first)
+            .where((k) => k.isNotEmpty)
+            .toList();
+        final keyInfo = keys.isEmpty ? '无' : keys.join(', ');
         setState(() {
           _extracting = false;
           _result = _CookieResult(
-            success: saved,
-            message: saved
-                ? 'Cookie 提取并保存成功！'
-                : 'Cookie 缺少必要字段（wr_skey 或 wr_vid），请确认已完整登录',
+            success: false,
+            message: '未获取到 wr_skey/wr_vid（已获取字段：$keyInfo）。'
+                '请确认已完成微信扫码并等待页面跳转到书架',
           );
         });
       }
@@ -246,13 +263,17 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
                   ],
                 ),
               ),
-            // 手动提取按钮（登录后未自动提取成功时备用）
-            if (_isReady && _result == null && !_extracting)
+            // 手动提取按钮（登录后未自动成功时备用，失败后也可重试）
+            if (_isReady && !_extracting)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Button(
-                  onPressed: _extractCookies,
-                  child: const Text('手动提取 Cookie'),
+                  onPressed: () {
+                    // 重置结果以允许重新提取
+                    setState(() => _result = null);
+                    _extractCookies();
+                  },
+                  child: Text(_result == null ? '手动提取 Cookie' : '重试提取'),
                 ),
               ),
             // 返回按钮
