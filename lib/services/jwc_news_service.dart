@@ -13,6 +13,7 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
+import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 教务处消息解析服务（单例）
@@ -119,9 +120,9 @@ class JwcNewsService {
         // 拼接完整 URL（相对路径补全域名）
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取发布日期
+        // 提取发布日期并规范化格式
         final dateMeta = item.querySelector('span.news_meta');
-        final date = dateMeta?.text.trim() ?? '';
+        final date = normalizeDate(dateMeta?.text.trim() ?? '');
 
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);
