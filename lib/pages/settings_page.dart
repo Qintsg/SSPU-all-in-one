@@ -17,7 +17,9 @@ import '../widgets/settings_widgets.dart';
 import '../widgets/channel_list_section.dart';
 import '../services/weread_auth_service.dart';
 import '../services/wechat_article_service.dart';
+import '../models/sspu_wechat_accounts.dart';
 import '../theme/fluent_tokens.dart';
+import 'weread_login_page.dart';
 
 /// 设置页面
 /// 包含密码保护、窗口行为、消息推送、职能部门/教学单位渠道管理、微信占位
@@ -537,9 +539,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    FilledButton(
+                      onPressed: () => _openWereadLogin(context),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(FluentIcons.q_r_code, size: 14),
+                          SizedBox(width: 6),
+                          Text('扫码登录'),
+                        ],
+                      ),
+                    ),
                     Button(
                       onPressed: () => _showCookieInputDialog(context),
-                      child: const Text('配置 Cookie'),
+                      child: const Text('手动配置 Cookie'),
                     ),
                     if (_wereadAuthenticated) ...[
                       Button(
@@ -619,6 +632,10 @@ class _SettingsPageState extends State<SettingsPage> {
           title: '微信渠道',
           channels: wechatChannels,
         ),
+        const SizedBox(height: FluentSpacing.l),
+
+        // SSPU 推荐公众号列表
+        _buildSspuRecommendedAccounts(context),
       ],
     );
   }
@@ -794,5 +811,93 @@ class _SettingsPageState extends State<SettingsPage> {
     if (mounted) {
       setState(() => _followedMps = mps);
     }
+  }
+
+  /// 打开微信读书扫码登录页
+  /// 登录成功后自动提取 Cookie 并保存
+  Future<void> _openWereadLogin(BuildContext context) async {
+    final success = await Navigator.of(context).push<bool>(
+      FluentPageRoute(
+        builder: (_) => const WereadLoginPage(),
+      ),
+    );
+
+    // 登录成功后刷新状态
+    if (success == true && mounted) {
+      setState(() => _wereadAuthenticated = true);
+      await _loadFollowedMps();
+      if (mounted) {
+        displayInfoBar(context, builder: (ctx, close) {
+          return InfoBar(
+            title: const Text('扫码登录成功，Cookie 已保存'),
+            severity: InfoBarSeverity.success,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          );
+        });
+      }
+    }
+  }
+
+  /// 构建 SSPU 推荐公众号卡片
+  /// 展示校园+微信矩阵中的所有官方公众号
+  Widget _buildSspuRecommendedAccounts(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(FluentSpacing.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('SSPU 推荐公众号', style: theme.typography.bodyStrong),
+                const SizedBox(width: FluentSpacing.s),
+                Text(
+                  '来源：校园+微信矩阵·共 ${sspuWechatAccounts.length} 个',
+                  style: theme.typography.caption,
+                ),
+              ],
+            ),
+            const SizedBox(height: FluentSpacing.s),
+            Text(
+              '以下为上海第二工业大学官方认可的微信公众号，'
+              '在微信读书中关注即可自动采集推文',
+              style: theme.typography.caption,
+            ),
+            const SizedBox(height: FluentSpacing.m),
+            // 公众号网格列表（每行 3 个）
+            Wrap(
+              spacing: FluentSpacing.m,
+              runSpacing: FluentSpacing.s,
+              children: sspuWechatAccounts.map((account) {
+                return SizedBox(
+                  width: 200,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Icon(FluentIcons.chat, size: 14,
+                            color: theme.accentColor),
+                        const SizedBox(width: FluentSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            account.name,
+                            style: theme.typography.body,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
