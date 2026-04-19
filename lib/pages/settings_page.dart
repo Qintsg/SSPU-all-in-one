@@ -46,6 +46,18 @@ class _SettingsPageState extends State<SettingsPage> {
   int _wechatPublicInterval = 0;
   int _wechatServiceInterval = 0;
 
+  /// 消息推送全局开关
+  bool _notificationEnabled = true;
+
+  /// 勿扰模式开关
+  bool _dndEnabled = false;
+
+  /// 勿扰时间段
+  int _dndStartHour = 22;
+  int _dndStartMinute = 0;
+  int _dndEndHour = 7;
+  int _dndEndMinute = 0;
+
   /// 消息状态服务引用
   final MessageStateService _messageState = MessageStateService.instance;
 
@@ -142,6 +154,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final ntInterval = await _messageState.getNoticeInterval();
     final wpInterval = await _messageState.getWechatPublicInterval();
     final wsInterval = await _messageState.getWechatServiceInterval();
+    // 加载消息推送与勿扰配置
+    final notifEnabled = await _messageState.isNotificationEnabled();
+    final dndOn = await _messageState.isDndEnabled();
+    final dndSH = await _messageState.getDndStartHour();
+    final dndSM = await _messageState.getDndStartMinute();
+    final dndEH = await _messageState.getDndEndHour();
+    final dndEM = await _messageState.getDndEndMinute();
     if (mounted) {
       setState(() {
         _isPasswordEnabled = isSet;
@@ -154,6 +173,12 @@ class _SettingsPageState extends State<SettingsPage> {
         _noticeInterval = ntInterval;
         _wechatPublicInterval = wpInterval;
         _wechatServiceInterval = wsInterval;
+        _notificationEnabled = notifEnabled;
+        _dndEnabled = dndOn;
+        _dndStartHour = dndSH;
+        _dndStartMinute = dndSM;
+        _dndEndHour = dndEH;
+        _dndEndMinute = dndEM;
         _isLoading = false;
       });
     }
@@ -691,6 +716,224 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // 消息推送设置卡片
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '消息推送',
+                  style: FluentTheme.of(context).typography.subtitle,
+                ),
+                const SizedBox(height: 16),
+                // 推送全局开关
+                Row(
+                  children: [
+                    const Icon(FluentIcons.ringer, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '启用消息推送',
+                            style: FluentTheme.of(context)
+                                .typography
+                                .bodyStrong,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '当自动刷新发现新消息时推送系统通知',
+                            style:
+                                FluentTheme.of(context).typography.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    ToggleSwitch(
+                      checked: _notificationEnabled,
+                      onChanged: (value) async {
+                        await _messageState.setNotificationEnabled(value);
+                        setState(() => _notificationEnabled = value);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // 勿扰模式开关
+                Row(
+                  children: [
+                    Icon(
+                      FluentIcons.ringer_off,
+                      size: 20,
+                      color: _notificationEnabled
+                          ? null
+                          : FluentTheme.of(context)
+                              .inactiveColor
+                              .withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '勿扰时段',
+                            style: FluentTheme.of(context)
+                                .typography
+                                .bodyStrong
+                                ?.copyWith(
+                                  color: _notificationEnabled
+                                      ? null
+                                      : FluentTheme.of(context)
+                                          .inactiveColor
+                                          .withValues(alpha: 0.4),
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '在指定时间段内不推送通知',
+                            style: FluentTheme.of(context)
+                                .typography
+                                .caption
+                                ?.copyWith(
+                                  color: _notificationEnabled
+                                      ? null
+                                      : FluentTheme.of(context)
+                                          .inactiveColor
+                                          .withValues(alpha: 0.4),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ToggleSwitch(
+                      checked: _dndEnabled,
+                      onChanged: _notificationEnabled
+                          ? (value) async {
+                              await _messageState.setDndEnabled(value);
+                              setState(() => _dndEnabled = value);
+                            }
+                          : null,
+                    ),
+                  ],
+                ),
+                // 勿扰时间段选择器
+                if (_dndEnabled && _notificationEnabled)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 32, top: 10),
+                    child: Row(
+                      children: [
+                        _buildTimePicker(
+                          label: '开始',
+                          hour: _dndStartHour,
+                          minute: _dndStartMinute,
+                          onChanged: (h, m) async {
+                            await _messageState.setDndTime(
+                              startHour: h,
+                              startMinute: m,
+                              endHour: _dndEndHour,
+                              endMinute: _dndEndMinute,
+                            );
+                            setState(() {
+                              _dndStartHour = h;
+                              _dndStartMinute = m;
+                            });
+                          },
+                        ),
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            '—',
+                            style: FluentTheme.of(context)
+                                .typography
+                                .bodyStrong,
+                          ),
+                        ),
+                        _buildTimePicker(
+                          label: '结束',
+                          hour: _dndEndHour,
+                          minute: _dndEndMinute,
+                          onChanged: (h, m) async {
+                            await _messageState.setDndTime(
+                              startHour: _dndStartHour,
+                              startMinute: _dndStartMinute,
+                              endHour: h,
+                              endMinute: m,
+                            );
+                            setState(() {
+                              _dndEndHour = h;
+                              _dndEndMinute = m;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建时间选择器（小时 + 分钟 ComboBox）
+  /// [label] 标签（如“开始”“结束”）
+  /// [hour] 当前小时（0–23）
+  /// [minute] 当前分钟（0/15/30/45）
+  /// [onChanged] 选中新值后回调
+  Widget _buildTimePicker({
+    required String label,
+    required int hour,
+    required int minute,
+    required Future<void> Function(int h, int m) onChanged,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$label ',
+          style: FluentTheme.of(context).typography.caption,
+        ),
+        ComboBox<int>(
+          value: hour,
+          items: List.generate(
+            24,
+            (h) => ComboBoxItem<int>(
+              value: h,
+              child: Text(h.toString().padLeft(2, '0')),
+            ),
+          ),
+          onChanged: (h) {
+            if (h != null) onChanged(h, minute);
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            ':',
+            style: FluentTheme.of(context).typography.bodyStrong,
+          ),
+        ),
+        ComboBox<int>(
+          value: [0, 15, 30, 45].contains(minute) ? minute : 0,
+          items: const [
+            ComboBoxItem(value: 0, child: Text('00')),
+            ComboBoxItem(value: 15, child: Text('15')),
+            ComboBoxItem(value: 30, child: Text('30')),
+            ComboBoxItem(value: 45, child: Text('45')),
+          ],
+          onChanged: (m) {
+            if (m != null) onChanged(hour, m);
+          },
         ),
       ],
     );
