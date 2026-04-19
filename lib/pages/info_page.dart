@@ -9,6 +9,7 @@
 
 import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/message_item.dart';
 import '../models/channel_config.dart';
@@ -362,7 +363,9 @@ class _InfoPageState extends State<InfoPage> {
             const SizedBox(height: FluentSpacing.s),
 
             // ==================== 筛选栏 ====================
-            _buildFilterBar(theme, isDark),
+            _buildFilterBar(theme, isDark)
+              .animate()
+              .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate),
             const SizedBox(height: FluentSpacing.m),
 
             // ==================== 消息列表 ====================

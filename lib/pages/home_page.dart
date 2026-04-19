@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/message_item.dart';
 import '../services/message_state_service.dart';
 import '../theme/fluent_tokens.dart';
@@ -113,7 +114,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-        ),
+        ).animate()
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
         Text('快捷功能', style: theme.typography.bodyStrong),
@@ -147,7 +150,9 @@ class _HomePageState extends State<HomePage> {
               width: tileWidth,
             ),
           ],
-        ),
+        ).animate(delay: 100.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
 
         const SizedBox(height: FluentSpacing.l),
 
@@ -177,7 +182,9 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
           ),
-        ),
+        ).animate(delay: 200.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
       ],
     );
       },

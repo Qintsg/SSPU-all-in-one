@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/fluent_tokens.dart';
 import 'agreement_page.dart';
@@ -165,7 +166,9 @@ class AboutPage extends StatelessWidget {
               ),
             ],
           ),
-        ),
+        ).animate()
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.l),
 
         // 操作按钮
@@ -194,7 +197,9 @@ class AboutPage extends StatelessWidget {
               ),
             ],
           ),
-        ),
+        ).animate(delay: 100.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.l),
 
         // 开源项目列表
@@ -219,7 +224,9 @@ class AboutPage extends StatelessWidget {
               );
             }).toList(),
           ),
-        ),
+        ).animate(delay: 200.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
       ],
     );
   }
