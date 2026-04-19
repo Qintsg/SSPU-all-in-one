@@ -27,6 +27,18 @@ class MessageChannelKeys {
   /// 微信服务号开关（占位）
   static const String wechatServiceEnabled = 'channel_wechat_service_enabled';
 
+  /// 最新公开信息自动刷新间隔（分钟，0 = 关闭）
+  static const String latestInfoInterval = 'channel_latest_info_interval';
+
+  /// 通知公示自动刷新间隔（分钟，0 = 关闭）
+  static const String noticeInterval = 'channel_notice_interval';
+
+  /// 微信公众号自动刷新间隔（分钟，0 = 关闭）
+  static const String wechatPublicInterval = 'channel_wechat_public_interval';
+
+  /// 微信服务号自动刷新间隔（分钟，0 = 关闭）
+  static const String wechatServiceInterval = 'channel_wechat_service_interval';
+
   /// 已读消息 ID 集合
   static const String readMessageIds = 'read_message_ids';
 
@@ -150,6 +162,72 @@ class MessageStateService {
     await StorageService.setBool(
       MessageChannelKeys.wechatServiceEnabled,
       enabled,
+    );
+  }
+
+  // ==================== 自动刷新间隔管理 ====================
+
+  /// 获取最新公开信息自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getLatestInfoInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.latestInfoInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置最新公开信息自动刷新间隔（分钟）
+  Future<void> setLatestInfoInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.latestInfoInterval,
+      minutes,
+    );
+  }
+
+  /// 获取通知公示自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getNoticeInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.noticeInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置通知公示自动刷新间隔（分钟）
+  Future<void> setNoticeInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.noticeInterval,
+      minutes,
+    );
+  }
+
+  /// 获取微信公众号自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getWechatPublicInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.wechatPublicInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置微信公众号自动刷新间隔（分钟）
+  Future<void> setWechatPublicInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.wechatPublicInterval,
+      minutes,
+    );
+  }
+
+  /// 获取微信服务号自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getWechatServiceInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.wechatServiceInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置微信服务号自动刷新间隔（分钟）
+  Future<void> setWechatServiceInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.wechatServiceInterval,
+      minutes,
     );
   }
 
