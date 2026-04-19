@@ -1,7 +1,7 @@
 /*
  * 教务处消息解析服务 — 抓取并解析教务处网站的消息列表
  * 支持 897（学生专栏）和 898（教师专栏）两个栏目
- * 与信息公开网使用相同 CMS，共用 ul.news_list 解析模式
+ * 与信息公开网使用相同 CMS，共用 .col_news_con ul.news_list 解析模式
  * @Project : SSPU-all-in-one
  * @File : jwc_news_service.dart
  * @Author : Qintsg
@@ -103,7 +103,7 @@ class JwcNewsService {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      final newsItems = document.querySelectorAll('ul.news_list li.news');
+      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {

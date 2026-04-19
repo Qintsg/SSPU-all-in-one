@@ -107,7 +107,7 @@ class SspuNewsService {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      final newsItems = document.querySelectorAll('ul.news_list li.news');
+      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
