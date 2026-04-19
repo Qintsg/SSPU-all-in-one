@@ -9,6 +9,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/fluent_tokens.dart';
+import '../widgets/responsive_layout.dart';
 
 /// 快速跳转页面
 /// 提供常用校园网站、服务平台的快捷跳转链接
@@ -27,15 +28,29 @@ class QuickLinksPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
 
-    return ScaffoldPage.scrollable(
+    return ResponsiveBuilder(
+      builder: (context, deviceType, constraints) {
+        final tileWidth = switch (deviceType) {
+          DeviceType.phone => 110.0,
+          DeviceType.tablet => 130.0,
+          DeviceType.desktop => 140.0,
+        };
+        final pagePadding = switch (deviceType) {
+          DeviceType.phone => FluentSpacing.m,
+          DeviceType.tablet => FluentSpacing.xl,
+          DeviceType.desktop => FluentSpacing.xxl,
+        };
+
+        return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('快速跳转')),
+      padding: EdgeInsets.all(pagePadding),
       children: [
         // 常用链接组
         Text('校园服务', style: theme.typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: FluentSpacing.m,
+          runSpacing: FluentSpacing.m,
           children: [
             _LinkTile(
               icon: FluentIcons.globe,
@@ -43,6 +58,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.blue,
               url: 'https://www.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.education,
@@ -50,6 +66,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.teal,
               url: 'https://jwxt.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.library,
@@ -57,6 +74,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.orange,
               url: 'https://library.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.mail,
@@ -64,6 +82,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.purple,
               url: 'https://mail.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.open_file,
@@ -71,6 +90,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.magenta,
               url: 'https://xxgk.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.contact,
@@ -78,6 +98,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.blue,
               url: 'https://oa.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.running,
@@ -85,18 +106,19 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.green,
               url: 'https://tygl.sspu.edu.cn/sportscore/',
               onTap: _openUrl,
+              width: tileWidth,
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 职能部门链接
         Text('职能部门', style: theme.typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: FluentSpacing.m,
+          runSpacing: FluentSpacing.m,
           children: [
             _LinkTile(
               icon: FluentIcons.education,
@@ -104,6 +126,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.teal,
               url: 'https://jwc.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.settings,
@@ -111,6 +134,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.blue,
               url: 'https://itc.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.globe,
@@ -118,6 +142,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.green,
               url: 'https://tyb.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.lock,
@@ -125,6 +150,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.red,
               url: 'https://bwc.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.home,
@@ -132,6 +158,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.orange,
               url: 'https://xqjsb.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.news,
@@ -139,6 +166,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.purple,
               url: 'https://news.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.mail,
@@ -146,18 +174,19 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.magenta,
               url: 'https://xsc.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 教学单位链接
         Text('教学单位', style: theme.typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: FluentSpacing.m,
+          runSpacing: FluentSpacing.m,
           children: [
             _LinkTile(
               icon: FluentIcons.settings,
@@ -165,6 +194,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.blue,
               url: 'https://jxxy.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.settings,
@@ -172,6 +202,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.teal,
               url: 'https://imce.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.globe,
@@ -179,6 +210,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.green,
               url: 'https://zihuan.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.settings,
@@ -186,6 +218,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.orange,
               url: 'https://sem.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.settings,
@@ -193,6 +226,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.purple,
               url: 'https://sic.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.settings,
@@ -200,6 +234,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.red,
               url: 'https://imhe.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.database,
@@ -207,6 +242,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.magenta,
               url: 'https://jjglxy.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.read,
@@ -214,6 +250,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.blue,
               url: 'https://wywh.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.education,
@@ -221,6 +258,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.teal,
               url: 'https://sltj.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.video,
@@ -228,6 +266,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.purple,
               url: 'https://design.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.education,
@@ -235,6 +274,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.green,
               url: 'https://stes.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.education,
@@ -242,6 +282,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.orange,
               url: 'https://cive.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.library,
@@ -249,6 +290,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.red,
               url: 'https://mkszyxy.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.education,
@@ -256,6 +298,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.magenta,
               url: 'https://adult.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.video,
@@ -263,6 +306,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.blue,
               url: 'https://education.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.globe,
@@ -270,6 +314,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.teal,
               url: 'https://sie.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.settings,
@@ -277,6 +322,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.green,
               url: 'https://cxcy.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.education,
@@ -284,17 +330,18 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.orange,
               url: 'https://yjs.sspu.edu.cn',
               onTap: _openUrl,
+              width: tileWidth,
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         Text('学习资源', style: theme.typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: FluentSpacing.m,
+          runSpacing: FluentSpacing.m,
           children: [
             _LinkTile(
               icon: FluentIcons.video,
@@ -302,6 +349,7 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.red,
               url: 'https://www.icourse163.org',
               onTap: _openUrl,
+              width: tileWidth,
             ),
             _LinkTile(
               icon: FluentIcons.database,
@@ -309,11 +357,12 @@ class QuickLinksPage extends StatelessWidget {
               color: Colors.magenta,
               url: 'https://www.cnki.net',
               onTap: _openUrl,
+              width: tileWidth,
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 提示
         const InfoBar(
@@ -323,6 +372,8 @@ class QuickLinksPage extends StatelessWidget {
           isLong: true,
         ),
       ],
+    );
+      },
     );
   }
 }
@@ -334,6 +385,8 @@ class _LinkTile extends StatelessWidget {
   final AccentColor color;
   final String url;
   final Future<void> Function(String) onTap;
+  /// 磁贴宽度（响应式调整）
+  final double width;
 
   const _LinkTile({
     required this.icon,
@@ -341,6 +394,7 @@ class _LinkTile extends StatelessWidget {
     required this.color,
     required this.url,
     required this.onTap,
+    this.width = 140,
   });
 
   @override
@@ -355,27 +409,27 @@ class _LinkTile extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          width: 140,
-          padding: const EdgeInsets.all(16),
+          width: width,
+          padding: const EdgeInsets.all(FluentSpacing.l),
           decoration: BoxDecoration(
             color: isHovered
                 ? color.withValues(alpha: isDark ? 0.15 : 0.08)
                 : isDark
-                    ? Colors.white.withValues(alpha: 0.04)
+                    ? FluentDarkColors.hoverFill
                     : Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(FluentRadius.xLarge),
             border: Border.all(
               color: isHovered
                   ? color.withValues(alpha: 0.3)
                   : isDark
-                      ? Colors.white.withValues(alpha: 0.06)
+                      ? FluentDarkColors.borderSubtle
                       : FluentLightColors.borderSubtle,
             ),
           ),
           child: Column(
             children: [
               Icon(icon, size: 28, color: color),
-              const SizedBox(height: 8),
+              const SizedBox(height: FluentSpacing.s),
               Text(
                 label,
                 style: theme.typography.body?.copyWith(
