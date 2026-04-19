@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'message_item.dart';
 
 /// 渠道分组类型
 enum ChannelGroup {
@@ -393,3 +394,42 @@ const List<ChannelConfig> wechatChannels = [
     group: ChannelGroup.wechat,
   ),
 ];
+
+// ==================== 渠道子分类配置（tag3） ====================
+
+/// 渠道子分类定义
+/// 表示一个渠道下的具体内容分类（tag3），可独立启用/禁用
+class SubCategory {
+  /// 消息分类枚举值
+  final MessageCategory category;
+
+  /// 显示名称
+  final String name;
+
+  const SubCategory(this.category, this.name);
+}
+
+/// 渠道子分类映射 — 仅列出有多个子分类的渠道
+/// 单分类渠道不需要子开关，渠道主开关即可控制
+const Map<String, List<SubCategory>> channelSubcategories = {
+  'jwc': [
+    SubCategory(MessageCategory.jwcStudent, '学生专栏'),
+    SubCategory(MessageCategory.jwcTeacher, '教师专栏'),
+  ],
+  'sports': [
+    SubCategory(MessageCategory.sportsNotice, '通知公告'),
+    SubCategory(MessageCategory.sportsEvent, '赛事活动'),
+  ],
+  'security_dept': [
+    SubCategory(MessageCategory.securityNews, '安全动态'),
+    SubCategory(MessageCategory.securityEducation, '安全教育'),
+  ],
+  'construction': [
+    SubCategory(MessageCategory.constructionNews, '建设动态'),
+    SubCategory(MessageCategory.constructionNotice, '通知公告'),
+  ],
+  'student_affairs': [
+    SubCategory(MessageCategory.studentNews, '学生新闻'),
+    SubCategory(MessageCategory.studentNotice, '通知公告'),
+  ],
+};
