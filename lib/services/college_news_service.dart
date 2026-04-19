@@ -14,6 +14,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
 
 import '../models/message_item.dart';
+import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 学院首页新闻解析的 HTML 模板类型
@@ -179,7 +180,7 @@ class CollegeNewsService {
       titleSelector: 'a.text-overflow',
     ),
 
-    // --- 5.4 能源与材料学院 (模板B: news_list，无日期) ---
+    // --- 5.4 能源与材料学院 (模板B: news_list) ---
     'college_em': CollegeConfig(
       baseUrl: 'https://sem.sspu.edu.cn',
       template: CollegeTemplate.newsListB,
@@ -187,6 +188,7 @@ class CollegeNewsService {
       category: MessageCategory.collegeEmNews,
       newsListContainerSelector: 'ul.news_list',
       newsListTitleSelector: 'div.news_title a',
+      newsListDateSelector: 'div.news_meta',
       newsListLinkSelector: 'div.news_title a',
     ),
 
@@ -434,9 +436,9 @@ class CollegeNewsService {
       final dateEl = item.querySelector(config.dateSelector ?? 'span');
       String date = dateEl?.text.trim() ?? '';
 
-      // MM-DD 短日期补年份
-      if (config.shortDateFormat && date.isNotEmpty) {
-        date = _normalizeShortDate(date);
+      // 日期规范化（短日期补年份 / 格式统一）
+      if (date.isNotEmpty) {
+        date = normalizeDate(date);
       }
 
       messages.add(MessageItem(
@@ -623,13 +625,9 @@ class CollegeNewsService {
       } else if (config.customDateSelector != null) {
         final dateEl = item.querySelector(config.customDateSelector!);
         date = dateEl?.text.trim() ?? '';
-        // 斜杠日期格式转换 YYYY/MM/DD → YYYY-MM-DD
-        if (config.customDateSlashFormat && date.isNotEmpty) {
-          date = date.replaceAll('/', '-');
-        }
-        // 短日期补年份
-        if (config.shortDateFormat && date.isNotEmpty) {
-          date = _normalizeShortDate(date);
+        // 日期规范化（斜杠→连字符 / 短日期补年份 / 格式统一）
+        if (date.isNotEmpty) {
+          date = normalizeDate(date);
         }
       }
 
@@ -660,19 +658,5 @@ class CollegeNewsService {
     final bytes = utf8.encode(url);
     final digest = md5.convert(bytes);
     return digest.toString();
-  }
-
-  /// 将 MM-DD 短日期补全为 YYYY-MM-DD
-  /// 如果月份大于当前月则认为是去年的消息
-  String _normalizeShortDate(String shortDate) {
-    final now = DateTime.now();
-    // 清理可能的前后空白和多余字符
-    final cleaned = shortDate.replaceAll(RegExp(r'[^\d\-]'), '').trim();
-    final parts = cleaned.split('-');
-    if (parts.length != 2) return shortDate;
-
-    final month = int.tryParse(parts[0]) ?? 0;
-    final year = (month > now.month) ? now.year - 1 : now.year;
-    return '$year-$shortDate';
   }
 }

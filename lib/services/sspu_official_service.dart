@@ -13,6 +13,7 @@ import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/message_item.dart';
+import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 学校官网消息解析服务（单例）
@@ -123,9 +124,9 @@ class SspuOfficialService {
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 提取日期（div.news_meta）
+        // 提取日期（div.news_meta）并规范化格式
         final dateEl = item.querySelector('div.news_meta');
-        final date = dateEl?.text.trim() ?? '';
+        final date = normalizeDate(dateEl?.text.trim() ?? '');
 
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);
