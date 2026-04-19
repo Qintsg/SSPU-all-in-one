@@ -11,7 +11,8 @@ import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
 
 import '../models/message_item.dart';
-import '../services/sspu_news_service.dart';
+import '../models/channel_config.dart';
+import '../services/auto_refresh_service.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
 import 'webview_page.dart';
@@ -62,8 +63,47 @@ class _InfoPageState extends State<InfoPage> {
   /// 消息状态服务
   final MessageStateService _stateService = MessageStateService.instance;
 
-  /// 新闻抓取服务
-  final SspuNewsService _newsService = SspuNewsService.instance;
+  /// 自动刷新服务（用于手动全渠道刷新）
+  final AutoRefreshService _autoRefreshService = AutoRefreshService.instance;
+
+  /// 消息分类 → 渠道配置 ID 映射表，用于根据渠道开关过滤消息
+  static const Map<MessageCategory, String> _categoryToChannelId = {
+    MessageCategory.latestInfo: 'latest_info',
+    MessageCategory.notice: 'notice',
+    MessageCategory.jwcStudent: 'jwc',
+    MessageCategory.jwcTeacher: 'jwc',
+    MessageCategory.itcNews: 'itc',
+    MessageCategory.sspuNotice: 'sspu_notice',
+    MessageCategory.sspuActivity: 'sspu_activity',
+    MessageCategory.sportsNotice: 'sports',
+    MessageCategory.sportsEvent: 'sports',
+    MessageCategory.securityNews: 'security_dept',
+    MessageCategory.securityEducation: 'security_dept',
+    MessageCategory.constructionNews: 'construction',
+    MessageCategory.constructionNotice: 'construction',
+    MessageCategory.campusNews: 'news_center',
+    MessageCategory.studentNews: 'student_affairs',
+    MessageCategory.studentNotice: 'student_affairs',
+    MessageCategory.collegeCsNews: 'college_cs',
+    MessageCategory.collegeImNews: 'college_im',
+    MessageCategory.collegeReNews: 'college_re',
+    MessageCategory.collegeEmNews: 'college_em',
+    MessageCategory.collegeIcNews: 'college_ic',
+    MessageCategory.collegeImheNews: 'college_imhe',
+    MessageCategory.collegeEconNews: 'college_econ',
+    MessageCategory.collegeLangNews: 'college_lang',
+    MessageCategory.collegeMathNews: 'college_math',
+    MessageCategory.collegeArtNews: 'college_art',
+    MessageCategory.collegeVteNews: 'college_vte',
+    MessageCategory.collegeVtNews: 'college_vt',
+    MessageCategory.collegeMarxNews: 'college_marx',
+    MessageCategory.collegeCeNews: 'college_ce',
+    MessageCategory.centerArtEduNews: 'center_art_edu',
+    MessageCategory.centerIntlNews: 'center_intl',
+    MessageCategory.centerInnovNews: 'center_innov',
+    MessageCategory.graduateNews: 'graduate',
+    MessageCategory.libCenterNews: 'lib_center',
+  };
 
   @override
   void initState() {
@@ -89,7 +129,7 @@ class _InfoPageState extends State<InfoPage> {
     await _filterByEnabledChannels();
   }
 
-  /// 刷新官网消息：抓取新数据并与已有数据合并持久化
+  /// 刷新官网消息：抓取所有已启用渠道的新数据并与已有数据合并持久化
   /// [maxCount] 每个栏目获取的条数，null 则弹出输入框
   Future<void> _refreshSchoolWebsite({int? maxCount}) async {
     // 弹出条数选择对话框
@@ -99,23 +139,10 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
-      final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
-      final noticeEnabled = await _stateService.isNoticeEnabled();
-
-      // 并行获取启用的栏目
-      final futures = <Future<List<MessageItem>>>[];
-      if (latestInfoEnabled) {
-        futures.add(_newsService.fetchLatestInfo(maxCount: count));
-      }
-      if (noticeEnabled) {
-        futures.add(_newsService.fetchNotices(maxCount: count));
-      }
-
-      final results = await Future.wait(futures);
-      final newMessages = <MessageItem>[];
-      for (final messages in results) {
-        newMessages.addAll(messages);
-      }
+      // 通过 AutoRefreshService 抓取所有已启用渠道的消息
+      final newMessages = await _autoRefreshService.fetchAllEnabledNow(
+        maxCount: count,
+      );
 
       // 与已有消息合并（不丢失旧数据）
       final merged = _stateService.mergeMessages(_allMessages, newMessages);
@@ -136,28 +163,39 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   /// 根据渠道开关过滤消息并排序
+  /// 通过 _categoryToChannelId 映射表统一检查所有渠道的启用状态
   Future<void> _filterByEnabledChannels() async {
-    final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
-    final noticeEnabled = await _stateService.isNoticeEnabled();
+    // 预加载所有渠道的启用状态，避免逾历每条消息时重复读取存储
+    final allConfigs = [...departmentChannels, ...teachingChannels];
+    final enabledCache = <String, bool>{};
+    for (final config in allConfigs) {
+      enabledCache[config.id] = await _stateService.isChannelEnabled(
+        config.id,
+        defaultValue: config.defaultEnabled,
+      );
+    }
+
+    // 微信渠道单独检查（使用专有方法）
     final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
     final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
 
     // 过滤掉已关闭渠道的消息
     _allMessages.removeWhere((msg) {
-      if (msg.category == MessageCategory.latestInfo && !latestInfoEnabled) {
-        return true;
+      // 微信渠道按 sourceType 判断
+      if (msg.sourceType == MessageSourceType.wechatPublic) {
+        return !wechatPublicEnabled;
       }
-      if (msg.category == MessageCategory.notice && !noticeEnabled) {
-        return true;
+      if (msg.sourceType == MessageSourceType.wechatService) {
+        return !wechatServiceEnabled;
       }
-      if (msg.sourceType == MessageSourceType.wechatPublic &&
-          !wechatPublicEnabled) {
-        return true;
+
+      // 其他渠道按 category → channelId 映射判断
+      final channelId = _categoryToChannelId[msg.category];
+      if (channelId != null) {
+        return !(enabledCache[channelId] ?? false);
       }
-      if (msg.sourceType == MessageSourceType.wechatService &&
-          !wechatServiceEnabled) {
-        return true;
-      }
+
+      // 未在映射表中的分类保留显示
       return false;
     });
 
