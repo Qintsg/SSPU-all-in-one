@@ -22,6 +22,7 @@ import 'campus_news_service.dart';
 import 'student_affairs_service.dart';
 import 'college_news_service.dart';
 import 'notification_service.dart';
+import 'wechat_article_service.dart';
 
 /// 自动刷新服务（单例）
 /// 根据各渠道配置的间隔定时抓取新消息，发现新消息时推送系统通知
@@ -42,6 +43,7 @@ class AutoRefreshService {
   final StudentAffairsService _studentService = StudentAffairsService.instance;
   final CollegeNewsService _collegeService = CollegeNewsService.instance;
   final NotificationService _notificationService = NotificationService.instance;
+  final WechatArticleService _wechatService = WechatArticleService.instance;
 
   /// 各渠道的定时器，key 为渠道标识
   final Map<String, Timer> _timers = {};
@@ -227,9 +229,96 @@ class AutoRefreshService {
       );
     }
 
-    // 微信渠道占位 — 未来接入时取消注释
-    // await _setupTimer(channelKey: 'wechatPublic', ...);
+    // 微信公众号渠道（通过微信读书 API）
+    await _setupTimer(
+      channelKey: 'wechatPublic',
+      getInterval: () => _stateService.getChannelInterval('wechat_public'),
+      isEnabled: () => _stateService.isChannelEnabled('wechat_public'),
+      fetchMessages: () => _wechatService.fetchArticles(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 微信服务号占位 — 未来接入时取消注释
     // await _setupTimer(channelKey: 'wechatService', ...);
+  }
+
+  /// 立即抓取所有已启用官网渠道的消息并返回合并结果
+  /// 用于手动刷新按钮，不依赖定时器
+  /// [maxCount] 支持 maxCount 参数的服务使用此值
+  /// :return: 所有已启用渠道的消息列表
+  Future<List<MessageItem>> fetchAllEnabledNow({
+    int maxCount = 20,
+  }) async {
+    final futures = <Future<List<MessageItem>>>[];
+
+    // 信息公开网
+    if (await _stateService.isLatestInfoEnabled()) {
+      futures.add(_newsService.fetchLatestInfo(maxCount: maxCount));
+    }
+    if (await _stateService.isNoticeEnabled()) {
+      futures.add(_newsService.fetchNotices(maxCount: maxCount));
+    }
+
+    // 职能部门
+    if (await _stateService.isChannelEnabled('jwc')) {
+      futures.add(_jwcService.fetchStudentNews(maxCount: maxCount));
+      futures.add(_jwcService.fetchTeacherNews(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('itc')) {
+      futures.add(_itcService.fetchNews(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('sspu_notice')) {
+      futures.add(_officialService.fetchNotices(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('sspu_activity')) {
+      futures.add(_officialService.fetchActivities(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('sports')) {
+      futures.add(_sportsService.fetchNotices(maxCount: maxCount));
+      futures.add(_sportsService.fetchEvents(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('security_dept')) {
+      futures.add(_securityService.fetchNews(maxCount: maxCount));
+      futures.add(_securityService.fetchEducation(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('construction')) {
+      futures.add(_constructionService.fetchNews());
+      futures.add(_constructionService.fetchNotices());
+    }
+    if (await _stateService.isChannelEnabled('news_center')) {
+      futures.add(_campusService.fetchCampusNews());
+    }
+    if (await _stateService.isChannelEnabled('student_affairs')) {
+      futures.add(_studentService.fetchNews());
+      futures.add(_studentService.fetchNotices());
+    }
+
+    // 教学单位（19个学院/部门）
+    const collegeIds = [
+      'college_cs', 'college_im', 'college_re', 'college_em', 'college_ic',
+      'college_imhe', 'college_econ', 'college_lang', 'college_math',
+      'college_art', 'college_vte', 'college_vt', 'college_marx', 'college_ce',
+      'center_art_edu', 'center_intl', 'center_innov', 'graduate', 'lib_center',
+    ];
+    for (final id in collegeIds) {
+      if (await _stateService.isChannelEnabled(id)) {
+        futures.add(_collegeService.fetchNews(id));
+      }
+    }
+
+    // 微信公众号
+    if (await _stateService.isChannelEnabled('wechat_public')) {
+      futures.add(_wechatService.fetchArticles(maxCount: maxCount));
+    }
+
+    if (futures.isEmpty) return [];
+
+    // 并行执行，单个渠道异常不影响其他渠道
+    final results = await Future.wait(
+      futures.map((f) => f.catchError((_) => <MessageItem>[])),
+    );
+    return results.expand((msgs) => msgs).toList();
   }
 
   /// 配置并启动单个渠道的定时器
@@ -285,17 +374,21 @@ class AutoRefreshService {
       final merged = _stateService.mergeMessages(existingMessages, fetched);
       await _stateService.saveMessages(merged);
 
-      // 推送系统通知
-      if (newMessages.length == 1) {
-        await _notificationService.show(
-          title: '新消息',
-          body: newMessages.first.title,
-        );
-      } else {
-        await _notificationService.show(
-          title: '${newMessages.length} 条新消息',
-          body: newMessages.take(3).map((m) => m.title).join('\n'),
-        );
+      // 推送系统通知（检查全局开关和勿扰时段）
+      final notifEnabled = await _stateService.isNotificationEnabled();
+      final inDnd = await _stateService.isInDndPeriod();
+      if (notifEnabled && !inDnd) {
+        if (newMessages.length == 1) {
+          await _notificationService.show(
+            title: '新消息',
+            body: newMessages.first.title,
+          );
+        } else {
+          await _notificationService.show(
+            title: '${newMessages.length} 条新消息',
+            body: newMessages.take(3).map((m) => m.title).join('\n'),
+          );
+        }
       }
     } catch (_) {
       // 静默失败，下次定时器触发会重试
@@ -484,7 +577,18 @@ class AutoRefreshService {
           fetchMessages: () => _collegeService.fetchNews(channelKey),
         );
         break;
-      // 微信渠道占位
+      // 微信公众号渠道
+      case 'wechatPublic':
+        await _setupTimer(
+          channelKey: 'wechatPublic',
+          getInterval: () => _stateService.getChannelInterval('wechat_public'),
+          isEnabled: () => _stateService.isChannelEnabled('wechat_public'),
+          fetchMessages: () => _wechatService.fetchArticles(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      // 其他渠道占位
       default:
         break;
     }
@@ -529,6 +633,8 @@ class AutoRefreshService {
     await reloadChannel('center_innov');
     await reloadChannel('graduate');
     await reloadChannel('lib_center');
+    // 微信公众号渠道
+    await reloadChannel('wechatPublic');
   }
 
   /// 销毁所有定时器
