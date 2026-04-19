@@ -9,6 +9,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import '../models/message_item.dart';
 import '../services/message_state_service.dart';
+import 'webview_page.dart';
 
 /// 主页
 /// 展示校园信息摘要、快捷入口、最新消息等内容
@@ -162,35 +163,59 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// 构建单条消息项
+  /// 构建单条消息项（点击跳转内嵌 WebView）
   Widget _buildMessageItem(BuildContext context, MessageItem msg) {
     final theme = FluentTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(msg.title, style: theme.typography.bodyStrong),
-                const SizedBox(height: 4),
-                Text(
-                  '${msg.category.label} · ${msg.sourceName.label}',
-                  style: theme.typography.caption,
+    return HoverButton(
+      onPressed: () {
+        // 标记已读并跳转内嵌 WebView
+        MessageStateService.instance.markAsRead(msg.id);
+        Navigator.of(context).push(
+          FluentPageRoute(
+            builder: (_) => WebViewPage(
+              url: msg.url,
+              initialTitle: msg.title,
+            ),
+          ),
+        );
+      },
+      builder: (context, states) {
+        final isHovered = states.isHovered;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          decoration: BoxDecoration(
+            color: isHovered
+                ? theme.resources.subtleFillColorSecondary
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(msg.title, style: theme.typography.bodyStrong),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${msg.category.label} · ${msg.sourceName.label}',
+                      style: theme.typography.caption,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                msg.date,
+                style: theme.typography.caption?.copyWith(
+                  color: theme.resources.textFillColorSecondary,
+                ),
+              ),
+            ],
           ),
-          Text(
-            msg.date,
-            style: theme.typography.caption?.copyWith(
-              color: theme.resources.textFillColorSecondary,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
