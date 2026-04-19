@@ -8,6 +8,7 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/fluent_tokens.dart';
 import 'agreement_page.dart';
 
 /// 使用/参考的开源项目列表
@@ -132,7 +133,7 @@ class AboutPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFF3F3F3),
+                      : FluentLightColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Image.asset(
