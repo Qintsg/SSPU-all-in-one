@@ -53,6 +53,63 @@ enum MessageSourceName {
   /// 学生处
   studentAffairs('学生处'),
 
+  /// 计算机与信息工程学院
+  collegeCs('计算机与信息工程学院'),
+
+  /// 智能制造与控制工程学院
+  collegeIm('智能制造与控制工程学院'),
+
+  /// 资源与环境工程学院
+  collegeRe('资源与环境工程学院'),
+
+  /// 能源与材料学院
+  collegeEm('能源与材料学院'),
+
+  /// 集成电路学院
+  collegeIc('集成电路学院'),
+
+  /// 智能医学与健康工程学院
+  collegeImhe('智能医学与健康工程学院'),
+
+  /// 经济与管理学院
+  collegeEcon('经济与管理学院'),
+
+  /// 语言与文化传播学院
+  collegeLang('语言与文化传播学院'),
+
+  /// 数理与统计学院
+  collegeMath('数理与统计学院'),
+
+  /// 艺术与设计学院
+  collegeArt('艺术与设计学院'),
+
+  /// 职业技术教师教育学院
+  collegeVte('职业技术教师教育学院'),
+
+  /// 职业技术学院
+  collegeVt('职业技术学院'),
+
+  /// 马克思主义学院
+  collegeMarx('马克思主义学院'),
+
+  /// 继续教育学院
+  collegeCe('继续教育学院'),
+
+  /// 艺术教育中心
+  centerArtEdu('艺术教育中心'),
+
+  /// 国际教育中心
+  centerIntl('国际教育中心'),
+
+  /// 创新创业教育中心
+  centerInnov('创新创业教育中心'),
+
+  /// 研究生处
+  graduate('研究生处'),
+
+  /// 图书馆
+  libCenter('图书馆'),
+
   /// 微信公众号占位
   wechatPublicPlaceholder('微信公众号'),
 
@@ -114,6 +171,63 @@ enum MessageCategory {
 
   /// 学生处通知公告 (490)
   studentNotice('学生通知'),
+
+  /// 计算机与信息工程学院动态
+  collegeCsNews('计信学院动态'),
+
+  /// 智能制造与控制工程学院动态
+  collegeImNews('智控学院动态'),
+
+  /// 资源与环境工程学院动态
+  collegeReNews('资环学院动态'),
+
+  /// 能源与材料学院动态
+  collegeEmNews('能材学院动态'),
+
+  /// 集成电路学院动态
+  collegeIcNews('集成电路学院动态'),
+
+  /// 智能医学与健康工程学院动态
+  collegeImheNews('智医学院动态'),
+
+  /// 经济与管理学院动态
+  collegeEconNews('经管学院动态'),
+
+  /// 语言与文化传播学院动态
+  collegeLangNews('文传学院动态'),
+
+  /// 数理与统计学院动态
+  collegeMathNews('数统学院动态'),
+
+  /// 艺术与设计学院动态
+  collegeArtNews('艺设学院动态'),
+
+  /// 职业技术教师教育学院动态
+  collegeVteNews('职师学院动态'),
+
+  /// 职业技术学院动态
+  collegeVtNews('职技学院动态'),
+
+  /// 马克思主义学院动态
+  collegeMarxNews('马院动态'),
+
+  /// 继续教育学院动态
+  collegeCeNews('继教学院动态'),
+
+  /// 艺术教育中心动态
+  centerArtEduNews('艺教中心动态'),
+
+  /// 国际教育中心动态
+  centerIntlNews('国教中心动态'),
+
+  /// 创新创业教育中心动态
+  centerInnovNews('双创中心动态'),
+
+  /// 研究生处动态
+  graduateNews('研究生处动态'),
+
+  /// 图书馆通知
+  libCenterNews('图书馆通知'),
 
   /// 微信推文占位
   wechatArticle('微信推文');

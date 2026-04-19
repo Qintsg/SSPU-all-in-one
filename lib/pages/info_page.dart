@@ -501,7 +501,36 @@ class _InfoPageState extends State<InfoPage> {
     if (_filterSourceType == null) return MessageSourceName.values;
     switch (_filterSourceType!) {
       case MessageSourceType.schoolWebsite:
-        return [MessageSourceName.infoDisclosure];
+        return [
+          MessageSourceName.infoDisclosure,
+          MessageSourceName.jwc,
+          MessageSourceName.itc,
+          MessageSourceName.sspuOfficial,
+          MessageSourceName.sports,
+          MessageSourceName.securityDept,
+          MessageSourceName.construction,
+          MessageSourceName.newsCenter,
+          MessageSourceName.studentAffairs,
+          MessageSourceName.collegeCs,
+          MessageSourceName.collegeIm,
+          MessageSourceName.collegeRe,
+          MessageSourceName.collegeEm,
+          MessageSourceName.collegeIc,
+          MessageSourceName.collegeImhe,
+          MessageSourceName.collegeEcon,
+          MessageSourceName.collegeLang,
+          MessageSourceName.collegeMath,
+          MessageSourceName.collegeArt,
+          MessageSourceName.collegeVte,
+          MessageSourceName.collegeVt,
+          MessageSourceName.collegeMarx,
+          MessageSourceName.collegeCe,
+          MessageSourceName.centerArtEdu,
+          MessageSourceName.centerIntl,
+          MessageSourceName.centerInnov,
+          MessageSourceName.graduate,
+          MessageSourceName.libCenter,
+        ];
       case MessageSourceType.wechatPublic:
         return [MessageSourceName.wechatPublicPlaceholder];
       case MessageSourceType.wechatService:
@@ -535,6 +564,45 @@ class _InfoPageState extends State<InfoPage> {
         return [MessageCategory.wechatArticle];
       case MessageSourceName.wechatServicePlaceholder:
         return [MessageCategory.wechatArticle];
+      // 教学单位渠道 — 每个学院只有一个新闻分类
+      case MessageSourceName.collegeCs:
+        return [MessageCategory.collegeCsNews];
+      case MessageSourceName.collegeIm:
+        return [MessageCategory.collegeImNews];
+      case MessageSourceName.collegeRe:
+        return [MessageCategory.collegeReNews];
+      case MessageSourceName.collegeEm:
+        return [MessageCategory.collegeEmNews];
+      case MessageSourceName.collegeIc:
+        return [MessageCategory.collegeIcNews];
+      case MessageSourceName.collegeImhe:
+        return [MessageCategory.collegeImheNews];
+      case MessageSourceName.collegeEcon:
+        return [MessageCategory.collegeEconNews];
+      case MessageSourceName.collegeLang:
+        return [MessageCategory.collegeLangNews];
+      case MessageSourceName.collegeMath:
+        return [MessageCategory.collegeMathNews];
+      case MessageSourceName.collegeArt:
+        return [MessageCategory.collegeArtNews];
+      case MessageSourceName.collegeVte:
+        return [MessageCategory.collegeVteNews];
+      case MessageSourceName.collegeVt:
+        return [MessageCategory.collegeVtNews];
+      case MessageSourceName.collegeMarx:
+        return [MessageCategory.collegeMarxNews];
+      case MessageSourceName.collegeCe:
+        return [MessageCategory.collegeCeNews];
+      case MessageSourceName.centerArtEdu:
+        return [MessageCategory.centerArtEduNews];
+      case MessageSourceName.centerIntl:
+        return [MessageCategory.centerIntlNews];
+      case MessageSourceName.centerInnov:
+        return [MessageCategory.centerInnovNews];
+      case MessageSourceName.graduate:
+        return [MessageCategory.graduateNews];
+      case MessageSourceName.libCenter:
+        return [MessageCategory.libCenterNews];
     }
   }
 
