@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/channel_config.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
@@ -176,7 +177,10 @@ class _SettingsPageState extends State<SettingsPage> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: _buildContentPanel(context),
+              child: _buildContentPanel(context)
+                .animate(key: ValueKey(_selectedTab))
+                .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+                .slideY(begin: 0.02, end: 0),
             ),
           ),
         ],
