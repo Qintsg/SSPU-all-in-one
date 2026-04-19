@@ -8,6 +8,7 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/fluent_tokens.dart';
 
 /// 快速跳转页面
 /// 提供常用校园网站、服务平台的快捷跳转链接
@@ -155,7 +156,7 @@ class _LinkTile extends StatelessWidget {
                   ? color.withValues(alpha: 0.3)
                   : isDark
                       ? Colors.white.withValues(alpha: 0.06)
-                      : const Color(0xFFE0E0E0),
+                      : FluentLightColors.borderSubtle,
             ),
           ),
           child: Column(
