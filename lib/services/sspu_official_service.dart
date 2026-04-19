@@ -1,7 +1,8 @@
 /*
  * 学校官网消息解析服务 — 抓取 SSPU 官网的通知公告与学术活动列表
  * 支持 2965（通知公告）和 xsjz（学术活动讲座）两个栏目
- * 官网使用 div 嵌套结构：ul.news_list li.news > a > div.news_meta + div.news_title
+ * 官网使用 div 嵌套结构：.col_news_con ul.news_list li.news > a > div.news_meta + div.news_title
+ * 注意：需限定 .col_news_con 容器，排除页脚 .foot-left 中的固定栏目小部件
  * @Project : SSPU-all-in-one
  * @File : sspu_official_service.dart
  * @Author : Qintsg
@@ -94,7 +95,8 @@ class SspuOfficialService {
   }
 
   /// 抓取单页内所有消息项
-  /// 官网解析模式: ul.news_list li.news > a.news_box1 > div.news_meta + div.news_title
+  /// 官网解析模式: .col_news_con ul.news_list li.news > a.news_box1 > div.news_meta + div.news_title
+  /// 限定 .col_news_con 以排除页脚固定栏目（人才招聘/课程思政等）
   Future<List<MessageItem>> _fetchSinglePage({
     required String url,
     required MessageCategory category,
@@ -103,8 +105,8 @@ class SspuOfficialService {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      // 官网列表: ul.news_list li.news，每项是一个 <a> 包裹的 div 结构
-      final newsItems = document.querySelectorAll('ul.news_list li.news');
+      // 官网列表: .col_news_con 限定主内容区，排除页脚 .foot-left 中的固定栏目
+      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
