@@ -138,7 +138,7 @@ class AboutPage extends StatelessWidget {
                 height: 96,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
+                      ? FluentDarkColors.backgroundSecondary
                       : FluentLightColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -148,17 +148,17 @@ class AboutPage extends StatelessWidget {
                   height: 96,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: FluentSpacing.l),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('SSPU All-in-One', style: typography.subtitle),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: FluentSpacing.xs),
                     Text('版本 0.0.1-alpha', style: typography.caption),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: FluentSpacing.l),
                     _buildInfoRow(context, '著作人', 'Qintsg'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: FluentSpacing.s),
                     _buildInfoRow(context, '许可证', 'MIT License'),
                   ],
                 ),
@@ -166,7 +166,7 @@ class AboutPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 操作按钮
         Card(
@@ -195,11 +195,11 @@ class AboutPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 开源项目列表
         Text('使用/参考的开源项目', style: typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Card(
           child: Column(
             children: _openSourceProjects.asMap().entries.map((entry) {
@@ -250,7 +250,7 @@ class AboutPage extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, size: 20),
-              const SizedBox(width: 12),
+              const SizedBox(width: FluentSpacing.m),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
