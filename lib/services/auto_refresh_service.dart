@@ -15,6 +15,11 @@ import 'sspu_news_service.dart';
 import 'jwc_news_service.dart';
 import 'itc_news_service.dart';
 import 'sspu_official_service.dart';
+import 'sports_news_service.dart';
+import 'security_news_service.dart';
+import 'construction_news_service.dart';
+import 'campus_news_service.dart';
+import 'student_affairs_service.dart';
 import 'notification_service.dart';
 
 /// 自动刷新服务（单例）
@@ -29,6 +34,11 @@ class AutoRefreshService {
   final JwcNewsService _jwcService = JwcNewsService.instance;
   final ItcNewsService _itcService = ItcNewsService.instance;
   final SspuOfficialService _officialService = SspuOfficialService.instance;
+  final SportsNewsService _sportsService = SportsNewsService.instance;
+  final SecurityNewsService _securityService = SecurityNewsService.instance;
+  final ConstructionNewsService _constructionService = ConstructionNewsService.instance;
+  final CampusNewsService _campusService = CampusNewsService.instance;
+  final StudentAffairsService _studentService = StudentAffairsService.instance;
   final NotificationService _notificationService = NotificationService.instance;
 
   /// 各渠道的定时器，key 为渠道标识
@@ -116,6 +126,86 @@ class AutoRefreshService {
       fetchMessages: () => _officialService.fetchActivities(
         maxCount: _defaultFetchCount,
       ),
+    );
+
+    // 体育部通知公告
+    await _setupTimer(
+      channelKey: 'sportsNotice',
+      getInterval: () => _stateService.getChannelInterval('sports'),
+      isEnabled: () => _stateService.isChannelEnabled('sports'),
+      fetchMessages: () => _sportsService.fetchNotices(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 体育部赛事通知
+    await _setupTimer(
+      channelKey: 'sportsEvent',
+      getInterval: () => _stateService.getChannelInterval('sports'),
+      isEnabled: () => _stateService.isChannelEnabled('sports'),
+      fetchMessages: () => _sportsService.fetchEvents(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 保卫处平安动态
+    await _setupTimer(
+      channelKey: 'securityNews',
+      getInterval: () => _stateService.getChannelInterval('security_dept'),
+      isEnabled: () => _stateService.isChannelEnabled('security_dept'),
+      fetchMessages: () => _securityService.fetchNews(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 保卫处宣教专栏
+    await _setupTimer(
+      channelKey: 'securityEducation',
+      getInterval: () => _stateService.getChannelInterval('security_dept'),
+      isEnabled: () => _stateService.isChannelEnabled('security_dept'),
+      fetchMessages: () => _securityService.fetchEducation(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 校区建设办要闻
+    await _setupTimer(
+      channelKey: 'constructionNews',
+      getInterval: () => _stateService.getChannelInterval('construction'),
+      isEnabled: () => _stateService.isChannelEnabled('construction'),
+      fetchMessages: () => _constructionService.fetchNews(),
+    );
+
+    // 校区建设办通知
+    await _setupTimer(
+      channelKey: 'constructionNotice',
+      getInterval: () => _stateService.getChannelInterval('construction'),
+      isEnabled: () => _stateService.isChannelEnabled('construction'),
+      fetchMessages: () => _constructionService.fetchNotices(),
+    );
+
+    // 新闻网综合新闻
+    await _setupTimer(
+      channelKey: 'campusNews',
+      getInterval: () => _stateService.getChannelInterval('news_center'),
+      isEnabled: () => _stateService.isChannelEnabled('news_center'),
+      fetchMessages: () => _campusService.fetchCampusNews(),
+    );
+
+    // 学生处学工要闻
+    await _setupTimer(
+      channelKey: 'studentNews',
+      getInterval: () => _stateService.getChannelInterval('student_affairs'),
+      isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
+      fetchMessages: () => _studentService.fetchNews(),
+    );
+
+    // 学生处通知公告
+    await _setupTimer(
+      channelKey: 'studentNotice',
+      getInterval: () => _stateService.getChannelInterval('student_affairs'),
+      isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
+      fetchMessages: () => _studentService.fetchNotices(),
     );
 
     // 微信渠道占位 — 未来接入时取消注释
@@ -268,6 +358,86 @@ class AutoRefreshService {
           ),
         );
         break;
+      case 'sportsNotice':
+        await _setupTimer(
+          channelKey: 'sportsNotice',
+          getInterval: () => _stateService.getChannelInterval('sports'),
+          isEnabled: () => _stateService.isChannelEnabled('sports'),
+          fetchMessages: () => _sportsService.fetchNotices(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'sportsEvent':
+        await _setupTimer(
+          channelKey: 'sportsEvent',
+          getInterval: () => _stateService.getChannelInterval('sports'),
+          isEnabled: () => _stateService.isChannelEnabled('sports'),
+          fetchMessages: () => _sportsService.fetchEvents(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'securityNews':
+        await _setupTimer(
+          channelKey: 'securityNews',
+          getInterval: () => _stateService.getChannelInterval('security_dept'),
+          isEnabled: () => _stateService.isChannelEnabled('security_dept'),
+          fetchMessages: () => _securityService.fetchNews(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'securityEducation':
+        await _setupTimer(
+          channelKey: 'securityEducation',
+          getInterval: () => _stateService.getChannelInterval('security_dept'),
+          isEnabled: () => _stateService.isChannelEnabled('security_dept'),
+          fetchMessages: () => _securityService.fetchEducation(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'constructionNews':
+        await _setupTimer(
+          channelKey: 'constructionNews',
+          getInterval: () => _stateService.getChannelInterval('construction'),
+          isEnabled: () => _stateService.isChannelEnabled('construction'),
+          fetchMessages: () => _constructionService.fetchNews(),
+        );
+        break;
+      case 'constructionNotice':
+        await _setupTimer(
+          channelKey: 'constructionNotice',
+          getInterval: () => _stateService.getChannelInterval('construction'),
+          isEnabled: () => _stateService.isChannelEnabled('construction'),
+          fetchMessages: () => _constructionService.fetchNotices(),
+        );
+        break;
+      case 'campusNews':
+        await _setupTimer(
+          channelKey: 'campusNews',
+          getInterval: () => _stateService.getChannelInterval('news_center'),
+          isEnabled: () => _stateService.isChannelEnabled('news_center'),
+          fetchMessages: () => _campusService.fetchCampusNews(),
+        );
+        break;
+      case 'studentNews':
+        await _setupTimer(
+          channelKey: 'studentNews',
+          getInterval: () => _stateService.getChannelInterval('student_affairs'),
+          isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
+          fetchMessages: () => _studentService.fetchNews(),
+        );
+        break;
+      case 'studentNotice':
+        await _setupTimer(
+          channelKey: 'studentNotice',
+          getInterval: () => _stateService.getChannelInterval('student_affairs'),
+          isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
+          fetchMessages: () => _studentService.fetchNotices(),
+        );
+        break;
       // 微信渠道占位
       default:
         break;
@@ -284,6 +454,15 @@ class AutoRefreshService {
     await reloadChannel('itc');
     await reloadChannel('sspuNotice');
     await reloadChannel('sspuActivity');
+    await reloadChannel('sportsNotice');
+    await reloadChannel('sportsEvent');
+    await reloadChannel('securityNews');
+    await reloadChannel('securityEducation');
+    await reloadChannel('constructionNews');
+    await reloadChannel('constructionNotice');
+    await reloadChannel('campusNews');
+    await reloadChannel('studentNews');
+    await reloadChannel('studentNotice');
   }
 
   /// 销毁所有定时器

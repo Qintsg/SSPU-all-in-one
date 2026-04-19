@@ -38,6 +38,21 @@ enum MessageSourceName {
   /// 学校官网（通知公告/学术活动）
   sspuOfficial('学校官网'),
 
+  /// 体育部
+  sports('体育部'),
+
+  /// 保卫处
+  securityDept('保卫处'),
+
+  /// 校区建设办
+  construction('校区建设办'),
+
+  /// 新闻网
+  newsCenter('新闻网'),
+
+  /// 学生处
+  studentAffairs('学生处'),
+
   /// 微信公众号占位
   wechatPublicPlaceholder('微信公众号'),
 
@@ -72,6 +87,33 @@ enum MessageCategory {
 
   /// 学校官网学术活动讲座 (xsjz)
   sspuActivity('学术活动讲座'),
+
+  /// 体育部通知公告 (342)
+  sportsNotice('体育部通知'),
+
+  /// 体育部赛事通知 (343)
+  sportsEvent('体育赛事'),
+
+  /// 保卫处平安动态 (1019)
+  securityNews('平安动态'),
+
+  /// 保卫处宣教专栏 (1023)
+  securityEducation('安全宣教'),
+
+  /// 校区建设办要闻 (405)
+  constructionNews('建设要闻'),
+
+  /// 校区建设办通知 (406)
+  constructionNotice('建设通知'),
+
+  /// 新闻网综合新闻 (1432)
+  campusNews('综合新闻'),
+
+  /// 学生处学工要闻 (489)
+  studentNews('学工要闻'),
+
+  /// 学生处通知公告 (490)
+  studentNotice('学生通知'),
 
   /// 微信推文占位
   wechatArticle('微信推文');
