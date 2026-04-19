@@ -47,6 +47,24 @@ class FluentLightColors {
   static const Color borderSubtle = Color(0xFFE0E0E0);
   /// 分隔线
   static const Color divider = Color(0xFFE8E8E8);
+
+  // --- 状态色 ---
+  /// 成功/确认
+  static const Color statusSuccess = Color(0xFF0F7B0F);
+  /// 警告/注意
+  static const Color statusWarning = Color(0xFFD83B01);
+  /// 错误/危险
+  static const Color statusError = Color(0xFFC42B1C);
+  /// 信息/提示
+  static const Color statusInfo = Color(0xFF0078D4);
+
+  // --- 交互状态色 ---
+  /// 悬停填充（列表项/卡片 hover）
+  static const Color hoverFill = Color(0x0A000000);
+  /// 按下填充
+  static const Color activeFill = Color(0x06000000);
+  /// 未读指示器
+  static const Color unreadIndicator = Color(0xFF0078D4);
 }
 
 /// Fluent 2 语义色 — 暗色主题
@@ -60,18 +78,85 @@ class FluentDarkColors {
 
   // --- 背景色 ---
   static const Color backgroundDefault = Color(0xFF1F1F1F);
-  static const Color backgroundCard = Color(0xFF292929);
+  /// 卡片背景（稍亮于主背景，增强层级区分）
+  static const Color backgroundCard = Color(0xFF2D2D2D);
   static const Color backgroundSidebar = Color(0xFF252525);
-  static const Color backgroundSecondary = Color(0xFF333333);
+  static const Color backgroundSecondary = Color(0xFF363636);
 
   // --- 前景/文字色 ---
-  static const Color textPrimary = Color(0xFFE0E0E0);
-  static const Color textSecondary = Color(0xFF9E9E9E);
+  /// 主文字（提亮至接近纯白，WCAG AA 对比度）
+  static const Color textPrimary = Color(0xFFE8E8E8);
+  /// 次要文字（提亮以保证可读性）
+  static const Color textSecondary = Color(0xFFAAAAAA);
   static const Color textDisabled = Color(0xFF5C5C5C);
 
   // --- 边框/分隔线 ---
   static const Color borderSubtle = Color(0xFF3D3D3D);
   static const Color divider = Color(0xFF383838);
+
+  // --- 状态色 ---
+  /// 成功/确认（暗色下提亮以保证对比度）
+  static const Color statusSuccess = Color(0xFF6CCB5F);
+  /// 警告/注意
+  static const Color statusWarning = Color(0xFFFCE100);
+  /// 错误/危险
+  static const Color statusError = Color(0xFFFF99A4);
+  /// 信息/提示
+  static const Color statusInfo = Color(0xFF4CC2FF);
+
+  // --- 交互状态色 ---
+  /// 悬停填充（列表项/卡片 hover）
+  static const Color hoverFill = Color(0x0AFFFFFF);
+  /// 按下填充
+  static const Color activeFill = Color(0x06FFFFFF);
+  /// 未读指示器
+  static const Color unreadIndicator = Color(0xFF4CC2FF);
+}
+
+// ==================== 阴影/浮层 Token ====================
+
+/// Fluent 2 浮层阴影系统
+class FluentElevation {
+  FluentElevation._();
+
+  /// 卡片阴影（微弱）
+  static const List<BoxShadow> cardRest = [
+    BoxShadow(
+      color: Color(0x0A000000),
+      blurRadius: 2,
+      offset: Offset(0, 1),
+    ),
+  ];
+
+  /// 卡片悬停阴影（稍强）
+  static const List<BoxShadow> cardHover = [
+    BoxShadow(
+      color: Color(0x14000000),
+      blurRadius: 8,
+      offset: Offset(0, 2),
+    ),
+  ];
+
+  /// 弹窗/浮层阴影
+  static const List<BoxShadow> dialog = [
+    BoxShadow(
+      color: Color(0x24000000),
+      blurRadius: 21,
+      offset: Offset(0, 8),
+    ),
+  ];
+
+  /// 暗色主题卡片阴影（取消阴影，改用边框区分层级）
+  static const List<BoxShadow> cardRestDark = [];
+
+  /// 暗色主题卡片悬停阴影
+  static const List<BoxShadow> cardHoverDark = [
+    BoxShadow(
+      color: Color(0x20000000),
+      blurRadius: 8,
+      offset: Offset(0, 2),
+    ),
+  ];
 }
 
 // ==================== 间距 Token ====================
@@ -177,6 +262,37 @@ class FluentEasing {
   static const Curve decelerate = Curves.easeOut;
   /// 弹性进入
   static const Curve accelerate = Curves.easeIn;
+}
+
+// ==================== 响应式断点 Token ====================
+
+/// 响应式布局断点——根据窗口宽度判断设备类型
+class FluentBreakpoints {
+  FluentBreakpoints._();
+
+  /// 手机上限
+  static const double compact = 640.0;
+  /// 平板上限
+  static const double medium = 1024.0;
+  /// 桐面上限（超过即为宽屏）
+  static const double expanded = 1440.0;
+
+  /// 根据宽度返回当前设备类型
+  static DeviceType fromWidth(double width) {
+    if (width < compact) return DeviceType.phone;
+    if (width < medium) return DeviceType.tablet;
+    return DeviceType.desktop;
+  }
+}
+
+/// 设备类型枚举
+enum DeviceType {
+  /// 手机（< 640px）
+  phone,
+  /// 平板（640–1024px）
+  tablet,
+  /// 桌面（≥ 1024px）
+  desktop,
 }
 
 // ==================== 主题工厂 ====================

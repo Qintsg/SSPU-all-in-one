@@ -16,6 +16,7 @@ import '../widgets/settings_widgets.dart';
 import '../widgets/channel_list_section.dart';
 import '../services/weread_auth_service.dart';
 import '../services/wechat_article_service.dart';
+import '../theme/fluent_tokens.dart';
 
 /// 设置页面
 /// 包含密码保护、窗口行为、消息推送、职能部门/教学单位渠道管理、微信占位
@@ -143,9 +144,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   // 基础设置组
                   buildSettingsNavItem(context: context, index: 0, selectedIndex: _selectedTab, icon: FluentIcons.lock, label: '安全', onTap: () => setState(() => _selectedTab = 0)),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: FluentSpacing.xxs),
                   buildSettingsNavItem(context: context, index: 1, selectedIndex: _selectedTab, icon: FluentIcons.chrome_close, label: '窗口行为', onTap: () => setState(() => _selectedTab = 1)),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: FluentSpacing.xxs),
                   buildSettingsNavItem(context: context, index: 2, selectedIndex: _selectedTab, icon: FluentIcons.ringer, label: '消息推送', onTap: () => setState(() => _selectedTab = 2)),
                   // 分隔线
                   const Padding(
@@ -154,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   // 渠道设置组
                   buildSettingsNavItem(context: context, index: 3, selectedIndex: _selectedTab, icon: FluentIcons.education, label: '职能部门', onTap: () => setState(() => _selectedTab = 3)),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: FluentSpacing.xxs),
                   buildSettingsNavItem(context: context, index: 4, selectedIndex: _selectedTab, icon: FluentIcons.library, label: '教学单位', onTap: () => setState(() => _selectedTab = 4)),
                   // 分隔线
                   const Padding(
@@ -215,23 +216,23 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSecuritySection(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(FluentSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('安全', style: FluentTheme.of(context).typography.subtitle),
-            const SizedBox(height: 16),
+            const SizedBox(height: FluentSpacing.l),
             // 密码保护开关行
             Row(
               children: [
                 const Icon(FluentIcons.lock, size: 20),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluentSpacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('密码保护', style: FluentTheme.of(context).typography.bodyStrong),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FluentSpacing.xxs),
                       Text(
                         _isPasswordEnabled
                             ? '已开启 — 重新打开应用时需要输入密码'
@@ -265,7 +266,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             // 修改密码 + 手动上锁（仅在已设置密码时显示）
             if (_isPasswordEnabled) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: FluentSpacing.m),
               Row(
                 children: [
                   Button(
@@ -274,14 +275,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (ok && mounted) _showSuccessBar('密码已修改');
                     }),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: FluentSpacing.m),
                   FilledButton(
                     onPressed: widget.onLock,
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(FluentIcons.lock, size: 14),
-                        SizedBox(width: 6),
+                        SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
                         Text('立即上锁'),
                       ],
                     ),
@@ -299,22 +300,22 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildWindowBehaviorSection(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(FluentSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('窗口行为', style: FluentTheme.of(context).typography.subtitle),
-            const SizedBox(height: 16),
+            const SizedBox(height: FluentSpacing.l),
             Row(
               children: [
                 const Icon(FluentIcons.chrome_close, size: 20),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluentSpacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('关闭按钮行为', style: FluentTheme.of(context).typography.bodyStrong),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FluentSpacing.xxs),
                       Text('选择点击窗口关闭按钮时的操作', style: FluentTheme.of(context).typography.caption),
                     ],
                   ),
@@ -345,23 +346,23 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildNotificationSection(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(FluentSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('消息推送', style: FluentTheme.of(context).typography.subtitle),
-            const SizedBox(height: 16),
+            const SizedBox(height: FluentSpacing.l),
             // 推送全局开关
             Row(
               children: [
                 const Icon(FluentIcons.ringer, size: 20),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluentSpacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('启用消息推送', style: FluentTheme.of(context).typography.bodyStrong),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FluentSpacing.xxs),
                       Text('当自动刷新发现新消息时推送系统通知', style: FluentTheme.of(context).typography.caption),
                     ],
                   ),
@@ -375,7 +376,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: FluentSpacing.l),
             // 勿扰模式开关
             Row(
               children: [
@@ -386,7 +387,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ? null
                       : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluentSpacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +400,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FluentSpacing.xxs),
                       Text(
                         '在指定时间段内不推送通知',
                         style: FluentTheme.of(context).typography.caption?.copyWith(
@@ -470,26 +471,27 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 微信栏目设置内容 — Cookie 配置、认证状态、公众号列表、渠道开关
   Widget _buildWechatSection(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('微信', style: theme.typography.subtitle),
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 微信读书 Cookie 配置卡片
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(FluentSpacing.l),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('微信读书认证', style: theme.typography.bodyStrong),
-                const SizedBox(height: 4),
+                const SizedBox(height: FluentSpacing.xs),
                 Text(
                   '通过微信读书 Web 版 Cookie 获取已关注的公众号推文',
                   style: theme.typography.caption,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: FluentSpacing.m),
 
                 // 认证状态指示
                 Row(
@@ -500,27 +502,31 @@ class _SettingsPageState extends State<SettingsPage> {
                           : FluentIcons.warning,
                       size: 16,
                       color: _wereadAuthenticated
-                          ? Colors.green
-                          : Colors.orange,
+                          ? (isDark
+                              ? FluentDarkColors.statusSuccess
+                              : FluentLightColors.statusSuccess)
+                          : (isDark
+                              ? FluentDarkColors.statusWarning
+                              : FluentLightColors.statusWarning),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: FluentSpacing.s),
                     Text(
                       _wereadAuthenticated ? 'Cookie 已配置' : 'Cookie 未配置',
                       style: theme.typography.body,
                     ),
                     if (_wereadChecking) ...[
-                      const SizedBox(width: 12),
+                      const SizedBox(width: FluentSpacing.m),
                       const SizedBox(
                         width: 14,
                         height: 14,
                         child: ProgressRing(strokeWidth: 2),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
                       Text('校验中...', style: theme.typography.caption),
                     ],
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: FluentSpacing.m),
 
                 // 操作按钮行
                 Wrap(
@@ -551,13 +557,13 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 已关注公众号列表
         if (_wereadAuthenticated && _followedMps.isNotEmpty) ...[
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(FluentSpacing.l),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -571,14 +577,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluentSpacing.s),
                   ...(_followedMps.map((mp) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Row(
                       children: [
                         Icon(FluentIcons.chat, size: 16,
                             color: theme.accentColor),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: FluentSpacing.s),
                         Expanded(
                           child: Text(
                             mp['name'] ?? '',
@@ -601,7 +607,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FluentSpacing.l),
         ],
 
         // 渠道开关
@@ -718,7 +724,7 @@ class _SettingsPageState extends State<SettingsPage> {
               '必须包含 wr_skey 和 wr_vid 字段',
               style: FluentTheme.of(ctx).typography.caption,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluentSpacing.m),
             TextBox(
               controller: controller,
               placeholder: 'wr_skey=xxx; wr_vid=xxx; RK=xxx; ...',

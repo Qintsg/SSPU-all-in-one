@@ -13,6 +13,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import '../models/message_item.dart';
 import '../models/channel_config.dart';
 import '../services/auto_refresh_service.dart';
+import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
 import 'webview_page.dart';
@@ -234,7 +235,7 @@ class _InfoPageState extends State<InfoPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('输入每个栏目要获取的消息条数，留空默认 20 条。'),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluentSpacing.m),
               TextBox(
                 controller: controller,
                 placeholder: '20',
@@ -354,15 +355,15 @@ class _InfoPageState extends State<InfoPage> {
           children: [
             // ==================== 操作栏 ====================
             _buildActionBar(theme),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluentSpacing.m),
 
             // ==================== 搜索栏 ====================
             _buildSearchBar(theme),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluentSpacing.s),
 
             // ==================== 筛选栏 ====================
             _buildFilterBar(theme, isDark),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluentSpacing.m),
 
             // ==================== 消息列表 ====================
             Expanded(
@@ -378,7 +379,7 @@ class _InfoPageState extends State<InfoPage> {
                                 size: 48,
                                 color: theme.resources.textFillColorSecondary,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: FluentSpacing.m),
                               Text(
                                 '暂无消息',
                                 style: theme.typography.body?.copyWith(
@@ -386,7 +387,7 @@ class _InfoPageState extends State<InfoPage> {
                                       theme.resources.textFillColorSecondary,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: FluentSpacing.s),
                               Text(
                                 '点击上方刷新按钮获取最新消息',
                                 style: theme.typography.caption?.copyWith(
@@ -402,9 +403,9 @@ class _InfoPageState extends State<InfoPage> {
 
             // ==================== 分页栏 ====================
             if (_filteredMessages.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: FluentSpacing.s),
               _buildPagination(theme),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluentSpacing.m),
             ],
           ],
         ),
@@ -429,7 +430,7 @@ class _InfoPageState extends State<InfoPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(FluentIcons.read, size: 14),
-              const SizedBox(width: 6),
+              const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
               Text('全部标为已读${unreadCount > 0 ? ' ($unreadCount)' : ''}'),
             ],
           ),
@@ -441,7 +442,7 @@ class _InfoPageState extends State<InfoPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(FluentIcons.refresh, size: 14),
-              SizedBox(width: 6),
+              SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
               Text('刷新官网消息'),
             ],
           ),
@@ -453,7 +454,7 @@ class _InfoPageState extends State<InfoPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(FluentIcons.refresh, size: 14),
-              SizedBox(width: 6),
+              SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
               Text('刷新微信公众号/服务号消息'),
             ],
           ),
@@ -725,7 +726,7 @@ class _InfoPageState extends State<InfoPage> {
               ? () => setState(() => _currentPage--)
               : null,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: FluentSpacing.s),
         // 页码信息（可点击弹出跳转输入框）
         Tooltip(
           message: '点击跳转到指定页',
@@ -744,7 +745,7 @@ class _InfoPageState extends State<InfoPage> {
             },
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: FluentSpacing.s),
         // 下一页
         IconButton(
           icon: const Icon(FluentIcons.chevron_right, size: 12),
@@ -769,7 +770,7 @@ class _InfoPageState extends State<InfoPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('当前第 ${_currentPage + 1} 页，共 $_totalPages 页'),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluentSpacing.s),
             TextBox(
               controller: controller,
               placeholder: '输入页码 (1-$_totalPages)',

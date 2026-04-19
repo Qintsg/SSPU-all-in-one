@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import '../theme/fluent_tokens.dart';
 
 /// 教务中心页面
 /// 提供课表查询、成绩查询、考试安排等功能入口
@@ -27,7 +28,7 @@ class AcademicPage extends StatelessWidget {
           description: '查看本学期课程表，支持按周次、课程名筛选',
           items: ['本周课程', '完整课表', '课程搜索'],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: FluentSpacing.m),
         _buildServiceCard(
           context,
           icon: FluentIcons.certificate,
@@ -36,7 +37,7 @@ class AcademicPage extends StatelessWidget {
           description: '查看历史成绩与绩点统计，支持按学期筛选',
           items: ['本学期成绩', '历史成绩', 'GPA 统计'],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: FluentSpacing.m),
         _buildServiceCard(
           context,
           icon: FluentIcons.calendar,
@@ -45,7 +46,7 @@ class AcademicPage extends StatelessWidget {
           description: '查看即将到来的考试时间、地点、座位号',
           items: ['近期考试', '所有考试'],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: FluentSpacing.m),
         _buildServiceCard(
           context,
           icon: FluentIcons.feedback,
@@ -55,7 +56,7 @@ class AcademicPage extends StatelessWidget {
           items: ['待评价课程', '已完成评价'],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 开发状态提示
         const InfoBar(
@@ -82,7 +83,7 @@ class AcademicPage extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(FluentSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -97,13 +98,13 @@ class AcademicPage extends StatelessWidget {
                   ),
                   child: Icon(icon, color: color, size: 20),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluentSpacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title, style: theme.typography.bodyStrong),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: FluentSpacing.xxs),
                       Text(
                         description,
                         style: theme.typography.caption?.copyWith(
@@ -116,7 +117,7 @@ class AcademicPage extends StatelessWidget {
                 const Icon(FluentIcons.chevron_right, size: 12),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluentSpacing.m),
             Wrap(
               spacing: 8,
               runSpacing: 8,
