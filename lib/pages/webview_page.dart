@@ -1,16 +1,16 @@
 /*
  * 内嵌 WebView 页面 — 在应用内展示网页内容
- * 基于 webview_windows（Edge WebView2）实现 Windows 平台内嵌浏览
+ * 使用 flutter_inappwebview 实现跨平台内嵌浏览（Windows/macOS/Android/iOS/Linux）
  * @Project : SSPU-all-in-one
  * @File : webview_page.dart
  * @Author : Qintsg
  * @Date : 2026-07-19
  */
 
-import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_windows/webview_windows.dart';
 
 /// 内嵌 WebView 页面
 /// 在应用内打开网页链接，提供导航栏（返回/前进/刷新/外部浏览器）
@@ -21,10 +21,14 @@ class WebViewPage extends StatefulWidget {
   /// 页面标题（WebView 加载完成前的临时标题）
   final String initialTitle;
 
+  /// Windows 平台需要的 WebViewEnvironment（可选，由外部传入）
+  final WebViewEnvironment? webViewEnvironment;
+
   const WebViewPage({
     super.key,
     required this.url,
     this.initialTitle = '加载中…',
+    this.webViewEnvironment,
   });
 
   @override
@@ -32,8 +36,8 @@ class WebViewPage extends StatefulWidget {
 }
 
 class _WebViewPageState extends State<WebViewPage> {
-  /// WebView 控制器
-  final WebviewController _controller = WebviewController();
+  /// InAppWebView 控制器
+  InAppWebViewController? _controller;
 
   /// 当前页面标题
   String _title = '';
@@ -47,71 +51,32 @@ class _WebViewPageState extends State<WebViewPage> {
   /// 是否可前进
   bool _canGoForward = false;
 
-  /// WebView 是否初始化成功
+  /// WebView 是否已创建
   bool _isReady = false;
 
   /// 初始化是否失败（触发 fallback）
   bool _initFailed = false;
 
-  /// 各 stream 订阅，用于 dispose 时取消
-  final List<StreamSubscription> _subscriptions = [];
+  /// 加载进度（0.0 ~ 1.0）
+  double _progress = 0;
 
   @override
   void initState() {
     super.initState();
     _title = widget.initialTitle;
     _currentUrl = widget.url;
-    _initWebView();
   }
 
-  /// 初始化 WebView 控制器并加载目标 URL
-  /// 失败时标记 _initFailed 以触发 fallback 到外部浏览器
-  Future<void> _initWebView() async {
-    try {
-      await _controller.initialize();
-
-      // 监听标题变化
-      _subscriptions.add(
-        _controller.title.listen((newTitle) {
-          if (mounted && newTitle.isNotEmpty) {
-            setState(() => _title = newTitle);
-          }
-        }),
-      );
-
-      // 监听 URL 变化
-      _subscriptions.add(
-        _controller.url.listen((newUrl) {
-          if (mounted) {
-            setState(() => _currentUrl = newUrl);
-          }
-        }),
-      );
-
-      // 监听历史状态（前进/后退可用性）
-      _subscriptions.add(
-        _controller.historyChanged.listen((history) {
-          if (mounted) {
-            setState(() {
-              _canGoBack = history.canGoBack;
-              _canGoForward = history.canGoForward;
-            });
-          }
-        }),
-      );
-
-      // 加载目标页面
-      await _controller.loadUrl(widget.url);
-
-      if (mounted) {
-        setState(() => _isReady = true);
-      }
-    } catch (error) {
-      // WebView2 运行时不可用或初始化异常 — 自动 fallback
-      if (mounted) {
-        setState(() => _initFailed = true);
-        _fallbackToExternalBrowser();
-      }
+  /// 更新导航按钮状态（前进/后退可用性）
+  Future<void> _updateNavigationState() async {
+    if (_controller == null) return;
+    final canBack = await _controller!.canGoBack();
+    final canForward = await _controller!.canGoForward();
+    if (mounted) {
+      setState(() {
+        _canGoBack = canBack;
+        _canGoForward = canForward;
+      });
     }
   }
 
@@ -121,16 +86,6 @@ class _WebViewPageState extends State<WebViewPage> {
     if (uri != null) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
-  }
-
-  @override
-  void dispose() {
-    // 取消所有 stream 订阅
-    for (final sub in _subscriptions) {
-      sub.cancel();
-    }
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -196,22 +151,26 @@ class _WebViewPageState extends State<WebViewPage> {
             IconButton(
               icon: Icon(
                 FluentIcons.back,
-                color: _canGoBack ? null : theme.inactiveColor.withValues(alpha: 0.4),
+                color: _canGoBack
+                    ? null
+                    : theme.inactiveColor.withValues(alpha: 0.4),
               ),
-              onPressed: _canGoBack ? () => _controller.goBack() : null,
+              onPressed: _canGoBack ? () => _controller?.goBack() : null,
             ),
             // WebView 内前进
             IconButton(
               icon: Icon(
                 FluentIcons.forward,
-                color: _canGoForward ? null : theme.inactiveColor.withValues(alpha: 0.4),
+                color: _canGoForward
+                    ? null
+                    : theme.inactiveColor.withValues(alpha: 0.4),
               ),
-              onPressed: _canGoForward ? () => _controller.goForward() : null,
+              onPressed: _canGoForward ? () => _controller?.goForward() : null,
             ),
             // 刷新
             IconButton(
               icon: const Icon(FluentIcons.refresh),
-              onPressed: _isReady ? () => _controller.reload() : null,
+              onPressed: _isReady ? () => _controller?.reload() : null,
             ),
             const SizedBox(width: 8),
             // 在外部浏览器中打开
@@ -225,9 +184,66 @@ class _WebViewPageState extends State<WebViewPage> {
           ],
         ),
       ),
-      content: _isReady
-          ? Webview(_controller)
-          : const Center(child: ProgressRing()),
+      content: Stack(
+        children: [
+          // WebView 主体
+          InAppWebView(
+            webViewEnvironment: widget.webViewEnvironment,
+            initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+            initialSettings: InAppWebViewSettings(
+              javaScriptEnabled: true,
+              isInspectable: kDebugMode,
+              // 桌面端浏览器 UA
+              userAgent:
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            ),
+            onWebViewCreated: (controller) {
+              _controller = controller;
+              if (mounted) {
+                setState(() => _isReady = true);
+              }
+            },
+            onTitleChanged: (controller, title) {
+              if (mounted && title != null && title.isNotEmpty) {
+                setState(() => _title = title);
+              }
+            },
+            onUpdateVisitedHistory: (controller, url, isReload) {
+              if (url != null && mounted) {
+                setState(() => _currentUrl = url.toString());
+                _updateNavigationState();
+              }
+            },
+            onLoadStop: (controller, url) {
+              if (url != null && mounted) {
+                setState(() => _currentUrl = url.toString());
+                _updateNavigationState();
+              }
+            },
+            onProgressChanged: (controller, progress) {
+              if (mounted) {
+                setState(() => _progress = progress / 100.0);
+              }
+            },
+            onReceivedError: (controller, request, error) {
+              // 仅主框架加载失败时触发 fallback
+              if (request.isForMainFrame == true && mounted) {
+                setState(() => _initFailed = true);
+                _fallbackToExternalBrowser();
+              }
+            },
+          ),
+          // 加载进度条（顶部细条）
+          if (_progress > 0 && _progress < 1.0)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: ProgressBar(value: _progress * 100),
+            ),
+        ],
+      ),
     );
   }
 }
