@@ -1,0 +1,392 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - img [ref=e6] [cursor=pointer]
+    - generic [ref=e25]: 使用微信扫一扫登录 “微信读书”
+  - generic [ref=e32]:
+    - generic [ref=e34]:
+      - searchbox "搜索" [ref=e40]
+      - generic [ref=e41]:
+        - generic [ref=e42]: 最近热搜
+        - link "人呐" [ref=e43] [cursor=pointer]:
+          - /url: https://weread.qq.com/web/reader/70032060813abb506g0188f4
+        - link "鱼不存在" [ref=e44] [cursor=pointer]:
+          - /url: https://weread.qq.com/web/reader/0af32760813ab798cg01135c
+        - link "山居杂忆" [ref=e45] [cursor=pointer]:
+          - /url: https://weread.qq.com/web/reader/90432270813ab8a7eg018ba7
+        - link "钟形罩" [ref=e46] [cursor=pointer]:
+          - /url: https://weread.qq.com/web/reader/cde32be0813ab9a59g01500d
+    - generic [ref=e47]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - generic [ref=e51]: 大家都在看
+          - generic [ref=e54] [cursor=pointer]: 换一批
+        - generic [ref=e55]:
+          - link "传书到手机" [ref=e56] [cursor=pointer]:
+            - /url: javascript:void(0)
+          - generic [ref=e58] [cursor=pointer]: 登录
+      - generic [ref=e90]:
+        - generic [ref=e91]: 榜单
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - link "微信读书用户近期热读的出版书" [ref=e94] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/rising
+              - generic [ref=e96]: 微信读书用户近期热读的出版书
+            - generic [ref=e97]:
+              - link "龙虾的55种赚钱方式 1 龙虾的55种赚钱方式 二导 FayeChen 推荐值 82.2%" [ref=e99] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/ca732ba0813abb53bg0156dd
+                - img "龙虾的55种赚钱方式" [ref=e102]
+                - generic [ref=e104]:
+                  - generic [ref=e105]: "1"
+                  - generic [ref=e107]:
+                    - generic [ref=e109]: 龙虾的55种赚钱方式
+                    - generic [ref=e110]: 二导 FayeChen
+                    - generic [ref=e113]: 推荐值 82.2%
+              - link "侯海洋基层风云（全10册） 2 侯海洋基层风云（全10册） 小桥老树 推荐值 85.0%" [ref=e116] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/ddd322f0813abb529g019905
+                - img "侯海洋基层风云（全10册）" [ref=e119]
+                - generic [ref=e121]:
+                  - generic [ref=e122]: "2"
+                  - generic [ref=e124]:
+                    - generic [ref=e126]: 侯海洋基层风云（全10册）
+                    - generic [ref=e127]: 小桥老树
+                    - generic [ref=e130]: 推荐值 85.0%
+              - link "圣多纳释放法 3 圣多纳释放法 [美]海尔·德沃斯金 推荐值 83.5%" [ref=e133] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/7a9321c0813abb533g012436
+                - img "圣多纳释放法" [ref=e136]
+                - generic [ref=e138]:
+                  - generic [ref=e139]: "3"
+                  - generic [ref=e141]:
+                    - generic [ref=e143]: 圣多纳释放法
+                    - generic [ref=e144]: "[美]海尔·德沃斯金"
+                    - generic [ref=e147]: 推荐值 83.5%
+              - link "人呐（用极短的时间读懂极深的人心） 4 人呐（用极短的时间读懂极深的人心） 莫言 推荐值 80.2%" [ref=e150] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/70032060813abb506g0188f4
+                - img "人呐（用极短的时间读懂极深的人心）" [ref=e153]
+                - generic [ref=e155]:
+                  - generic [ref=e156]: "4"
+                  - generic [ref=e158]:
+                    - generic [ref=e160]: 人呐（用极短的时间读懂极深的人心）
+                    - generic [ref=e161]: 莫言
+                    - generic [ref=e164]: 推荐值 80.2%
+              - link "春夜困渡 5 春夜困渡 晏执 推荐值 88.9%" [ref=e167] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/48332960813abaddag017169
+                - img "春夜困渡" [ref=e170]
+                - generic [ref=e172]:
+                  - generic [ref=e173]: "5"
+                  - generic [ref=e175]:
+                    - generic [ref=e177]: 春夜困渡
+                    - generic [ref=e178]: 晏执
+                    - generic [ref=e181]: 推荐值 88.9%
+              - link "废太子：戍边三年，逆袭崛起 6 废太子：戍边三年，逆袭崛起 Summer晴空 推荐值 67.4%" [ref=e184] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/ed232740813abb498g013da8
+                - img "废太子：戍边三年，逆袭崛起" [ref=e187]
+                - generic [ref=e189]:
+                  - generic [ref=e190]: "6"
+                  - generic [ref=e192]:
+                    - generic [ref=e194]: 废太子：戍边三年，逆袭崛起
+                    - generic [ref=e195]: Summer晴空
+                    - generic [ref=e198]: 推荐值 67.4%
+            - link "查看全部" [ref=e201] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/rising
+              - generic [ref=e202]: 查看全部
+          - generic [ref=e204]:
+            - link "最近 90 天出版的热门书籍" [ref=e205] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/newbook
+              - generic [ref=e207]: 最近 90 天出版的热门书籍
+            - generic [ref=e208]:
+              - link "人呐（用极短的时间读懂极深的人心） 1 人呐（用极短的时间读懂极深的人心） 莫言 推荐值 80.2%" [ref=e210] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/70032060813abb506g0188f4
+                - img "人呐（用极短的时间读懂极深的人心）" [ref=e213]
+                - generic [ref=e215]:
+                  - generic [ref=e216]: "1"
+                  - generic [ref=e218]:
+                    - generic [ref=e220]: 人呐（用极短的时间读懂极深的人心）
+                    - generic [ref=e221]: 莫言
+                    - generic [ref=e224]: 推荐值 80.2%
+              - link "历史中的大与小（微信读书特别版） 2 历史中的大与小（微信读书特别版） 马伯庸 推荐值 81.9%" [ref=e227] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/fa432da0813abb4bfg0198ad
+                - img "历史中的大与小（微信读书特别版）" [ref=e230]
+                - generic [ref=e232]:
+                  - generic [ref=e233]: "2"
+                  - generic [ref=e235]:
+                    - generic [ref=e237]: 历史中的大与小（微信读书特别版）
+                    - generic [ref=e238]: 马伯庸
+                    - generic [ref=e241]: 推荐值 81.9%
+              - link "钢铁森林（井柏然、蔡文静主演同名电视剧原著） 3 钢铁森林（井柏然、蔡文静主演同名电视剧原著） 弃吴钩 推荐值 73.3%" [ref=e244] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/e7a328e0813ab8a3ag010d9a
+                - img "钢铁森林（井柏然、蔡文静主演同名电视剧原著）" [ref=e247]
+                - generic [ref=e249]:
+                  - generic [ref=e250]: "3"
+                  - generic [ref=e252]:
+                    - generic [ref=e254]: 钢铁森林（井柏然、蔡文静主演同名电视剧原著）
+                    - generic [ref=e255]: 弃吴钩
+                    - generic [ref=e258]: 推荐值 73.3%
+              - link "省委班子（全四册） 4 省委班子（全四册） 许开祯 推荐值 88.8%" [ref=e261] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/20e32f20813abb43fg01262c
+                - img "省委班子（全四册）" [ref=e264]
+                - generic [ref=e266]:
+                  - generic [ref=e267]: "4"
+                  - generic [ref=e269]:
+                    - generic [ref=e271]: 省委班子（全四册）
+                    - generic [ref=e272]: 许开祯
+                    - generic [ref=e275]: 推荐值 88.8%
+              - link "沧浪之水 5 沧浪之水 阎真 推荐值 88.7%" [ref=e278] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/7c632ef05a49197c62b53f0
+                - img "沧浪之水" [ref=e281]
+                - generic [ref=e283]:
+                  - generic [ref=e284]: "5"
+                  - generic [ref=e286]:
+                    - generic [ref=e288]: 沧浪之水
+                    - generic [ref=e289]: 阎真
+                    - generic [ref=e291]:
+                      - generic [ref=e292]: 推荐值 88.7%
+                      - img [ref=e294]
+              - link "邪门案件故事集 6 邪门案件故事集 天才捕手计划 推荐值 75.7%" [ref=e297] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/d8332b40813abb4d7g015c01
+                - img "邪门案件故事集" [ref=e300]
+                - generic [ref=e302]:
+                  - generic [ref=e303]: "6"
+                  - generic [ref=e305]:
+                    - generic [ref=e307]: 邪门案件故事集
+                    - generic [ref=e308]: 天才捕手计划
+                    - generic [ref=e311]: 推荐值 75.7%
+            - link "查看全部" [ref=e314] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/newbook
+              - generic [ref=e315]: 查看全部
+          - generic [ref=e317]:
+            - link "微信读书用户最喜爱的出版书" [ref=e318] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/all
+              - generic [ref=e320]: 微信读书用户最喜爱的出版书
+            - generic [ref=e321]:
+              - link "三体全集（全三册） 1 三体全集（全三册） 刘慈欣 推荐值 93.1%" [ref=e323] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/ce032b305a9bc1ce0b0dd2a
+                - img "三体全集（全三册）" [ref=e326]
+                - generic [ref=e328]:
+                  - generic [ref=e329]: "1"
+                  - generic [ref=e331]:
+                    - generic [ref=e333]: 三体全集（全三册）
+                    - generic [ref=e334]: 刘慈欣
+                    - generic [ref=e336]:
+                      - generic [ref=e337]: 推荐值 93.1%
+                      - img [ref=e339]
+              - link "长安的荔枝（同名影视原著） 2 长安的荔枝（同名影视原著） 马伯庸 推荐值 93.0%" [ref=e342] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/cc932860813ab67c2g014597
+                - img "长安的荔枝（同名影视原著）" [ref=e345]
+                - generic [ref=e347]:
+                  - generic [ref=e348]: "2"
+                  - generic [ref=e350]:
+                    - generic [ref=e352]: 长安的荔枝（同名影视原著）
+                    - generic [ref=e353]: 马伯庸
+                    - generic [ref=e355]:
+                      - generic [ref=e356]: 推荐值 93.0%
+                      - img [ref=e358]
+              - link "明朝那些事儿（全集） 3 明朝那些事儿（全集） 当年明月 推荐值 92.3%" [ref=e361] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/a57325c05c8ed3a57224187
+                - img "明朝那些事儿（全集）" [ref=e364]
+                - generic [ref=e366]:
+                  - generic [ref=e367]: "3"
+                  - generic [ref=e369]:
+                    - generic [ref=e371]: 明朝那些事儿（全集）
+                    - generic [ref=e372]: 当年明月
+                    - generic [ref=e374]:
+                      - generic [ref=e375]: 推荐值 92.3%
+                      - img [ref=e377]
+              - link "活着 4 活着 余华 推荐值 92.0%" [ref=e380] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/33332bf05cbba0333b1efb4
+                - img "活着" [ref=e383]
+                - generic [ref=e385]:
+                  - generic [ref=e386]: "4"
+                  - generic [ref=e388]:
+                    - generic [ref=e390]: 活着
+                    - generic [ref=e391]: 余华
+                    - generic [ref=e393]:
+                      - generic [ref=e394]: 推荐值 92.0%
+                      - img [ref=e396]
+              - link "平凡的世界（全三册） 5 平凡的世界（全三册） 路遥 推荐值 93.0%" [ref=e399] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/18832880717cf0511881c78
+                - img "平凡的世界（全三册）" [ref=e402]
+                - generic [ref=e404]:
+                  - generic [ref=e405]: "5"
+                  - generic [ref=e407]:
+                    - generic [ref=e409]: 平凡的世界（全三册）
+                    - generic [ref=e410]: 路遥
+                    - generic [ref=e412]:
+                      - generic [ref=e413]: 推荐值 93.0%
+                      - img [ref=e415]
+              - link "追风筝的人（珍藏纪念版） 6 追风筝的人（珍藏纪念版） 卡勒德·胡赛尼 推荐值 91.9%" [ref=e418] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/0d332e805856230d3bebc23
+                - img "追风筝的人（珍藏纪念版）" [ref=e421]
+                - generic [ref=e423]:
+                  - generic [ref=e424]: "6"
+                  - generic [ref=e426]:
+                    - generic [ref=e428]: 追风筝的人（珍藏纪念版）
+                    - generic [ref=e429]: 卡勒德·胡赛尼
+                    - generic [ref=e431]:
+                      - generic [ref=e432]: 推荐值 91.9%
+                      - img [ref=e434]
+            - link "查看全部" [ref=e437] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/all
+              - generic [ref=e438]: 查看全部
+          - generic [ref=e440]:
+            - link "超过500人点评，推荐值≥90%的出版书" [ref=e441] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/newrating_publish
+              - generic [ref=e443]: 超过500人点评，推荐值≥90%的出版书
+            - generic [ref=e444]:
+              - link "张新民教你读财报 1 张新民教你读财报 张新民 推荐值 90.1%" [ref=e446] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/a6932010813ab789bg0155e6
+                - img "张新民教你读财报" [ref=e449]
+                - generic [ref=e451]:
+                  - generic [ref=e452]: "1"
+                  - generic [ref=e454]:
+                    - generic [ref=e456]: 张新民教你读财报
+                    - generic [ref=e457]: 张新民
+                    - generic [ref=e459]:
+                      - generic [ref=e460]: 推荐值 90.1%
+                      - img [ref=e462]
+              - link "面纱（珍藏版） 2 面纱（珍藏版） [英]W.毛姆·萨默塞特 推荐值 90.5%" [ref=e465] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/7fe32070813ab7684g012bbf
+                - img "面纱（珍藏版）" [ref=e468]
+                - generic [ref=e470]:
+                  - generic [ref=e471]: "2"
+                  - generic [ref=e473]:
+                    - generic [ref=e475]: 面纱（珍藏版）
+                    - generic [ref=e476]: "[英]W.毛姆·萨默塞特"
+                    - generic [ref=e478]:
+                      - generic [ref=e479]: 推荐值 90.5%
+                      - img [ref=e481]
+              - link "包法利夫人 3 包法利夫人 [法]居斯塔夫·福楼拜 推荐值 90.0%" [ref=e484] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/fac320a072709880fac67a9
+                - img "包法利夫人" [ref=e487]
+                - generic [ref=e489]:
+                  - generic [ref=e490]: "3"
+                  - generic [ref=e492]:
+                    - generic [ref=e494]: 包法利夫人
+                    - generic [ref=e495]: "[法]居斯塔夫·福楼拜"
+                    - generic [ref=e497]:
+                      - generic [ref=e498]: 推荐值 90.0%
+                      - img [ref=e500]
+              - link "赞美闲散（果麦经典） 4 赞美闲散（果麦经典） [英]伯特兰·罗素 推荐值 95.4%" [ref=e503] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/00332e90813aba975g0130a7
+                - img "赞美闲散（果麦经典）" [ref=e506]
+                - generic [ref=e508]:
+                  - generic [ref=e509]: "4"
+                  - generic [ref=e511]:
+                    - generic [ref=e513]: 赞美闲散（果麦经典）
+                    - generic [ref=e514]: "[英]伯特兰·罗素"
+                    - generic [ref=e516]:
+                      - generic [ref=e517]: 推荐值 95.4%
+                      - img [ref=e519]
+              - link "朗读者（凯特·温丝莱特主演同名电影原著） 5 朗读者（凯特·温丝莱特主演同名电影原著） 本哈德·施林克 推荐值 90.1%" [ref=e522] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/a4932d40723f4285a4951b0
+                - img "朗读者（凯特·温丝莱特主演同名电影原著）" [ref=e525]
+                - generic [ref=e527]:
+                  - generic [ref=e528]: "5"
+                  - generic [ref=e530]:
+                    - generic [ref=e532]: 朗读者（凯特·温丝莱特主演同名电影原著）
+                    - generic [ref=e533]: 本哈德·施林克
+                    - generic [ref=e535]:
+                      - generic [ref=e536]: 推荐值 90.1%
+                      - img [ref=e538]
+              - link "上帝掷骰子吗？：量子物理史话（升级版） 6 上帝掷骰子吗？：量子物理史话（升级版） 曹天元 推荐值 90.4%" [ref=e541] [cursor=pointer]:
+                - /url: https://weread.qq.com/web/reader/bd5320f07186f617bd52222
+                - img "上帝掷骰子吗？：量子物理史话（升级版）" [ref=e544]
+                - generic [ref=e546]:
+                  - generic [ref=e547]: "6"
+                  - generic [ref=e549]:
+                    - generic [ref=e551]: 上帝掷骰子吗？：量子物理史话（升级版）
+                    - generic [ref=e552]: 曹天元
+                    - generic [ref=e554]:
+                      - generic [ref=e555]: 推荐值 90.4%
+                      - img [ref=e557]
+            - link "查看全部" [ref=e560] [cursor=pointer]:
+              - /url: https://weread.qq.com/web/category/newrating_publish
+              - generic [ref=e561]: 查看全部
+      - generic [ref=e563]:
+        - generic [ref=e564]:
+          - generic [ref=e565]: 分类
+          - generic [ref=e566] [cursor=pointer]:
+            - generic [ref=e567]: 查看全部 · 22 个
+            - img [ref=e568]
+        - generic [ref=e570]:
+          - link "书籍封面 精品小说 38507 本书籍" [ref=e571] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/100000
+            - img "书籍封面" [ref=e574]
+            - generic [ref=e576]:
+              - generic [ref=e577]: 精品小说
+              - generic [ref=e578]: 38507 本书籍
+          - link "书籍封面 历史 31490 本书籍" [ref=e579] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/200000
+            - img "书籍封面" [ref=e582]
+            - generic [ref=e584]:
+              - generic [ref=e585]: 历史
+              - generic [ref=e586]: 31490 本书籍
+          - link "书籍封面 文学 49776 本书籍" [ref=e587] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/300000
+            - img "书籍封面" [ref=e590]
+            - generic [ref=e592]:
+              - generic [ref=e593]: 文学
+              - generic [ref=e594]: 49776 本书籍
+          - link "书籍封面 艺术 9504 本书籍" [ref=e595] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/400000
+            - img "书籍封面" [ref=e598]
+            - generic [ref=e600]:
+              - generic [ref=e601]: 艺术
+              - generic [ref=e602]: 9504 本书籍
+          - link "书籍封面 人物传记 7093 本书籍" [ref=e603] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/500000
+            - img "书籍封面" [ref=e606]
+            - generic [ref=e608]:
+              - generic [ref=e609]: 人物传记
+              - generic [ref=e610]: 7093 本书籍
+          - link "书籍封面 哲学宗教 11909 本书籍" [ref=e611] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/600000
+            - img "书籍封面" [ref=e614]
+            - generic [ref=e616]:
+              - generic [ref=e617]: 哲学宗教
+              - generic [ref=e618]: 11909 本书籍
+          - link "书籍封面 计算机 12596 本书籍" [ref=e619] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/700000
+            - img "书籍封面" [ref=e622]
+            - generic [ref=e624]:
+              - generic [ref=e625]: 计算机
+              - generic [ref=e626]: 12596 本书籍
+          - link "书籍封面 心理 5055 本书籍" [ref=e627] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/800000
+            - img "书籍封面" [ref=e630]
+            - generic [ref=e632]:
+              - generic [ref=e633]: 心理
+              - generic [ref=e634]: 5055 本书籍
+          - link "书籍封面 社会文化 20921 本书籍" [ref=e635] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/900000
+            - img "书籍封面" [ref=e638]
+            - generic [ref=e640]:
+              - generic [ref=e641]: 社会文化
+              - generic [ref=e642]: 20921 本书籍
+          - link "书籍封面 个人成长 16095 本书籍" [ref=e643] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/1000000
+            - img "书籍封面" [ref=e646]
+            - generic [ref=e648]:
+              - generic [ref=e649]: 个人成长
+              - generic [ref=e650]: 16095 本书籍
+          - link "书籍封面 经济理财 26308 本书籍" [ref=e651] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/1100000
+            - img "书籍封面" [ref=e654]
+            - generic [ref=e656]:
+              - generic [ref=e657]: 经济理财
+              - generic [ref=e658]: 26308 本书籍
+          - link "书籍封面 政治军事 8391 本书籍" [ref=e659] [cursor=pointer]:
+            - /url: https://weread.qq.com/web/category/1200000
+            - img "书籍封面" [ref=e662]
+            - generic [ref=e664]:
+              - generic [ref=e665]: 政治军事
+              - generic [ref=e666]: 8391 本书籍
+    - generic [ref=e667]:
+      - generic [ref=e668]: © 1998 - 2026 Tencent Inc. All Rights Reserved
+      - generic [ref=e669] [cursor=pointer]:
+        - link "用户协议" [ref=e670]:
+          - /url: https://weread.qq.com/web/copyright
+        - generic [ref=e671]: ·
+        - link "隐私政策" [ref=e672]:
+          - /url: https://privacy.qq.com/mb/policy/tencent-privacypolicy
+        - generic [ref=e673]: ·
+        - generic [ref=e674]: 帮助与反馈
