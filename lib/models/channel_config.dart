@@ -375,16 +375,20 @@ const List<ChannelConfig> teachingChannels = [
   ),
 ];
 
-// ==================== 微信渠道（占位） ====================
+// ==================== 微信渠道 ====================
 
-/// 微信渠道配置列表（目前仅占位）
+/// 微信渠道配置列表
+/// wechat_public 通过微信读书 API 获取已关注的公众号推文
 const List<ChannelConfig> wechatChannels = [
   ChannelConfig(
     id: 'wechat_public',
     name: '微信公众号',
-    description: '暂未接入',
+    description: '通过微信读书获取已关注公众号的推文',
     icon: FluentIcons.chat,
     group: ChannelGroup.wechat,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'wechat_service',
