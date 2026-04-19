@@ -7,6 +7,8 @@
  * @Date : 2026-07-19
  */
 
+import 'dart:convert';
+import '../models/message_item.dart';
 import '../services/storage_service.dart';
 
 /// 消息渠道配置键名
@@ -25,8 +27,23 @@ class MessageChannelKeys {
   /// 微信服务号开关（占位）
   static const String wechatServiceEnabled = 'channel_wechat_service_enabled';
 
+  /// 最新公开信息自动刷新间隔（分钟，0 = 关闭）
+  static const String latestInfoInterval = 'channel_latest_info_interval';
+
+  /// 通知公示自动刷新间隔（分钟，0 = 关闭）
+  static const String noticeInterval = 'channel_notice_interval';
+
+  /// 微信公众号自动刷新间隔（分钟，0 = 关闭）
+  static const String wechatPublicInterval = 'channel_wechat_public_interval';
+
+  /// 微信服务号自动刷新间隔（分钟，0 = 关闭）
+  static const String wechatServiceInterval = 'channel_wechat_service_interval';
+
   /// 已读消息 ID 集合
   static const String readMessageIds = 'read_message_ids';
+
+  /// 持久化的消息列表（JSON 数组）
+  static const String persistedMessages = 'persisted_messages';
 }
 
 /// 消息状态管理服务（单例）
@@ -146,5 +163,119 @@ class MessageStateService {
       MessageChannelKeys.wechatServiceEnabled,
       enabled,
     );
+  }
+
+  // ==================== 自动刷新间隔管理 ====================
+
+  /// 获取最新公开信息自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getLatestInfoInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.latestInfoInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置最新公开信息自动刷新间隔（分钟）
+  Future<void> setLatestInfoInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.latestInfoInterval,
+      minutes,
+    );
+  }
+
+  /// 获取通知公示自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getNoticeInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.noticeInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置通知公示自动刷新间隔（分钟）
+  Future<void> setNoticeInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.noticeInterval,
+      minutes,
+    );
+  }
+
+  /// 获取微信公众号自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getWechatPublicInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.wechatPublicInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置微信公众号自动刷新间隔（分钟）
+  Future<void> setWechatPublicInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.wechatPublicInterval,
+      minutes,
+    );
+  }
+
+  /// 获取微信服务号自动刷新间隔（分钟，0 = 关闭，默认 0）
+  Future<int> getWechatServiceInterval() async {
+    return (await StorageService.getInt(
+          MessageChannelKeys.wechatServiceInterval,
+        )) ??
+        0;
+  }
+
+  /// 设置微信服务号自动刷新间隔（分钟）
+  Future<void> setWechatServiceInterval(int minutes) async {
+    await StorageService.setInt(
+      MessageChannelKeys.wechatServiceInterval,
+      minutes,
+    );
+  }
+
+  // ==================== 消息持久化管理 ====================
+
+  /// 保存消息列表到本地存储
+  Future<void> saveMessages(List<MessageItem> messages) async {
+    final jsonList = messages.map((msg) => msg.toJson()).toList();
+    await StorageService.setString(
+      MessageChannelKeys.persistedMessages,
+      jsonEncode(jsonList),
+    );
+  }
+
+  /// 从本地存储加载消息列表
+  Future<List<MessageItem>> loadMessages() async {
+    final stored = await StorageService.getString(
+      MessageChannelKeys.persistedMessages,
+    );
+    if (stored == null || stored.isEmpty) return [];
+    try {
+      final jsonList = jsonDecode(stored) as List<dynamic>;
+      return jsonList
+          .map((json) => MessageItem.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      // 存储数据损坏时返回空列表
+      return [];
+    }
+  }
+
+  /// 将新抓取的消息与已有消息合并（按 ID 去重）
+  /// [existingMessages] 已有消息列表
+  /// [newMessages] 新抓取的消息列表
+  /// 返回合并后的列表（新消息覆盖同 ID 旧消息）
+  List<MessageItem> mergeMessages(
+    List<MessageItem> existingMessages,
+    List<MessageItem> newMessages,
+  ) {
+    final messageMap = <String, MessageItem>{};
+    // 先放旧消息
+    for (final msg in existingMessages) {
+      messageMap[msg.id] = msg;
+    }
+    // 新消息覆盖同 ID 的旧消息
+    for (final msg in newMessages) {
+      messageMap[msg.id] = msg;
+    }
+    return messageMap.values.toList();
   }
 }

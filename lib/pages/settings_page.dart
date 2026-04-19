@@ -10,6 +10,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
 import '../services/message_state_service.dart';
+import '../services/auto_refresh_service.dart';
 
 /// 设置页面
 /// 包含密码保护开关、密码设置/修改/移除功能、手动上锁、窗口行为设置
@@ -39,13 +40,91 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _wechatPublicEnabled = false;
   bool _wechatServiceEnabled = false;
 
+  /// 各渠道自动刷新间隔（分钟，0 = 关闭）
+  int _latestInfoInterval = 0;
+  int _noticeInterval = 0;
+  int _wechatPublicInterval = 0;
+  int _wechatServiceInterval = 0;
+
   /// 消息状态服务引用
   final MessageStateService _messageState = MessageStateService.instance;
+
+  /// 自动刷新服务引用
+  final AutoRefreshService _autoRefresh = AutoRefreshService.instance;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+  }
+
+  /// 可选的自动刷新间隔（分钟 => 显示文本）
+  static const Map<int, String> _intervalOptions = {
+    0: '关闭',
+    15: '15 分钟',
+    30: '30 分钟',
+    60: '1 小时',
+    120: '2 小时',
+    360: '6 小时',
+    720: '12 小时',
+    1440: '24 小时',
+  };
+
+  /// 构建自动刷新间隔选择器
+  /// [currentValue] 当前间隔（分钟）
+  /// [enabled] 渠道是否启用（未启用时灰色不可点）
+  /// [onChanged] 选中新值后回调
+  Widget _buildIntervalSelector({
+    required int currentValue,
+    required bool enabled,
+    required Future<void> Function(int minutes) onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, top: 6),
+      child: Row(
+        children: [
+          Icon(
+            FluentIcons.sync,
+            size: 14,
+            color: enabled
+                ? FluentTheme.of(context).inactiveColor
+                : FluentTheme.of(context)
+                    .inactiveColor
+                    .withValues(alpha: 0.4),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '自动刷新：',
+            style: FluentTheme.of(context).typography.caption?.copyWith(
+                  color: enabled
+                      ? null
+                      : FluentTheme.of(context)
+                          .inactiveColor
+                          .withValues(alpha: 0.4),
+                ),
+          ),
+          const SizedBox(width: 4),
+          ComboBox<int>(
+            value: _intervalOptions.containsKey(currentValue)
+                ? currentValue
+                : 0,
+            items: _intervalOptions.entries
+                .map(
+                  (entry) => ComboBoxItem<int>(
+                    value: entry.key,
+                    child: Text(entry.value),
+                  ),
+                )
+                .toList(),
+            onChanged: enabled
+                ? (value) {
+                    if (value != null) onChanged(value);
+                  }
+                : null,
+          ),
+        ],
+      ),
+    );
   }
 
   /// 从本地存储加载密码保护状态和窗口行为偏好
@@ -58,6 +137,11 @@ class _SettingsPageState extends State<SettingsPage> {
     final notice = await _messageState.isNoticeEnabled();
     final wechatPub = await _messageState.isWechatPublicEnabled();
     final wechatSvc = await _messageState.isWechatServiceEnabled();
+    // 加载自动刷新间隔
+    final liInterval = await _messageState.getLatestInfoInterval();
+    final ntInterval = await _messageState.getNoticeInterval();
+    final wpInterval = await _messageState.getWechatPublicInterval();
+    final wsInterval = await _messageState.getWechatServiceInterval();
     if (mounted) {
       setState(() {
         _isPasswordEnabled = isSet;
@@ -66,6 +150,10 @@ class _SettingsPageState extends State<SettingsPage> {
         _noticeEnabled = notice;
         _wechatPublicEnabled = wechatPub;
         _wechatServiceEnabled = wechatSvc;
+        _latestInfoInterval = liInterval;
+        _noticeInterval = ntInterval;
+        _wechatPublicInterval = wpInterval;
+        _wechatServiceInterval = wsInterval;
         _isLoading = false;
       });
     }
@@ -521,6 +609,18 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setLatestInfoEnabled(value);
                     setState(() => _latestInfoEnabled = value);
+                    _showChannelChangedTip(value, '最新公开信息');
+                    // 渠道开关变化后重新加载自动刷新定时器
+                    await _autoRefresh.reloadChannel('latestInfo');
+                  },
+                ),
+                _buildIntervalSelector(
+                  currentValue: _latestInfoInterval,
+                  enabled: _latestInfoEnabled,
+                  onChanged: (minutes) async {
+                    await _messageState.setLatestInfoInterval(minutes);
+                    setState(() => _latestInfoInterval = minutes);
+                    await _autoRefresh.reloadChannel('latestInfo');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -533,6 +633,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setNoticeEnabled(value);
                     setState(() => _noticeEnabled = value);
+                    _showChannelChangedTip(value, '通知公示');
+                    await _autoRefresh.reloadChannel('notice');
+                  },
+                ),
+                _buildIntervalSelector(
+                  currentValue: _noticeInterval,
+                  enabled: _noticeEnabled,
+                  onChanged: (minutes) async {
+                    await _messageState.setNoticeInterval(minutes);
+                    setState(() => _noticeInterval = minutes);
+                    await _autoRefresh.reloadChannel('notice');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -545,6 +656,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setWechatPublicEnabled(value);
                     setState(() => _wechatPublicEnabled = value);
+                    _showChannelChangedTip(value, '微信公众号');
+                  },
+                ),
+                _buildIntervalSelector(
+                  currentValue: _wechatPublicInterval,
+                  enabled: _wechatPublicEnabled,
+                  onChanged: (minutes) async {
+                    await _messageState.setWechatPublicInterval(minutes);
+                    setState(() => _wechatPublicInterval = minutes);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -557,6 +677,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setWechatServiceEnabled(value);
                     setState(() => _wechatServiceEnabled = value);
+                    _showChannelChangedTip(value, '微信服务号');
+                  },
+                ),
+                _buildIntervalSelector(
+                  currentValue: _wechatServiceInterval,
+                  enabled: _wechatServiceEnabled,
+                  onChanged: (minutes) async {
+                    await _messageState.setWechatServiceInterval(minutes);
+                    setState(() => _wechatServiceInterval = minutes);
                   },
                 ),
               ],
@@ -600,6 +729,30 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+
+  /// 渠道开关变更时显示提示栏
+  /// [enabled] 是否启用
+  /// [channelName] 渠道名称
+  void _showChannelChangedTip(bool enabled, String channelName) {
+    final message = enabled
+        ? '已启用「$channelName」，请到信息中心刷新获取该渠道消息'
+        : '已关闭「$channelName」，该渠道消息将不再显示';
+    displayInfoBar(
+      context,
+      builder: (context, close) {
+        return InfoBar(
+          title: Text(message),
+          severity: enabled
+              ? InfoBarSeverity.success
+              : InfoBarSeverity.warning,
+          action: IconButton(
+            icon: const Icon(FluentIcons.clear),
+            onPressed: close,
+          ),
+        );
+      },
     );
   }
 }
