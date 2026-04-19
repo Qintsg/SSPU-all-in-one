@@ -16,36 +16,38 @@
 - whether an intensive chat session is active
 
 ## Current Dida365 Mirror Snapshot
-# Dida365 任务状态镜像
+# Dida365 状态镜像
 
 ## 项目信息
+- **MCP 项目/清单名称**: mcp-SSPU-all-in-one
+- **项目 ID**: 69e37a01e4b0028dfb42216d
+- **名称来源**: AGENTS.md (`项目名称为：SSPU-all-in-one`)
+- **远程项目/清单就绪**: ✅ 是
 
-- **MCP 项目名称**: `mcp-SSPU-all-in-one`
-- **项目 ID**: `69e37a01e4b0028dfb42216d`
-- **名称来源**: `AGENTS.md` (项目名称: SSPU-all-in-one)
-- **远程项目就绪**: ✅
-
-## 当前阶段
-
-- **阶段**: 全部完成
+## 当前状态
+- **当前阶段**: 任务完成，等待用户下一步指令
 - **当前子任务**: 无
 - **剩余未完成项**: 0
-- **密集交互会话**: 未开启
+- **是否有活跃的 intensive chat**: 否
 
-## 任务列表
+## 最近完成的任务
 
-| ID | 标题 | 状态 | 提交 |
-|----|------|------|------|
-| [A] | 修复官网活动页解析到页脚固定栏目 | ✅ 完成 | `a4d359b` |
-| [B] | 统一日期规范化，修复短日期补全bug | ✅ 完成 | `2ae6302` |
-| [C] | 新增渠道子分类(tag3)独立开关 | ✅ 完成 | `bc93b44` |
-| [D] | 设置页重构 | ✅ 完成 | 已存在（左导航布局） |
-| [E] | 信息中心分页支持快速跳转 | ✅ 完成 | `0a7a827` |
-| [F] | 微信读书公众号推文获取服务 | ✅ 完成 | `fae31fa` |
+### Task H: 微信读书扫码登录 + SSPU推荐公众号导入
+- **任务 ID**: 69e4caafe4b0028dfb503ef0
+- **状态**: ✅ 已完成
+- **Commit**: d3b1ffc `feat(wechat): 新增微信读书扫码登录与SSPU推荐公众号导入`
+- **变更文件**:
+  1. `lib/models/sspu_wechat_accounts.dart` — 新增，37个SSPU官方公众号数据
+  2. `lib/pages/weread_login_page.dart` — 新增，WebView扫码登录页
+  3. `lib/pages/settings_page.dart` — 修改，新增扫码登录按钮+推荐公众号卡片
+- **验证**: flutter analyze 0 errors, 0 warnings
+
+### Task G: 优化前端操作逻辑/动画/配色/适配
+- **状态**: ✅ 已完成
+- **Commits**: 3 次提交（配色+间距+动画）
 
 ## 最后同步时间
-
-2025-07-20T19:38:00+08:00
+2026-07-21T20:41:45+08:00
 
 
 ## Recovery Steps
