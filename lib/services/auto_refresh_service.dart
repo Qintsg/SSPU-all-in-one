@@ -20,6 +20,7 @@ import 'security_news_service.dart';
 import 'construction_news_service.dart';
 import 'campus_news_service.dart';
 import 'student_affairs_service.dart';
+import 'college_news_service.dart';
 import 'notification_service.dart';
 
 /// 自动刷新服务（单例）
@@ -39,6 +40,7 @@ class AutoRefreshService {
   final ConstructionNewsService _constructionService = ConstructionNewsService.instance;
   final CampusNewsService _campusService = CampusNewsService.instance;
   final StudentAffairsService _studentService = StudentAffairsService.instance;
+  final CollegeNewsService _collegeService = CollegeNewsService.instance;
   final NotificationService _notificationService = NotificationService.instance;
 
   /// 各渠道的定时器，key 为渠道标识
@@ -207,6 +209,23 @@ class AutoRefreshService {
       isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
       fetchMessages: () => _studentService.fetchNotices(),
     );
+
+    // ==================== 教学单位渠道（19个学院/部门） ====================
+    // 所有学院共用 CollegeNewsService，通过 channelId 区分解析配置
+    final collegeChannelIds = [
+      'college_cs', 'college_im', 'college_re', 'college_em', 'college_ic',
+      'college_imhe', 'college_econ', 'college_lang', 'college_math',
+      'college_art', 'college_vte', 'college_vt', 'college_marx', 'college_ce',
+      'center_art_edu', 'center_intl', 'center_innov', 'graduate', 'lib_center',
+    ];
+    for (final channelId in collegeChannelIds) {
+      await _setupTimer(
+        channelKey: channelId,
+        getInterval: () => _stateService.getChannelInterval(channelId),
+        isEnabled: () => _stateService.isChannelEnabled(channelId),
+        fetchMessages: () => _collegeService.fetchNews(channelId),
+      );
+    }
 
     // 微信渠道占位 — 未来接入时取消注释
     // await _setupTimer(channelKey: 'wechatPublic', ...);
@@ -438,6 +457,33 @@ class AutoRefreshService {
           fetchMessages: () => _studentService.fetchNotices(),
         );
         break;
+      // 教学单位渠道（19个学院/部门，统一处理）
+      case 'college_cs':
+      case 'college_im':
+      case 'college_re':
+      case 'college_em':
+      case 'college_ic':
+      case 'college_imhe':
+      case 'college_econ':
+      case 'college_lang':
+      case 'college_math':
+      case 'college_art':
+      case 'college_vte':
+      case 'college_vt':
+      case 'college_marx':
+      case 'college_ce':
+      case 'center_art_edu':
+      case 'center_intl':
+      case 'center_innov':
+      case 'graduate':
+      case 'lib_center':
+        await _setupTimer(
+          channelKey: channelKey,
+          getInterval: () => _stateService.getChannelInterval(channelKey),
+          isEnabled: () => _stateService.isChannelEnabled(channelKey),
+          fetchMessages: () => _collegeService.fetchNews(channelKey),
+        );
+        break;
       // 微信渠道占位
       default:
         break;
@@ -463,6 +509,26 @@ class AutoRefreshService {
     await reloadChannel('campusNews');
     await reloadChannel('studentNews');
     await reloadChannel('studentNotice');
+    // 教学单位渠道
+    await reloadChannel('college_cs');
+    await reloadChannel('college_im');
+    await reloadChannel('college_re');
+    await reloadChannel('college_em');
+    await reloadChannel('college_ic');
+    await reloadChannel('college_imhe');
+    await reloadChannel('college_econ');
+    await reloadChannel('college_lang');
+    await reloadChannel('college_math');
+    await reloadChannel('college_art');
+    await reloadChannel('college_vte');
+    await reloadChannel('college_vt');
+    await reloadChannel('college_marx');
+    await reloadChannel('college_ce');
+    await reloadChannel('center_art_edu');
+    await reloadChannel('center_intl');
+    await reloadChannel('center_innov');
+    await reloadChannel('graduate');
+    await reloadChannel('lib_center');
   }
 
   /// 销毁所有定时器
