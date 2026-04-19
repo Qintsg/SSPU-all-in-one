@@ -7,7 +7,6 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
-import 'message_item.dart';
 
 /// 渠道分组类型
 enum ChannelGroup {
@@ -93,9 +92,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '教务管理通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 60,
-    defaultEnabled: true,
   ),
   ChannelConfig(
     id: 'itc',
@@ -103,9 +99,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '校园网与信息系统公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 60,
-    defaultEnabled: true,
   ),
   ChannelConfig(
     id: 'sports',
@@ -113,9 +106,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '体育活动与赛事通知',
     icon: FluentIcons.globe,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'security_dept',
@@ -123,9 +113,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '校园安全通知与公告',
     icon: FluentIcons.lock,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'construction',
@@ -133,9 +120,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '校区建设动态与公告',
     icon: FluentIcons.home,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'news_center',
@@ -143,9 +127,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '学校新闻与宣传报道',
     icon: FluentIcons.news,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 60,
-    defaultEnabled: true,
   ),
   ChannelConfig(
     id: 'student_affairs',
@@ -153,29 +134,6 @@ const List<ChannelConfig> departmentChannels = [
     description: '学生管理与服务通知',
     icon: FluentIcons.mail,
     group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 60,
-    defaultEnabled: true,
-  ),
-  ChannelConfig(
-    id: 'sspu_notice',
-    name: '学校通知公告',
-    description: '学校官网 — 通知公告',
-    icon: FluentIcons.megaphone,
-    group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 60,
-    defaultEnabled: true,
-  ),
-  ChannelConfig(
-    id: 'sspu_activity',
-    name: '学术活动讲座',
-    description: '学校官网 — 学术活动与讲座预告',
-    icon: FluentIcons.event,
-    group: ChannelGroup.department,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
 ];
 
@@ -189,9 +147,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_im',
@@ -199,9 +154,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_re',
@@ -209,9 +161,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.globe,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_em',
@@ -219,9 +168,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_ic',
@@ -229,9 +175,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_imhe',
@@ -239,9 +182,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_econ',
@@ -249,9 +189,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.database,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_lang',
@@ -259,9 +196,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.read,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_math',
@@ -269,9 +203,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_art',
@@ -279,9 +210,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.video,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_vte',
@@ -289,9 +217,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_vt',
@@ -299,9 +224,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_marx',
@@ -309,9 +231,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.library,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_ce',
@@ -319,9 +238,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'center_art_edu',
@@ -329,9 +245,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '中心通知与公告',
     icon: FluentIcons.video,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'center_intl',
@@ -339,9 +252,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '中心通知与公告',
     icon: FluentIcons.globe,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'center_innov',
@@ -349,9 +259,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '中心通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'graduate',
@@ -359,9 +266,6 @@ const List<ChannelConfig> teachingChannels = [
     description: '研究生管理通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'lib_center',
@@ -369,26 +273,19 @@ const List<ChannelConfig> teachingChannels = [
     description: '图书馆通知与服务公告',
     icon: FluentIcons.library,
     group: ChannelGroup.teaching,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
 ];
 
-// ==================== 微信渠道 ====================
+// ==================== 微信渠道（占位） ====================
 
-/// 微信渠道配置列表
-/// wechat_public 通过微信读书 API 获取已关注的公众号推文
+/// 微信渠道配置列表（目前仅占位）
 const List<ChannelConfig> wechatChannels = [
   ChannelConfig(
     id: 'wechat_public',
     name: '微信公众号',
-    description: '通过微信读书获取已关注公众号的推文',
+    description: '暂未接入',
     icon: FluentIcons.chat,
     group: ChannelGroup.wechat,
-    implemented: true,
-    defaultInterval: 120,
-    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'wechat_service',
@@ -398,42 +295,3 @@ const List<ChannelConfig> wechatChannels = [
     group: ChannelGroup.wechat,
   ),
 ];
-
-// ==================== 渠道子分类配置（tag3） ====================
-
-/// 渠道子分类定义
-/// 表示一个渠道下的具体内容分类（tag3），可独立启用/禁用
-class SubCategory {
-  /// 消息分类枚举值
-  final MessageCategory category;
-
-  /// 显示名称
-  final String name;
-
-  const SubCategory(this.category, this.name);
-}
-
-/// 渠道子分类映射 — 仅列出有多个子分类的渠道
-/// 单分类渠道不需要子开关，渠道主开关即可控制
-const Map<String, List<SubCategory>> channelSubcategories = {
-  'jwc': [
-    SubCategory(MessageCategory.jwcStudent, '学生专栏'),
-    SubCategory(MessageCategory.jwcTeacher, '教师专栏'),
-  ],
-  'sports': [
-    SubCategory(MessageCategory.sportsNotice, '通知公告'),
-    SubCategory(MessageCategory.sportsEvent, '赛事活动'),
-  ],
-  'security_dept': [
-    SubCategory(MessageCategory.securityNews, '安全动态'),
-    SubCategory(MessageCategory.securityEducation, '安全教育'),
-  ],
-  'construction': [
-    SubCategory(MessageCategory.constructionNews, '建设动态'),
-    SubCategory(MessageCategory.constructionNotice, '通知公告'),
-  ],
-  'student_affairs': [
-    SubCategory(MessageCategory.studentNews, '学生新闻'),
-    SubCategory(MessageCategory.studentNotice, '通知公告'),
-  ],
-};
