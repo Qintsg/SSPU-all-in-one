@@ -11,7 +11,9 @@ import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
 
 import '../models/message_item.dart';
-import '../services/sspu_news_service.dart';
+import '../models/channel_config.dart';
+import '../services/auto_refresh_service.dart';
+import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
 import 'webview_page.dart';
@@ -62,8 +64,47 @@ class _InfoPageState extends State<InfoPage> {
   /// 消息状态服务
   final MessageStateService _stateService = MessageStateService.instance;
 
-  /// 新闻抓取服务
-  final SspuNewsService _newsService = SspuNewsService.instance;
+  /// 自动刷新服务（用于手动全渠道刷新）
+  final AutoRefreshService _autoRefreshService = AutoRefreshService.instance;
+
+  /// 消息分类 → 渠道配置 ID 映射表，用于根据渠道开关过滤消息
+  static const Map<MessageCategory, String> _categoryToChannelId = {
+    MessageCategory.latestInfo: 'latest_info',
+    MessageCategory.notice: 'notice',
+    MessageCategory.jwcStudent: 'jwc',
+    MessageCategory.jwcTeacher: 'jwc',
+    MessageCategory.itcNews: 'itc',
+    MessageCategory.sspuNotice: 'sspu_notice',
+    MessageCategory.sspuActivity: 'sspu_activity',
+    MessageCategory.sportsNotice: 'sports',
+    MessageCategory.sportsEvent: 'sports',
+    MessageCategory.securityNews: 'security_dept',
+    MessageCategory.securityEducation: 'security_dept',
+    MessageCategory.constructionNews: 'construction',
+    MessageCategory.constructionNotice: 'construction',
+    MessageCategory.campusNews: 'news_center',
+    MessageCategory.studentNews: 'student_affairs',
+    MessageCategory.studentNotice: 'student_affairs',
+    MessageCategory.collegeCsNews: 'college_cs',
+    MessageCategory.collegeImNews: 'college_im',
+    MessageCategory.collegeReNews: 'college_re',
+    MessageCategory.collegeEmNews: 'college_em',
+    MessageCategory.collegeIcNews: 'college_ic',
+    MessageCategory.collegeImheNews: 'college_imhe',
+    MessageCategory.collegeEconNews: 'college_econ',
+    MessageCategory.collegeLangNews: 'college_lang',
+    MessageCategory.collegeMathNews: 'college_math',
+    MessageCategory.collegeArtNews: 'college_art',
+    MessageCategory.collegeVteNews: 'college_vte',
+    MessageCategory.collegeVtNews: 'college_vt',
+    MessageCategory.collegeMarxNews: 'college_marx',
+    MessageCategory.collegeCeNews: 'college_ce',
+    MessageCategory.centerArtEduNews: 'center_art_edu',
+    MessageCategory.centerIntlNews: 'center_intl',
+    MessageCategory.centerInnovNews: 'center_innov',
+    MessageCategory.graduateNews: 'graduate',
+    MessageCategory.libCenterNews: 'lib_center',
+  };
 
   @override
   void initState() {
@@ -89,7 +130,7 @@ class _InfoPageState extends State<InfoPage> {
     await _filterByEnabledChannels();
   }
 
-  /// 刷新官网消息：抓取新数据并与已有数据合并持久化
+  /// 刷新官网消息：抓取所有已启用渠道的新数据并与已有数据合并持久化
   /// [maxCount] 每个栏目获取的条数，null 则弹出输入框
   Future<void> _refreshSchoolWebsite({int? maxCount}) async {
     // 弹出条数选择对话框
@@ -99,23 +140,10 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
-      final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
-      final noticeEnabled = await _stateService.isNoticeEnabled();
-
-      // 并行获取启用的栏目
-      final futures = <Future<List<MessageItem>>>[];
-      if (latestInfoEnabled) {
-        futures.add(_newsService.fetchLatestInfo(maxCount: count));
-      }
-      if (noticeEnabled) {
-        futures.add(_newsService.fetchNotices(maxCount: count));
-      }
-
-      final results = await Future.wait(futures);
-      final newMessages = <MessageItem>[];
-      for (final messages in results) {
-        newMessages.addAll(messages);
-      }
+      // 通过 AutoRefreshService 抓取所有已启用渠道的消息
+      final newMessages = await _autoRefreshService.fetchAllEnabledNow(
+        maxCount: count,
+      );
 
       // 与已有消息合并（不丢失旧数据）
       final merged = _stateService.mergeMessages(_allMessages, newMessages);
@@ -136,28 +164,55 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   /// 根据渠道开关过滤消息并排序
+  /// 通过 _categoryToChannelId 映射表统一检查所有渠道的启用状态
   Future<void> _filterByEnabledChannels() async {
-    final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
-    final noticeEnabled = await _stateService.isNoticeEnabled();
+    // 预加载所有渠道的启用状态，避免逾历每条消息时重复读取存储
+    final allConfigs = [...departmentChannels, ...teachingChannels];
+    final enabledCache = <String, bool>{};
+    for (final config in allConfigs) {
+      enabledCache[config.id] = await _stateService.isChannelEnabled(
+        config.id,
+        defaultValue: config.defaultEnabled,
+      );
+    }
+
+    // 预加载子分类启用状态（仅有多子分类的渠道）
+    final categoryEnabledCache = <String, bool>{};
+    for (final entry in channelSubcategories.entries) {
+      for (final sub in entry.value) {
+        categoryEnabledCache[sub.category.name] =
+            await _stateService.isCategoryEnabled(sub.category.name);
+      }
+    }
+
+    // 微信渠道单独检查（使用专有方法）
     final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
     final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
 
     // 过滤掉已关闭渠道的消息
     _allMessages.removeWhere((msg) {
-      if (msg.category == MessageCategory.latestInfo && !latestInfoEnabled) {
-        return true;
+      // 微信渠道按 sourceType 判断
+      if (msg.sourceType == MessageSourceType.wechatPublic) {
+        return !wechatPublicEnabled;
       }
-      if (msg.category == MessageCategory.notice && !noticeEnabled) {
-        return true;
+      if (msg.sourceType == MessageSourceType.wechatService) {
+        return !wechatServiceEnabled;
       }
-      if (msg.sourceType == MessageSourceType.wechatPublic &&
-          !wechatPublicEnabled) {
-        return true;
+
+      // 其他渠道按 category → channelId 映射判断
+      final channelId = _categoryToChannelId[msg.category];
+      if (channelId != null) {
+        // 渠道级检查 — 渠道关闭则直接过滤
+        if (!(enabledCache[channelId] ?? false)) return true;
+        // 子分类级检查 — 渠道启用但子分类关闭时过滤
+        final catName = msg.category.name;
+        if (categoryEnabledCache.containsKey(catName)) {
+          return !categoryEnabledCache[catName]!;
+        }
+        return false;
       }
-      if (msg.sourceType == MessageSourceType.wechatService &&
-          !wechatServiceEnabled) {
-        return true;
-      }
+
+      // 未在映射表中的分类保留显示
       return false;
     });
 
@@ -180,7 +235,7 @@ class _InfoPageState extends State<InfoPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('输入每个栏目要获取的消息条数，留空默认 20 条。'),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluentSpacing.m),
               TextBox(
                 controller: controller,
                 placeholder: '20',
@@ -300,15 +355,15 @@ class _InfoPageState extends State<InfoPage> {
           children: [
             // ==================== 操作栏 ====================
             _buildActionBar(theme),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluentSpacing.m),
 
             // ==================== 搜索栏 ====================
             _buildSearchBar(theme),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluentSpacing.s),
 
             // ==================== 筛选栏 ====================
             _buildFilterBar(theme, isDark),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluentSpacing.m),
 
             // ==================== 消息列表 ====================
             Expanded(
@@ -324,7 +379,7 @@ class _InfoPageState extends State<InfoPage> {
                                 size: 48,
                                 color: theme.resources.textFillColorSecondary,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: FluentSpacing.m),
                               Text(
                                 '暂无消息',
                                 style: theme.typography.body?.copyWith(
@@ -332,7 +387,7 @@ class _InfoPageState extends State<InfoPage> {
                                       theme.resources.textFillColorSecondary,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: FluentSpacing.s),
                               Text(
                                 '点击上方刷新按钮获取最新消息',
                                 style: theme.typography.caption?.copyWith(
@@ -348,9 +403,9 @@ class _InfoPageState extends State<InfoPage> {
 
             // ==================== 分页栏 ====================
             if (_filteredMessages.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: FluentSpacing.s),
               _buildPagination(theme),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluentSpacing.m),
             ],
           ],
         ),
@@ -375,7 +430,7 @@ class _InfoPageState extends State<InfoPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(FluentIcons.read, size: 14),
-              const SizedBox(width: 6),
+              const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
               Text('全部标为已读${unreadCount > 0 ? ' ($unreadCount)' : ''}'),
             ],
           ),
@@ -387,7 +442,7 @@ class _InfoPageState extends State<InfoPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(FluentIcons.refresh, size: 14),
-              SizedBox(width: 6),
+              SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
               Text('刷新官网消息'),
             ],
           ),
@@ -399,7 +454,7 @@ class _InfoPageState extends State<InfoPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(FluentIcons.refresh, size: 14),
-              SizedBox(width: 6),
+              SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
               Text('刷新微信公众号/服务号消息'),
             ],
           ),
@@ -671,14 +726,26 @@ class _InfoPageState extends State<InfoPage> {
               ? () => setState(() => _currentPage--)
               : null,
         ),
-        const SizedBox(width: 8),
-        // 页码信息
-        Text(
-          '第 ${_currentPage + 1} / $_totalPages 页  '
-          '(共 ${_filteredMessages.length} 条)',
-          style: theme.typography.caption,
+        const SizedBox(width: FluentSpacing.s),
+        // 页码信息（可点击弹出跳转输入框）
+        Tooltip(
+          message: '点击跳转到指定页',
+          child: HoverButton(
+            onPressed: () => _showPageJumpDialog(),
+            builder: (context, states) {
+              return Text(
+                '第 ${_currentPage + 1} / $_totalPages 页  '
+                '(共 ${_filteredMessages.length} 条)',
+                style: theme.typography.caption?.copyWith(
+                  decoration: states.isHovered
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                ),
+              );
+            },
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: FluentSpacing.s),
         // 下一页
         IconButton(
           icon: const Icon(FluentIcons.chevron_right, size: 12),
@@ -688,5 +755,58 @@ class _InfoPageState extends State<InfoPage> {
         ),
       ],
     );
+  }
+
+  /// 弹出页码跳转对话框
+  /// 用户输入目标页码后直接跳转
+  Future<void> _showPageJumpDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => ContentDialog(
+        title: const Text('跳转到指定页'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('当前第 ${_currentPage + 1} 页，共 $_totalPages 页'),
+            const SizedBox(height: FluentSpacing.s),
+            TextBox(
+              controller: controller,
+              placeholder: '输入页码 (1-$_totalPages)',
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              onSubmitted: (_) {
+                // 回车确认
+                final page = int.tryParse(controller.text);
+                if (page != null && page >= 1 && page <= _totalPages) {
+                  Navigator.of(ctx).pop(page - 1);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          Button(
+            child: const Text('取消'),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          FilledButton(
+            child: const Text('跳转'),
+            onPressed: () {
+              final page = int.tryParse(controller.text);
+              if (page != null && page >= 1 && page <= _totalPages) {
+                Navigator.of(ctx).pop(page - 1);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    // 执行跳转
+    if (result != null && mounted) {
+      setState(() => _currentPage = result);
+    }
   }
 }

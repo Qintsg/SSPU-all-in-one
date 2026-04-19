@@ -8,6 +8,7 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import '../models/message_item.dart';
+import '../theme/fluent_tokens.dart';
 
 /// 单条消息列表项组件
 /// 展示消息标题、标签、日期、已读/未读状态、操作按钮
@@ -57,14 +58,14 @@ class MessageTile extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: FluentSpacing.s + FluentSpacing.xxs, horizontal: FluentSpacing.m),
           decoration: BoxDecoration(
             color: isHovered
                 ? (isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.black.withValues(alpha: 0.02))
+                    ? FluentDarkColors.hoverFill
+                    : FluentLightColors.hoverFill)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(FluentRadius.large),
           ),
           child: Row(
             children: [
@@ -72,10 +73,14 @@ class MessageTile extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                margin: const EdgeInsets.only(right: 10),
+                margin: const EdgeInsets.only(right: FluentSpacing.s + FluentSpacing.xxs),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isRead ? Colors.transparent : Colors.blue,
+                  color: isRead
+                      ? Colors.transparent
+                      : (isDark
+                          ? FluentDarkColors.unreadIndicator
+                          : FluentLightColors.unreadIndicator),
                 ),
               ),
 
@@ -91,7 +96,7 @@ class MessageTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
                     // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类
                     Wrap(
                       spacing: 6,
@@ -115,7 +120,7 @@ class MessageTile extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: FluentSpacing.m),
 
               // 右侧：日期 + 操作按钮
               Column(
@@ -129,7 +134,7 @@ class MessageTile extends StatelessWidget {
                       color: theme.resources.textFillColorSecondary,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
                   // 操作按钮行
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -145,7 +150,7 @@ class MessageTile extends StatelessWidget {
                           onPressed: onTap,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: FluentSpacing.xs),
                       // 标为已读按钮
                       if (!isRead)
                         Tooltip(
@@ -177,7 +182,7 @@ class MessageTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: isDark ? 0.2 : 0.1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(FluentRadius.medium),
       ),
       child: Text(
         text,

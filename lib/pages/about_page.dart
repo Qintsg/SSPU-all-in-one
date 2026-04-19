@@ -8,6 +8,7 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/fluent_tokens.dart';
 import 'agreement_page.dart';
 
 /// 使用/参考的开源项目列表
@@ -24,6 +25,12 @@ const List<_OpenSourceProject> _openSourceProjects = [
     description: 'Fluent Design 组件库',
     license: 'BSD-3-Clause',
     url: 'https://pub.dev/packages/fluent_ui',
+  ),
+  _OpenSourceProject(
+    name: 'Fluent 2 Design System',
+    description: '微软 Fluent 2 设计系统，本项目 Token 体系参考来源',
+    license: 'MIT',
+    url: 'https://fluent2.microsoft.design',
   ),
   _OpenSourceProject(
     name: 'shared_preferences',
@@ -131,8 +138,8 @@ class AboutPage extends StatelessWidget {
                 height: 96,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFF3F3F3),
+                      ? FluentDarkColors.backgroundSecondary
+                      : FluentLightColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Image.asset(
@@ -141,17 +148,17 @@ class AboutPage extends StatelessWidget {
                   height: 96,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: FluentSpacing.l),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('SSPU All-in-One', style: typography.subtitle),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: FluentSpacing.xs),
                     Text('版本 0.0.1-alpha', style: typography.caption),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: FluentSpacing.l),
                     _buildInfoRow(context, '著作人', 'Qintsg'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: FluentSpacing.s),
                     _buildInfoRow(context, '许可证', 'MIT License'),
                   ],
                 ),
@@ -159,7 +166,7 @@ class AboutPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 操作按钮
         Card(
@@ -188,11 +195,11 @@ class AboutPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 开源项目列表
         Text('使用/参考的开源项目', style: typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Card(
           child: Column(
             children: _openSourceProjects.asMap().entries.map((entry) {
@@ -243,7 +250,7 @@ class AboutPage extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, size: 20),
-              const SizedBox(width: 12),
+              const SizedBox(width: FluentSpacing.m),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

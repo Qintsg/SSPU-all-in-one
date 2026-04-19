@@ -9,6 +9,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import '../models/message_item.dart';
 import '../services/message_state_service.dart';
+import '../theme/fluent_tokens.dart';
+import '../widgets/responsive_layout.dart';
 import 'webview_page.dart';
 
 /// 主页
@@ -45,8 +47,23 @@ class _HomePageState extends State<HomePage> {
     final theme = FluentTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return ScaffoldPage.scrollable(
+    return ResponsiveBuilder(
+      builder: (context, deviceType, constraints) {
+        // 根据设备类型调整页面边距与磁贴尺寸
+        final pagePadding = switch (deviceType) {
+          DeviceType.phone => FluentSpacing.m,
+          DeviceType.tablet => FluentSpacing.xl,
+          DeviceType.desktop => FluentSpacing.xxl,
+        };
+        final tileWidth = switch (deviceType) {
+          DeviceType.phone => 110.0,
+          DeviceType.tablet => 130.0,
+          DeviceType.desktop => 140.0,
+        };
+
+        return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('主页')),
+      padding: EdgeInsets.all(pagePadding),
       children: [
         // 欢迎卡片
         Card(
@@ -64,9 +81,9 @@ class _HomePageState extends State<HomePage> {
                       decoration: BoxDecoration(
                         // 根据主题亮暗自适应背景色
                         color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : const Color(0xFFF3F3F3),
-                        borderRadius: BorderRadius.circular(12),
+                            ? FluentDarkColors.backgroundSecondary
+                            : FluentLightColors.backgroundSecondary,
+                        borderRadius: BorderRadius.circular(FluentRadius.xxLarge),
                       ),
                       child: Image.asset(
                         'assets/images/logo.png',
@@ -74,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                         height: 80,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: FluentSpacing.l),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +100,7 @@ class _HomePageState extends State<HomePage> {
                             '欢迎使用 SSPU All-in-One',
                             style: theme.typography.subtitle,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: FluentSpacing.s),
                           Text(
                             '上海第二工业大学校园综合服务应用',
                             style: theme.typography.bodyLarge,
@@ -98,50 +115,52 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        const SizedBox(height: 16),
-
-        // 功能快捷入口区域
+        const SizedBox(height: FluentSpacing.l),
         Text('快捷功能', style: theme.typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: FluentSpacing.m,
+          runSpacing: FluentSpacing.m,
           children: [
             _FeatureTile(
               icon: FluentIcons.education,
               label: '课表查询',
               color: Colors.blue,
+              width: tileWidth,
             ),
             _FeatureTile(
               icon: FluentIcons.certificate,
               label: '成绩查询',
               color: Colors.teal,
+              width: tileWidth,
             ),
             _FeatureTile(
               icon: FluentIcons.calendar,
               label: '考试安排',
               color: Colors.orange,
+              width: tileWidth,
             ),
             _FeatureTile(
               icon: FluentIcons.news,
               label: '校园公告',
               color: Colors.purple,
+              width: tileWidth,
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluentSpacing.l),
 
         // 最新消息
         Text('最新消息', style: theme.typography.bodyStrong),
-        const SizedBox(height: 8),
+        const SizedBox(height: FluentSpacing.s),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(FluentSpacing.l),
             child: _latestMessages.isEmpty
                 ? Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      padding: const EdgeInsets.symmetric(vertical: FluentSpacing.xl),
                       child: Text(
                         '暂无消息，开启信息渠道并等待自动刷新后将在此显示',
                         style: theme.typography.caption,
@@ -160,6 +179,8 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
+    );
+      },
     );
   }
 
@@ -225,11 +246,14 @@ class _FeatureTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final AccentColor color;
+  /// 磁贴宽度（响应式调整）
+  final double width;
 
   const _FeatureTile({
     required this.icon,
     required this.label,
     required this.color,
+    this.width = 140,
   });
 
   @override
@@ -244,27 +268,27 @@ class _FeatureTile extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          width: 140,
-          padding: const EdgeInsets.all(16),
+          width: width,
+          padding: const EdgeInsets.all(FluentSpacing.l),
           decoration: BoxDecoration(
             color: isHovered
                 ? color.withValues(alpha: isDark ? 0.15 : 0.08)
                 : isDark
-                    ? Colors.white.withValues(alpha: 0.04)
+                    ? FluentDarkColors.hoverFill
                     : Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(FluentRadius.xLarge),
             border: Border.all(
               color: isHovered
                   ? color.withValues(alpha: 0.3)
                   : isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : const Color(0xFFE0E0E0),
+                      ? FluentDarkColors.borderSubtle
+                      : FluentLightColors.borderSubtle,
             ),
           ),
           child: Column(
             children: [
               Icon(icon, size: 28, color: color),
-              const SizedBox(height: 8),
+              const SizedBox(height: FluentSpacing.s),
               Text(
                 label,
                 style: theme.typography.body?.copyWith(
