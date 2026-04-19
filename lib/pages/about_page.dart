@@ -27,6 +27,12 @@ const List<_OpenSourceProject> _openSourceProjects = [
     url: 'https://pub.dev/packages/fluent_ui',
   ),
   _OpenSourceProject(
+    name: 'Fluent 2 Design System',
+    description: '微软 Fluent 2 设计系统，本项目 Token 体系参考来源',
+    license: 'MIT',
+    url: 'https://fluent2.microsoft.design',
+  ),
+  _OpenSourceProject(
     name: 'shared_preferences',
     description: '本地持久化存储',
     license: 'BSD-3-Clause',
