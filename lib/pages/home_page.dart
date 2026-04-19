@@ -7,11 +7,38 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import '../models/message_item.dart';
+import '../services/message_state_service.dart';
+import 'webview_page.dart';
 
 /// 主页
-/// 展示校园信息摘要、快捷入口、公告等内容
-class HomePage extends StatelessWidget {
+/// 展示校园信息摘要、快捷入口、最新消息等内容
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  /// 最新消息列表（最多 5 条）
+  List<MessageItem> _latestMessages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLatestMessages();
+  }
+
+  /// 从本地存储加载消息并取前 5 条
+  Future<void> _loadLatestMessages() async {
+    final all = await MessageStateService.instance.loadMessages();
+    // 按日期降序排列，取前 5 条
+    all.sort((a, b) => b.date.compareTo(a.date));
+    if (mounted) {
+      setState(() => _latestMessages = all.take(5).toList());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,66 +132,90 @@ class HomePage extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // 校园公告占位
-        Text('最新公告', style: theme.typography.bodyStrong),
+        // 最新消息
+        Text('最新消息', style: theme.typography.bodyStrong),
         const SizedBox(height: 8),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAnnouncementItem(
-                  context,
-                  title: '欢迎使用 SSPU All-in-One',
-                  date: '系统通知',
-                  summary: '本应用旨在将教务查询、校园公告、常用链接等功能集成于一体，提供便捷的校园服务体验。',
-                ),
-                const Divider(),
-                _buildAnnouncementItem(
-                  context,
-                  title: '功能持续开发中',
-                  date: '开发日志',
-                  summary: '教务中心、信息中心等核心功能正在开发，敬请期待。',
-                ),
-              ],
-            ),
+            child: _latestMessages.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        '暂无消息，开启信息渠道并等待自动刷新后将在此显示',
+                        style: theme.typography.caption,
+                      ),
+                    ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < _latestMessages.length; i++) ...[
+                        if (i > 0) const Divider(),
+                        _buildMessageItem(context, _latestMessages[i]),
+                      ],
+                    ],
+                  ),
           ),
         ),
       ],
     );
   }
 
-  /// 构建单条公告项
-  Widget _buildAnnouncementItem(
-    BuildContext context, {
-    required String title,
-    required String date,
-    required String summary,
-  }) {
+  /// 构建单条消息项（点击跳转内嵌 WebView）
+  Widget _buildMessageItem(BuildContext context, MessageItem msg) {
     final theme = FluentTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return HoverButton(
+      onPressed: () {
+        // 标记已读并跳转内嵌 WebView
+        MessageStateService.instance.markAsRead(msg.id);
+        Navigator.of(context).push(
+          FluentPageRoute(
+            builder: (_) => WebViewPage(
+              url: msg.url,
+              initialTitle: msg.title,
+            ),
+          ),
+        );
+      },
+      builder: (context, states) {
+        final isHovered = states.isHovered;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          decoration: BoxDecoration(
+            color: isHovered
+                ? theme.resources.subtleFillColorSecondary
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(title, style: theme.typography.bodyStrong),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(msg.title, style: theme.typography.bodyStrong),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${msg.category.label} · ${msg.sourceName.label}',
+                      style: theme.typography.caption,
+                    ),
+                  ],
+                ),
               ),
               Text(
-                date,
+                msg.date,
                 style: theme.typography.caption?.copyWith(
                   color: theme.resources.textFillColorSecondary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(summary, style: theme.typography.body),
-        ],
-      ),
+        );
+      },
     );
   }
 }
