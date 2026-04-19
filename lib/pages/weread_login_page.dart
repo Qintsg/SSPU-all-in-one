@@ -1,6 +1,6 @@
 /*
  * 微信读书扫码登录页 — 内嵌 WebView 实现免手动粘贴 Cookie
- * 用户通过微信扫码完成登录后，自动提取浏览器 Cookie 并保存
+ * 使用 flutter_inappwebview 实现跨平台 Cookie 提取（含 HttpOnly）
  * @Project : SSPU-all-in-one
  * @File : weread_login_page.dart
  * @Author : Qintsg
@@ -8,8 +8,9 @@
  */
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:webview_windows/webview_windows.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../services/weread_auth_service.dart';
 import '../theme/fluent_tokens.dart';
@@ -21,22 +22,22 @@ const String _wereadLoginUrl = 'https://weread.qq.com/#login';
 const String _wereadHomePrefix = 'https://weread.qq.com/web/shelf';
 
 /// 微信读书扫码登录页面
-/// 加载微信读书 Web 版登录页，用户扫码后自动提取 Cookie
+/// 加载微信读书 Web 版登录页，用户扫码后通过原生 CookieManager 提取 Cookie
 class WereadLoginPage extends StatefulWidget {
-  const WereadLoginPage({super.key});
+  /// Windows 平台需要的 WebViewEnvironment（由外部传入或内部创建）
+  final WebViewEnvironment? webViewEnvironment;
+
+  const WereadLoginPage({super.key, this.webViewEnvironment});
 
   @override
   State<WereadLoginPage> createState() => _WereadLoginPageState();
 }
 
 class _WereadLoginPageState extends State<WereadLoginPage> {
-  /// WebView 控制器
-  final WebviewController _controller = WebviewController();
+  /// InAppWebView 控制器
+  InAppWebViewController? _controller;
 
-  /// 各 stream 订阅
-  final List<StreamSubscription> _subscriptions = [];
-
-  /// WebView 是否初始化完成
+  /// WebView 是否已创建
   bool _isReady = false;
 
   /// 初始化是否失败
@@ -51,48 +52,8 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
   /// Cookie 提取结果
   _CookieResult? _result;
 
-  @override
-  void initState() {
-    super.initState();
-    _initWebView();
-  }
-
-  /// 初始化 WebView 并加载登录页
-  /// 监听 URL 变化以检测登录成功
-  Future<void> _initWebView() async {
-    try {
-      await _controller.initialize();
-
-      // 监听标题变化
-      _subscriptions.add(
-        _controller.title.listen((newTitle) {
-          if (mounted && newTitle.isNotEmpty) {
-            setState(() => _title = newTitle);
-          }
-        }),
-      );
-
-      // 监听 URL 变化 — 登录成功后会跳转到书架页
-      _subscriptions.add(
-        _controller.url.listen((newUrl) {
-          if (mounted) {
-            // 检测是否已跳转到登录后页面
-            _checkLoginSuccess(newUrl);
-          }
-        }),
-      );
-
-      await _controller.loadUrl(_wereadLoginUrl);
-
-      if (mounted) {
-        setState(() => _isReady = true);
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() => _initFailed = true);
-      }
-    }
-  }
+  /// 最大重试次数（每次间隔递增，覆盖 Cookie 延迟写入场景）
+  static const int _maxRetries = 5;
 
   /// 检测 URL 变化判断登录是否成功
   /// 微信读书登录成功后会从 #login 跳转到 /web/shelf 等页面
@@ -112,44 +73,74 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
     }
   }
 
-  /// 通过 executeScript 提取 document.cookie 并保存
-  /// 注意：HttpOnly 的 Cookie 无法通过 JS 获取，但 wr_skey/wr_vid 通常可访问
+  /// 通过原生 CookieManager 提取所有 Cookie（含 HttpOnly）并保存
+  /// flutter_inappwebview 的 CookieManager 使用平台原生 API：
+  /// - Windows: ICoreWebView2CookieManager
+  /// - Android: android.webkit.CookieManager
+  /// - iOS/macOS: WKHTTPCookieStore
+  /// 均可获取 HttpOnly cookie（如 wr_skey、wr_vid）
   Future<void> _extractCookies() async {
     if (_extracting) return;
     setState(() => _extracting = true);
 
     try {
-      // 等待一小段时间确保 Cookie 已完全写入
-      await Future.delayed(const Duration(milliseconds: 1500));
+      final cookieManager = CookieManager.instance();
+      final wereadUrl = WebUri('https://weread.qq.com/');
+      String? lastCookieStr;
 
-      // 执行 JS 获取 document.cookie
-      final cookieString = await _controller.executeScript('document.cookie');
-      if (cookieString == null || cookieString.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _extracting = false;
-            _result = _CookieResult(
-              success: false,
-              message: 'Cookie 为空，可能因 HttpOnly 限制无法获取',
-            );
-          });
+      for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+        // 递增等待：1s, 2s, 3s... 确保 Cookie 完全写入
+        await Future.delayed(Duration(seconds: attempt));
+        if (!mounted) return;
+
+        // 通过原生 API 获取所有 Cookie（含 HttpOnly）
+        final cookies = await cookieManager.getCookies(
+          url: wereadUrl,
+          webViewController: _controller,
+        );
+
+        // 组装 Cookie 字符串
+        final cookieStr = cookies
+            .map((c) => '${c.name}=${c.value}')
+            .join('; ');
+        lastCookieStr = cookieStr;
+
+        // 检查关键字段
+        final hasKey = cookies.any((c) => c.name == 'wr_skey');
+        final hasVid = cookies.any((c) => c.name == 'wr_vid');
+
+        if (hasKey && hasVid) {
+          // 关键字段就绪，保存到本地
+          final saved =
+              await WereadAuthService.instance.saveCookies(cookieStr);
+          if (saved && mounted) {
+            setState(() {
+              _extracting = false;
+              _result = _CookieResult(
+                success: true,
+                message: 'Cookie 提取并保存成功！',
+              );
+            });
+            return;
+          }
         }
-        return;
       }
 
-      // 清理返回值（executeScript 可能返回带引号的字符串）
-      final cleaned = _cleanJsResult(cookieString);
-
-      // 保存 Cookie
-      final saved = await WereadAuthService.instance.saveCookies(cleaned);
+      // 所有重试均未获取到完整 Cookie
       if (mounted) {
+        // 诊断信息：列出实际获取到的 Cookie 键名
+        final keys = (lastCookieStr ?? '')
+            .split(';')
+            .map((p) => p.trim().split('=').first)
+            .where((k) => k.isNotEmpty)
+            .toList();
+        final keyInfo = keys.isEmpty ? '无' : keys.join(', ');
         setState(() {
           _extracting = false;
           _result = _CookieResult(
-            success: saved,
-            message: saved
-                ? 'Cookie 提取并保存成功！'
-                : 'Cookie 缺少必要字段（wr_skey 或 wr_vid），请确认已完整登录',
+            success: false,
+            message: '未获取到 wr_skey/wr_vid（已获取字段：$keyInfo）。'
+                '请确认已完成微信扫码并等待页面跳转到书架',
           );
         });
       }
@@ -166,31 +157,6 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
     }
   }
 
-  /// 清理 executeScript 返回的 JS 字符串
-  /// WebView2 的 executeScript 返回值可能被 JSON 编码（带外层引号）
-  String _cleanJsResult(String raw) {
-    var result = raw.trim();
-    // 移除外层 JSON 引号
-    if (result.startsWith('"') && result.endsWith('"')) {
-      result = result.substring(1, result.length - 1);
-    }
-    // 反转义
-    result = result
-        .replaceAll(r'\"', '"')
-        .replaceAll(r'\\', r'\')
-        .replaceAll(r'\/', '/');
-    return result;
-  }
-
-  @override
-  void dispose() {
-    for (final sub in _subscriptions) {
-      sub.cancel();
-    }
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
@@ -202,7 +168,7 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
         commandBar: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 显示提取状态
+            // 提取状态指示
             if (_extracting)
               const Padding(
                 padding: EdgeInsets.only(right: 12),
@@ -246,18 +212,22 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
                   ],
                 ),
               ),
-            // 手动提取按钮（登录后未自动提取成功时备用）
-            if (_isReady && _result == null && !_extracting)
+            // 手动提取按钮（失败后也可重试）
+            if (_isReady && !_extracting)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Button(
-                  onPressed: _extractCookies,
-                  child: const Text('手动提取 Cookie'),
+                  onPressed: () {
+                    setState(() => _result = null);
+                    _extractCookies();
+                  },
+                  child: Text(_result == null ? '手动提取 Cookie' : '重试提取'),
                 ),
               ),
             // 返回按钮
             Button(
-              onPressed: () => Navigator.of(context).pop(_result?.success ?? false),
+              onPressed: () =>
+                  Navigator.of(context).pop(_result?.success ?? false),
               child: Text(_result?.success == true ? '完成' : '返回'),
             ),
           ],
@@ -288,15 +258,9 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
       );
     }
 
-    // 加载中
-    if (!_isReady) {
-      return const Center(child: ProgressRing());
-    }
-
-    // WebView 主体 + 底部提示
     return Column(
       children: [
-        // 提取成功后的结果横幅
+        // 提取成功/失败横幅
         if (_result != null)
           Container(
             width: double.infinity,
@@ -316,9 +280,51 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
               ),
             ),
           ),
-        // WebView 区域
+        // WebView 区域 — 使用 InAppWebView 跨平台实现
         Expanded(
-          child: Webview(_controller),
+          child: InAppWebView(
+            webViewEnvironment: widget.webViewEnvironment,
+            initialUrlRequest: URLRequest(url: WebUri(_wereadLoginUrl)),
+            initialSettings: InAppWebViewSettings(
+              // 启用 JS 支持（微信读书登录页必需）
+              javaScriptEnabled: true,
+              // 开发模式下启用检查器
+              isInspectable: kDebugMode,
+              // 桌面端模拟浏览器 UA，避免被识别为 WebView
+              userAgent:
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            ),
+            onWebViewCreated: (controller) {
+              _controller = controller;
+              if (mounted) {
+                setState(() => _isReady = true);
+              }
+            },
+            onTitleChanged: (controller, title) {
+              if (mounted && title != null && title.isNotEmpty) {
+                setState(() => _title = title);
+              }
+            },
+            onUpdateVisitedHistory: (controller, url, isReload) {
+              // 检测 URL 变化判断登录成功
+              if (url != null && mounted) {
+                _checkLoginSuccess(url.toString());
+              }
+            },
+            onLoadStop: (controller, url) {
+              // 页面加载完成后也检测一次
+              if (url != null && mounted) {
+                _checkLoginSuccess(url.toString());
+              }
+            },
+            onReceivedError: (controller, request, error) {
+              // 仅主框架加载失败时标记
+              if (request.isForMainFrame == true && mounted) {
+                setState(() => _initFailed = true);
+              }
+            },
+          ),
         ),
         // 底部操作提示
         Container(
