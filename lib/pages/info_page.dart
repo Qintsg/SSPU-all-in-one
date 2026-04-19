@@ -31,9 +31,6 @@ class _InfoPageState extends State<InfoPage> {
   /// 经过搜索和筛选后的消息
   List<MessageItem> _filteredMessages = [];
 
-  /// 是否已经执行过首次自动刷新
-  bool _hasAutoRefreshed = false;
-
   /// 是否正在加载
   bool _isLoading = false;
 
@@ -79,17 +76,19 @@ class _InfoPageState extends State<InfoPage> {
     super.dispose();
   }
 
-  /// 初始化状态服务，首次进入时自动刷新
+  /// 初始化状态服务，从本地存储加载消息并根据渠道开关过滤显示
   Future<void> _initAndLoad() async {
     await _stateService.init();
-    // 仅首次进入信息中心时自动弹出刷新对话框
-    if (!_hasAutoRefreshed) {
-      _hasAutoRefreshed = true;
-      await _refreshSchoolWebsite();
-    }
+    // 从本地存储加载已有消息，不弹刷新对话框
+    final persisted = await _stateService.loadMessages();
+    _allMessages
+      ..clear()
+      ..addAll(persisted);
+    // 根据渠道开关过滤并排序
+    await _filterByEnabledChannels();
   }
 
-  /// 刷新官网消息（根据渠道开关加载启用的栏目）
+  /// 刷新官网消息：抓取新数据并与已有数据合并持久化
   /// [maxCount] 每个栏目获取的条数，null 则弹出输入框
   Future<void> _refreshSchoolWebsite({int? maxCount}) async {
     // 弹出条数选择对话框
@@ -99,11 +98,6 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 清除旧的官网消息
-      _allMessages.removeWhere(
-        (msg) => msg.sourceType == MessageSourceType.schoolWebsite,
-      );
-
       final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
       final noticeEnabled = await _stateService.isNoticeEnabled();
 
@@ -117,18 +111,58 @@ class _InfoPageState extends State<InfoPage> {
       }
 
       final results = await Future.wait(futures);
+      final newMessages = <MessageItem>[];
       for (final messages in results) {
-        _allMessages.addAll(messages);
+        newMessages.addAll(messages);
       }
 
-      // 按日期倒序排列
-      _allMessages.sort((a, b) => b.date.compareTo(a.date));
-      _applyFilters();
+      // 与已有消息合并（不丢失旧数据）
+      final merged = _stateService.mergeMessages(_allMessages, newMessages);
+      _allMessages
+        ..clear()
+        ..addAll(merged);
+
+      // 持久化合并后的全部消息
+      await _stateService.saveMessages(_allMessages);
+
+      // 根据渠道开关过滤并排序
+      await _filterByEnabledChannels();
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// 根据渠道开关过滤消息并排序
+  Future<void> _filterByEnabledChannels() async {
+    final latestInfoEnabled = await _stateService.isLatestInfoEnabled();
+    final noticeEnabled = await _stateService.isNoticeEnabled();
+    final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
+    final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
+
+    // 过滤掉已关闭渠道的消息
+    _allMessages.removeWhere((msg) {
+      if (msg.category == MessageCategory.latestInfo && !latestInfoEnabled) {
+        return true;
+      }
+      if (msg.category == MessageCategory.notice && !noticeEnabled) {
+        return true;
+      }
+      if (msg.sourceType == MessageSourceType.wechatPublic &&
+          !wechatPublicEnabled) {
+        return true;
+      }
+      if (msg.sourceType == MessageSourceType.wechatService &&
+          !wechatServiceEnabled) {
+        return true;
+      }
+      return false;
+    });
+
+    // 按日期倒序排列
+    _allMessages.sort((a, b) => b.date.compareTo(a.date));
+    _applyFilters();
   }
 
   /// 弹出获取条数输入对话框

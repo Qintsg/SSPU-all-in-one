@@ -521,6 +521,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setLatestInfoEnabled(value);
                     setState(() => _latestInfoEnabled = value);
+                    _showChannelChangedTip(value, '最新公开信息');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -533,6 +534,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setNoticeEnabled(value);
                     setState(() => _noticeEnabled = value);
+                    _showChannelChangedTip(value, '通知公示');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -545,6 +547,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setWechatPublicEnabled(value);
                     setState(() => _wechatPublicEnabled = value);
+                    _showChannelChangedTip(value, '微信公众号');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -557,6 +560,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (value) async {
                     await _messageState.setWechatServiceEnabled(value);
                     setState(() => _wechatServiceEnabled = value);
+                    _showChannelChangedTip(value, '微信服务号');
                   },
                 ),
               ],
@@ -600,6 +604,30 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+
+  /// 渠道开关变更时显示提示栏
+  /// [enabled] 是否启用
+  /// [channelName] 渠道名称
+  void _showChannelChangedTip(bool enabled, String channelName) {
+    final message = enabled
+        ? '已启用「$channelName」，请到信息中心刷新获取该渠道消息'
+        : '已关闭「$channelName」，该渠道消息将不再显示';
+    displayInfoBar(
+      context,
+      builder: (context, close) {
+        return InfoBar(
+          title: Text(message),
+          severity: enabled
+              ? InfoBarSeverity.success
+              : InfoBarSeverity.warning,
+          action: IconButton(
+            icon: const Icon(FluentIcons.clear),
+            onPressed: close,
+          ),
+        );
+      },
     );
   }
 }
