@@ -58,6 +58,9 @@ class _SettingsPageState extends State<SettingsPage> {
   int _dndEndHour = 7;
   int _dndEndMinute = 0;
 
+  /// 当前选中的设置分区索引（0=安全 1=窗口行为 2=信息渠道 3=消息推送）
+  int _selectedTab = 0;
+
   /// 消息状态服务引用
   final MessageStateService _messageState = MessageStateService.instance;
 
@@ -465,10 +468,34 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     }
 
-    return ScaffoldPage.scrollable(
+    return ScaffoldPage(
       header: const PageHeader(title: Text('设置')),
-      children: [
-        // 密码保护设置卡片
+      content: Column(
+        children: [
+          // 设置分区导航栏
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                _buildNavTab(0, FluentIcons.lock, '安全'),
+                const SizedBox(width: 8),
+                _buildNavTab(1, FluentIcons.chrome_close, '窗口行为'),
+                const SizedBox(width: 8),
+                _buildNavTab(2, FluentIcons.news, '信息渠道'),
+                const SizedBox(width: 8),
+                _buildNavTab(3, FluentIcons.ringer, '消息推送'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 根据选中分区显示内容（可滚动）
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+        // 安全设置卡片
+        if (_selectedTab == 0)
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -545,9 +572,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
 
-        const SizedBox(height: 16),
-
         // 窗口行为设置卡片
+        if (_selectedTab == 1)
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -611,9 +637,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
 
-        const SizedBox(height: 16),
-
         // 信息渠道设置卡片
+        if (_selectedTab == 2)
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -718,9 +743,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
 
-        const SizedBox(height: 16),
-
         // 消息推送设置卡片
+        if (_selectedTab == 3)
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -881,7 +905,55 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
-      ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建设置分区导航栏按钮
+  /// [index] 分区索引
+  /// [icon] 图标
+  /// [label] 显示文本
+  Widget _buildNavTab(int index, IconData icon, String label) {
+    final isSelected = _selectedTab == index;
+    final theme = FluentTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Button(
+        style: ButtonStyle(
+          padding: WidgetStatePropertyAll(
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+          backgroundColor: WidgetStatePropertyAll(
+            isSelected
+                ? theme.accentColor.withValues(alpha: 0.1)
+                : Colors.transparent,
+          ),
+        ),
+        onPressed: () => setState(() => _selectedTab = index),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? theme.accentColor : null,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: isSelected
+                  ? theme.typography.bodyStrong
+                      ?.copyWith(color: theme.accentColor)
+                  : theme.typography.body,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
