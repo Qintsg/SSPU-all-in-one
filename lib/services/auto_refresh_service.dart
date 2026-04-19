@@ -1,0 +1,186 @@
+/*
+ * 自动刷新服务 — 定时抓取各渠道消息并推送新消息通知
+ * 每个渠道独立 Timer.periodic，间隔可在设置中分别调整
+ * 后台运行（最小化到托盘时 Timer 继续执行）
+ * @Project : SSPU-all-in-one
+ * @File : auto_refresh_service.dart
+ * @Author : Qintsg
+ * @Date : 2026-04-19
+ */
+
+import 'dart:async';
+import '../models/message_item.dart';
+import 'message_state_service.dart';
+import 'sspu_news_service.dart';
+import 'notification_service.dart';
+
+/// 自动刷新服务（单例）
+/// 根据各渠道配置的间隔定时抓取新消息，发现新消息时推送系统通知
+class AutoRefreshService {
+  AutoRefreshService._();
+
+  static final AutoRefreshService instance = AutoRefreshService._();
+
+  final MessageStateService _stateService = MessageStateService.instance;
+  final SspuNewsService _newsService = SspuNewsService.instance;
+  final NotificationService _notificationService = NotificationService.instance;
+
+  /// 各渠道的定时器，key 为渠道标识
+  final Map<String, Timer> _timers = {};
+
+  /// 是否已初始化
+  bool _initialized = false;
+
+  /// 默认每次自动抓取的条数
+  static const int _defaultFetchCount = 20;
+
+  /// 初始化并启动自动刷新
+  /// 应在 app 启动时调用一次
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+
+    await _stateService.init();
+    await _notificationService.init();
+
+    // 根据各渠道配置启动对应定时器
+    await _setupTimer(
+      channelKey: 'latestInfo',
+      getInterval: _stateService.getLatestInfoInterval,
+      isEnabled: _stateService.isLatestInfoEnabled,
+      fetchMessages: () => _newsService.fetchLatestInfo(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    await _setupTimer(
+      channelKey: 'notice',
+      getInterval: _stateService.getNoticeInterval,
+      isEnabled: _stateService.isNoticeEnabled,
+      fetchMessages: () => _newsService.fetchNotices(
+        maxCount: _defaultFetchCount,
+      ),
+    );
+
+    // 微信渠道占位 — 未来接入时取消注释
+    // await _setupTimer(channelKey: 'wechatPublic', ...);
+    // await _setupTimer(channelKey: 'wechatService', ...);
+  }
+
+  /// 配置并启动单个渠道的定时器
+  /// [channelKey] 渠道标识（用作 Timer map 的 key）
+  /// [getInterval] 获取当前间隔（分钟）的异步方法
+  /// [isEnabled] 检查渠道是否启用的异步方法
+  /// [fetchMessages] 抓取该渠道消息的异步方法
+  Future<void> _setupTimer({
+    required String channelKey,
+    required Future<int> Function() getInterval,
+    required Future<bool> Function() isEnabled,
+    required Future<List<MessageItem>> Function() fetchMessages,
+  }) async {
+    // 先取消已有定时器
+    _timers[channelKey]?.cancel();
+    _timers.remove(channelKey);
+
+    final enabled = await isEnabled();
+    final intervalMinutes = await getInterval();
+
+    // 渠道未启用或间隔为 0（关闭）则不启动
+    if (!enabled || intervalMinutes <= 0) return;
+
+    final duration = Duration(minutes: intervalMinutes);
+
+    _timers[channelKey] = Timer.periodic(duration, (_) async {
+      await _doRefresh(channelKey, fetchMessages);
+    });
+  }
+
+  /// 执行单次刷新：抓取 → 对比 → 合并持久化 → 推送新消息通知
+  /// [channelKey] 渠道标识（用于日志）
+  /// [fetchMessages] 抓取消息的方法
+  Future<void> _doRefresh(
+    String channelKey,
+    Future<List<MessageItem>> Function() fetchMessages,
+  ) async {
+    try {
+      // 加载已有消息
+      final existingMessages = await _stateService.loadMessages();
+      final existingIds = existingMessages.map((m) => m.id).toSet();
+
+      // 抓取新消息
+      final fetched = await fetchMessages();
+
+      // 找出真正的新消息（ID 不在已有集合中）
+      final newMessages =
+          fetched.where((m) => !existingIds.contains(m.id)).toList();
+
+      if (newMessages.isEmpty) return;
+
+      // 合并并持久化
+      final merged = _stateService.mergeMessages(existingMessages, fetched);
+      await _stateService.saveMessages(merged);
+
+      // 推送系统通知
+      if (newMessages.length == 1) {
+        await _notificationService.show(
+          title: '新消息',
+          body: newMessages.first.title,
+        );
+      } else {
+        await _notificationService.show(
+          title: '${newMessages.length} 条新消息',
+          body: newMessages.take(3).map((m) => m.title).join('\n'),
+        );
+      }
+    } catch (_) {
+      // 静默失败，下次定时器触发会重试
+    }
+  }
+
+  /// 重新加载某个渠道的定时器配置
+  /// 设置页修改间隔后调用此方法使新间隔生效
+  /// [channelKey] 渠道标识：'latestInfo' / 'notice' / 'wechatPublic' / 'wechatService'
+  Future<void> reloadChannel(String channelKey) async {
+    switch (channelKey) {
+      case 'latestInfo':
+        await _setupTimer(
+          channelKey: 'latestInfo',
+          getInterval: _stateService.getLatestInfoInterval,
+          isEnabled: _stateService.isLatestInfoEnabled,
+          fetchMessages: () => _newsService.fetchLatestInfo(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      case 'notice':
+        await _setupTimer(
+          channelKey: 'notice',
+          getInterval: _stateService.getNoticeInterval,
+          isEnabled: _stateService.isNoticeEnabled,
+          fetchMessages: () => _newsService.fetchNotices(
+            maxCount: _defaultFetchCount,
+          ),
+        );
+        break;
+      // 微信渠道占位
+      default:
+        break;
+    }
+  }
+
+  /// 重新加载所有渠道定时器
+  /// 适用于应用恢复前台或全局刷新设置后
+  Future<void> reloadAll() async {
+    await reloadChannel('latestInfo');
+    await reloadChannel('notice');
+  }
+
+  /// 销毁所有定时器
+  void dispose() {
+    for (final timer in _timers.values) {
+      timer.cancel();
+    }
+    _timers.clear();
+    _initialized = false;
+  }
+}
