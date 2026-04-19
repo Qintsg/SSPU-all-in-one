@@ -726,11 +726,23 @@ class _InfoPageState extends State<InfoPage> {
               : null,
         ),
         const SizedBox(width: 8),
-        // 页码信息
-        Text(
-          '第 ${_currentPage + 1} / $_totalPages 页  '
-          '(共 ${_filteredMessages.length} 条)',
-          style: theme.typography.caption,
+        // 页码信息（可点击弹出跳转输入框）
+        Tooltip(
+          message: '点击跳转到指定页',
+          child: HoverButton(
+            onPressed: () => _showPageJumpDialog(),
+            builder: (context, states) {
+              return Text(
+                '第 ${_currentPage + 1} / $_totalPages 页  '
+                '(共 ${_filteredMessages.length} 条)',
+                style: theme.typography.caption?.copyWith(
+                  decoration: states.isHovered
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                ),
+              );
+            },
+          ),
         ),
         const SizedBox(width: 8),
         // 下一页
@@ -742,5 +754,58 @@ class _InfoPageState extends State<InfoPage> {
         ),
       ],
     );
+  }
+
+  /// 弹出页码跳转对话框
+  /// 用户输入目标页码后直接跳转
+  Future<void> _showPageJumpDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => ContentDialog(
+        title: const Text('跳转到指定页'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('当前第 ${_currentPage + 1} 页，共 $_totalPages 页'),
+            const SizedBox(height: 8),
+            TextBox(
+              controller: controller,
+              placeholder: '输入页码 (1-$_totalPages)',
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              onSubmitted: (_) {
+                // 回车确认
+                final page = int.tryParse(controller.text);
+                if (page != null && page >= 1 && page <= _totalPages) {
+                  Navigator.of(ctx).pop(page - 1);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          Button(
+            child: const Text('取消'),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          FilledButton(
+            child: const Text('跳转'),
+            onPressed: () {
+              final page = int.tryParse(controller.text);
+              if (page != null && page >= 1 && page <= _totalPages) {
+                Navigator.of(ctx).pop(page - 1);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    // 执行跳转
+    if (result != null && mounted) {
+      setState(() => _currentPage = result);
+    }
   }
 }
