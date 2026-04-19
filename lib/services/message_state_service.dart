@@ -183,7 +183,66 @@ class MessageStateService {
     );
   }
 
-  // ==================== 自动刷新间隔管理 ====================
+  // ==================== 通用渠道开关与间隔管理 ====================
+
+  /// 生成渠道启用状态的存储键名
+  /// [channelId] 渠道唯一标识（snake_case）
+  static String _channelEnabledKey(String channelId) =>
+      'channel_${channelId}_enabled';
+
+  /// 生成渠道自动刷新间隔的存储键名
+  static String _channelIntervalKey(String channelId) =>
+      'channel_${channelId}_interval';
+
+  /// 获取指定渠道是否启用
+  /// [channelId] 渠道唯一标识
+  /// [defaultValue] 默认值，未设置时返回此值
+  /// :return: 渠道启用状态
+  Future<bool> isChannelEnabled(
+    String channelId, {
+    bool defaultValue = false,
+  }) async {
+    return await StorageService.getBool(
+      _channelEnabledKey(channelId),
+      defaultValue: defaultValue,
+    );
+  }
+
+  /// 设置指定渠道的启用状态
+  /// [channelId] 渠道唯一标识
+  /// [enabled] 是否启用
+  Future<void> setChannelEnabled(String channelId, bool enabled) async {
+    await StorageService.setBool(
+      _channelEnabledKey(channelId),
+      enabled,
+    );
+  }
+
+  /// 获取指定渠道的自动刷新间隔
+  /// [channelId] 渠道唯一标识
+  /// [defaultValue] 默认间隔（分钟，0 = 关闭）
+  /// :return: 自动刷新间隔（分钟）
+  Future<int> getChannelInterval(
+    String channelId, {
+    int defaultValue = 0,
+  }) async {
+    return (await StorageService.getInt(
+          _channelIntervalKey(channelId),
+        )) ??
+        defaultValue;
+  }
+
+  /// 设置指定渠道的自动刷新间隔
+  /// [channelId] 渠道唯一标识
+  /// [minutes] 间隔分钟数（0 = 关闭）
+  Future<void> setChannelInterval(String channelId, int minutes) async {
+    await StorageService.setInt(
+      _channelIntervalKey(channelId),
+      minutes,
+    );
+  }
+
+  // ==================== 自动刷新间隔管理（旧接口，保持兼容） ====================
 
   /// 获取最新公开信息自动刷新间隔（分钟，0 = 关闭，默认 60）
   Future<int> getLatestInfoInterval() async {
