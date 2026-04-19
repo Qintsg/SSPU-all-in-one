@@ -188,6 +188,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_im',
@@ -195,6 +198,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_re',
@@ -202,6 +208,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.globe,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_em',
@@ -209,6 +218,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_ic',
@@ -216,6 +228,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_imhe',
@@ -223,6 +238,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_econ',
@@ -230,6 +248,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.database,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_lang',
@@ -237,6 +258,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.read,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_math',
@@ -244,6 +268,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_art',
@@ -251,6 +278,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.video,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_vte',
@@ -258,6 +288,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_vt',
@@ -265,6 +298,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_marx',
@@ -272,6 +308,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.library,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'college_ce',
@@ -279,6 +318,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '学院通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'center_art_edu',
@@ -286,6 +328,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '中心通知与公告',
     icon: FluentIcons.video,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'center_intl',
@@ -293,6 +338,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '中心通知与公告',
     icon: FluentIcons.globe,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'center_innov',
@@ -300,6 +348,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '中心通知与公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'graduate',
@@ -307,6 +358,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '研究生管理通知与公告',
     icon: FluentIcons.education,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
   ChannelConfig(
     id: 'lib_center',
@@ -314,6 +368,9 @@ const List<ChannelConfig> teachingChannels = [
     description: '图书馆通知与服务公告',
     icon: FluentIcons.library,
     group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
   ),
 ];
 
