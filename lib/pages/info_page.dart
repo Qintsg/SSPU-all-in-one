@@ -521,6 +521,16 @@ class _InfoPageState extends State<InfoPage> {
         return [MessageCategory.itcNews];
       case MessageSourceName.sspuOfficial:
         return [MessageCategory.sspuNotice, MessageCategory.sspuActivity];
+      case MessageSourceName.sports:
+        return [MessageCategory.sportsNotice, MessageCategory.sportsEvent];
+      case MessageSourceName.securityDept:
+        return [MessageCategory.securityNews, MessageCategory.securityEducation];
+      case MessageSourceName.construction:
+        return [MessageCategory.constructionNews, MessageCategory.constructionNotice];
+      case MessageSourceName.newsCenter:
+        return [MessageCategory.campusNews];
+      case MessageSourceName.studentAffairs:
+        return [MessageCategory.studentNews, MessageCategory.studentNotice];
       case MessageSourceName.wechatPublicPlaceholder:
         return [MessageCategory.wechatArticle];
       case MessageSourceName.wechatServicePlaceholder:
