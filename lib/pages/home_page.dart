@@ -9,6 +9,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import '../models/message_item.dart';
 import '../services/message_state_service.dart';
+import '../theme/fluent_tokens.dart';
 import 'webview_page.dart';
 
 /// 主页
@@ -65,7 +66,7 @@ class _HomePageState extends State<HomePage> {
                         // 根据主题亮暗自适应背景色
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.08)
-                            : const Color(0xFFF3F3F3),
+                            : FluentLightColors.backgroundSecondary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Image.asset(
@@ -258,7 +259,7 @@ class _FeatureTile extends StatelessWidget {
                   ? color.withValues(alpha: 0.3)
                   : isDark
                       ? Colors.white.withValues(alpha: 0.06)
-                      : const Color(0xFFE0E0E0),
+                      : FluentLightColors.borderSubtle,
             ),
           ),
           child: Column(
