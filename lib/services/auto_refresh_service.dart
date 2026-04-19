@@ -232,6 +232,79 @@ class AutoRefreshService {
     // await _setupTimer(channelKey: 'wechatService', ...);
   }
 
+  /// 立即抓取所有已启用官网渠道的消息并返回合并结果
+  /// 用于手动刷新按钮，不依赖定时器
+  /// [maxCount] 支持 maxCount 参数的服务使用此值
+  /// :return: 所有已启用渠道的消息列表
+  Future<List<MessageItem>> fetchAllEnabledNow({
+    int maxCount = 20,
+  }) async {
+    final futures = <Future<List<MessageItem>>>[];
+
+    // 信息公开网
+    if (await _stateService.isLatestInfoEnabled()) {
+      futures.add(_newsService.fetchLatestInfo(maxCount: maxCount));
+    }
+    if (await _stateService.isNoticeEnabled()) {
+      futures.add(_newsService.fetchNotices(maxCount: maxCount));
+    }
+
+    // 职能部门
+    if (await _stateService.isChannelEnabled('jwc')) {
+      futures.add(_jwcService.fetchStudentNews(maxCount: maxCount));
+      futures.add(_jwcService.fetchTeacherNews(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('itc')) {
+      futures.add(_itcService.fetchNews(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('sspu_notice')) {
+      futures.add(_officialService.fetchNotices(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('sspu_activity')) {
+      futures.add(_officialService.fetchActivities(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('sports')) {
+      futures.add(_sportsService.fetchNotices(maxCount: maxCount));
+      futures.add(_sportsService.fetchEvents(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('security_dept')) {
+      futures.add(_securityService.fetchNews(maxCount: maxCount));
+      futures.add(_securityService.fetchEducation(maxCount: maxCount));
+    }
+    if (await _stateService.isChannelEnabled('construction')) {
+      futures.add(_constructionService.fetchNews());
+      futures.add(_constructionService.fetchNotices());
+    }
+    if (await _stateService.isChannelEnabled('news_center')) {
+      futures.add(_campusService.fetchCampusNews());
+    }
+    if (await _stateService.isChannelEnabled('student_affairs')) {
+      futures.add(_studentService.fetchNews());
+      futures.add(_studentService.fetchNotices());
+    }
+
+    // 教学单位（19个学院/部门）
+    const collegeIds = [
+      'college_cs', 'college_im', 'college_re', 'college_em', 'college_ic',
+      'college_imhe', 'college_econ', 'college_lang', 'college_math',
+      'college_art', 'college_vte', 'college_vt', 'college_marx', 'college_ce',
+      'center_art_edu', 'center_intl', 'center_innov', 'graduate', 'lib_center',
+    ];
+    for (final id in collegeIds) {
+      if (await _stateService.isChannelEnabled(id)) {
+        futures.add(_collegeService.fetchNews(id));
+      }
+    }
+
+    if (futures.isEmpty) return [];
+
+    // 并行执行，单个渠道异常不影响其他渠道
+    final results = await Future.wait(
+      futures.map((f) => f.catchError((_) => <MessageItem>[])),
+    );
+    return results.expand((msgs) => msgs).toList();
+  }
+
   /// 配置并启动单个渠道的定时器
   /// [channelKey] 渠道标识（用作 Timer map 的 key）
   /// [getInterval] 获取当前间隔（分钟）的异步方法
