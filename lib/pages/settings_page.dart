@@ -18,11 +18,13 @@ import '../widgets/password_dialogs.dart';
 import '../widgets/settings_widgets.dart';
 import '../widgets/channel_list_section.dart';
 import '../services/weread_auth_service.dart';
+import '../services/weread_api_service.dart';
 import '../services/weread_webview_service.dart';
 import '../services/wechat_article_service.dart';
 import '../models/sspu_wechat_accounts.dart';
 import '../theme/fluent_tokens.dart';
 import 'weread_login_page.dart';
+import 'webview_page.dart';
 
 /// 设置页面
 /// 包含密码保护、窗口行为、消息推送、职能部门/教学单位渠道管理、微信占位
@@ -852,6 +854,65 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// 在微信读书中搜索指定公众号名称
+  /// 调用 API 搜索后跳转到公众号文章列表页，用户可在 WebView 内手动关注
+  /// [context] 构建上下文
+  /// [keyword] 公众号名称（搜索关键词）
+  Future<void> _openWereadSearch(BuildContext context, String keyword) async {
+    // 尝试通过 API 搜索获取公众号 bookId
+    final result = await WereadApiService.instance.search(keyword, count: 5);
+    final books = result?['books'] as List<dynamic>? ?? [];
+
+    // 查找 bookId 以 MP_WXS_ 开头的公众号
+    String? mpBookId;
+    for (final item in books) {
+      final bookInfo = item is Map ? (item['bookInfo'] as Map?) : null;
+      final bid = bookInfo?['bookId'] as String? ?? '';
+      if (bid.startsWith('MP_WXS_')) {
+        mpBookId = bid;
+        break;
+      }
+    }
+
+    if (!context.mounted) return;
+
+    if (mpBookId != null) {
+      // 找到公众号 → 跳转到其文章列表页
+      final detailUrl =
+          'https://weread.qq.com/web/reader/$mpBookId';
+      Navigator.of(context).push(
+        FluentPageRoute(
+          builder: (_) => WebViewPage(
+            url: detailUrl,
+            initialTitle: keyword,
+          ),
+        ),
+      );
+    } else {
+      // 未找到 → 打开微信读书主页让用户自行搜索
+      Navigator.of(context).push(
+        FluentPageRoute(
+          builder: (_) => WebViewPage(
+            url: 'https://weread.qq.com/',
+            initialTitle: '搜索: $keyword',
+          ),
+        ),
+      );
+      if (context.mounted) {
+        displayInfoBar(context, builder: (ctx, close) {
+          return InfoBar(
+            title: Text('未找到公众号「$keyword」，请在微信读书中手动搜索'),
+            severity: InfoBarSeverity.warning,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          );
+        });
+      }
+    }
+  }
+
   /// 构建 SSPU 推荐公众号卡片
   /// 展示校园+微信矩阵中的所有官方公众号
   Widget _buildSspuRecommendedAccounts(BuildContext context) {
@@ -885,7 +946,7 @@ class _SettingsPageState extends State<SettingsPage> {
               runSpacing: FluentSpacing.s,
               children: sspuWechatAccounts.map((account) {
                 return SizedBox(
-                  width: 200,
+                  width: 240,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -900,6 +961,14 @@ class _SettingsPageState extends State<SettingsPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        // TODO: 关注按钮暂时隐藏，待搜索跳转功能完善后启用
+                        // HyperlinkButton(
+                        //   onPressed: () => _openWereadSearch(
+                        //     context,
+                        //     account.name,
+                        //   ),
+                        //   child: const Text('关注'),
+                        // ),
                       ],
                     ),
                   ),
