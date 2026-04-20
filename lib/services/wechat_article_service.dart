@@ -422,8 +422,8 @@ class WechatArticleService {
   }
 
   static (String, List<String>) _transformId(String bookId) {
-    if (RegExp(r'^\d+
-).hasMatch(bookId)) {
+    final isNumeric = bookId.codeUnits.every((c) => c >= 48 && c <= 57);
+    if (isNumeric) {
       final ary = <String>[];
       for (var i = 0; i < bookId.length; i += 9) {
         final end = (i + 9 > bookId.length) ? bookId.length : i + 9;

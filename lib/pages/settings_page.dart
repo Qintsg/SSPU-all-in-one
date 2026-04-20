@@ -9,6 +9,7 @@
 import 'dart:async';
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/channel_config.dart';
 import '../services/password_service.dart';
@@ -351,6 +352,28 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ],
+            const SizedBox(height: FluentSpacing.xl),
+            const Divider(),
+            const SizedBox(height: FluentSpacing.l),
+            // 数据管理
+            Text('数据管理', style: FluentTheme.of(context).typography.subtitle),
+            const SizedBox(height: FluentSpacing.xs),
+            Text(
+              '清除所有本地数据（包括登录信息、设置、缓存等），应用将退出',
+              style: FluentTheme.of(context).typography.caption,
+            ),
+            const SizedBox(height: FluentSpacing.m),
+            Button(
+              onPressed: () => _showClearAllDataDialog(context),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(FluentIcons.delete, size: 14),
+                  SizedBox(width: 6),
+                  Text('清除所有数据'),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -856,6 +879,35 @@ class _SettingsPageState extends State<SettingsPage> {
           );
         },
       );
+    }
+  }
+
+  /// 清除所有本地数据（带二次确认对话框），确认后退出应用
+  Future<void> _showClearAllDataDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => ContentDialog(
+        title: const Text('确认清除所有数据'),
+        content: const Text(
+          '此操作将清除所有本地数据（包括登录信息、设置等），应用将退出。\n'
+          '是否继续？',
+        ),
+        actions: [
+          Button(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('确认清除并退出'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await StorageService.clearAll();
+      await windowManager.destroy();
     }
   }
 

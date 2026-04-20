@@ -453,6 +453,19 @@ class MessageStateService {
     }
   }
 
+  /// 清除所有微信公众号类型的预存文章
+  /// 保留其他渠道的消息不受影响
+  /// :return: 被清除的文章数量
+  Future<int> clearWechatArticles() async {
+    final messages = await loadMessages();
+    final before = messages.length;
+    messages.removeWhere(
+      (msg) => msg.sourceType == MessageSourceType.wechatPublic,
+    );
+    await saveMessages(messages);
+    return before - messages.length;
+  }
+
   /// 将新抓取的消息与已有消息合并（按 ID 去重）
   /// [existingMessages] 已有消息列表
   /// [newMessages] 新抓取的消息列表
