@@ -1,10 +1,8 @@
 # CI 工作流 — Flutter 测试与静态分析
-# 触发：push 到 develop/main，或 PR 到 develop/main
+# 触发：PR 到 develop/main
 name: CI
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
