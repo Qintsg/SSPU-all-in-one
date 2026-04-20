@@ -412,7 +412,9 @@ class CollegeNewsService {
 
   /// 解析模板A: ul/div 列表内 li 项，包含日期 span + 标题 a
   List<MessageItem> _parseListA(Document document, CollegeConfig config) {
-    final container = document.querySelector(config.listContainerSelector ?? '');
+    final container = document.querySelector(
+      config.listContainerSelector ?? '',
+    );
     if (container == null) return [];
 
     final items = container.querySelectorAll(config.listItemSelector ?? 'li');
@@ -441,15 +443,17 @@ class CollegeNewsService {
         date = normalizeDate(date);
       }
 
-      messages.add(MessageItem(
-        id: _generateId(fullUrl),
-        title: title,
-        date: date,
-        url: fullUrl,
-        sourceType: MessageSourceType.schoolWebsite,
-        sourceName: config.sourceName,
-        category: config.category,
-      ));
+      messages.add(
+        MessageItem(
+          id: _generateId(fullUrl),
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: config.sourceName,
+          category: config.category,
+        ),
+      );
     }
 
     return messages;
@@ -459,7 +463,8 @@ class CollegeNewsService {
 
   /// 解析模板B: ul.news_list 内的 li.news 卡片
   List<MessageItem> _parseNewsListB(Document document, CollegeConfig config) {
-    final containerSelector = config.newsListContainerSelector ?? 'ul.news_list';
+    final containerSelector =
+        config.newsListContainerSelector ?? 'ul.news_list';
     final container = document.querySelector(containerSelector);
     if (container == null) return [];
 
@@ -467,7 +472,9 @@ class CollegeNewsService {
     // 如果没有 li.news，尝试用 div 子项（如艺术学院 div.index_list2_box）
     final actualItems = items.isNotEmpty
         ? items
-        : container.children.where((e) => e.localName == 'div' || e.localName == 'li').toList();
+        : container.children
+              .where((e) => e.localName == 'div' || e.localName == 'li')
+              .toList();
 
     final messages = <MessageItem>[];
 
@@ -508,15 +515,17 @@ class CollegeNewsService {
         date = dateEl?.text.trim() ?? '';
       }
 
-      messages.add(MessageItem(
-        id: _generateId(fullUrl),
-        title: title,
-        date: date,
-        url: fullUrl,
-        sourceType: MessageSourceType.schoolWebsite,
-        sourceName: config.sourceName,
-        category: config.category,
-      ));
+      messages.add(
+        MessageItem(
+          id: _generateId(fullUrl),
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: config.sourceName,
+          category: config.category,
+        ),
+      );
     }
 
     return messages;
@@ -558,15 +567,17 @@ class CollegeNewsService {
         date = '$yearMonth-$day';
       }
 
-      messages.add(MessageItem(
-        id: _generateId(fullUrl),
-        title: title,
-        date: date,
-        url: fullUrl,
-        sourceType: MessageSourceType.schoolWebsite,
-        sourceName: config.sourceName,
-        category: config.category,
-      ));
+      messages.add(
+        MessageItem(
+          id: _generateId(fullUrl),
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: config.sourceName,
+          category: config.category,
+        ),
+      );
     }
 
     return messages;
@@ -613,7 +624,8 @@ class CollegeNewsService {
 
       // 提取日期
       String date = '';
-      if (config.customDateComposite && config.customDateYearMonthSelector != null) {
+      if (config.customDateComposite &&
+          config.customDateYearMonthSelector != null) {
         // 拼合模式: day(customDateSelector) + yearMonth(customDateYearMonthSelector)
         final dayEl = item.querySelector(config.customDateSelector ?? '');
         final ymEl = item.querySelector(config.customDateYearMonthSelector!);
@@ -631,15 +643,17 @@ class CollegeNewsService {
         }
       }
 
-      messages.add(MessageItem(
-        id: _generateId(fullUrl),
-        title: title,
-        date: date,
-        url: fullUrl,
-        sourceType: MessageSourceType.schoolWebsite,
-        sourceName: config.sourceName,
-        category: config.category,
-      ));
+      messages.add(
+        MessageItem(
+          id: _generateId(fullUrl),
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: config.sourceName,
+          category: config.category,
+        ),
+      );
     }
 
     return messages;

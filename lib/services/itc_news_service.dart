@@ -34,10 +34,7 @@ class ItcNewsService {
   /// 获取最新消息
   /// [maxCount] 最大获取条数，默认 20 条
   Future<List<MessageItem>> fetchNews({int maxCount = 20}) async {
-    return _fetchFromColumn(
-      columnPath: _newsPath,
-      maxCount: maxCount,
-    );
+    return _fetchFromColumn(columnPath: _newsPath, maxCount: maxCount);
   }
 
   /// 根据页码生成列表页 URL
@@ -80,9 +77,7 @@ class ItcNewsService {
   /// 抓取单页内所有消息项
   /// ITC 解析模式: li 元素中包含 <span>日期</span> 和 <a href title>标题</a>
   /// 选择器: 匹配 class 以 'n' 开头的 li 元素（n1, n2, n3...）
-  Future<List<MessageItem>> _fetchSinglePage({
-    required String url,
-  }) async {
+  Future<List<MessageItem>> _fetchSinglePage({required String url}) async {
     try {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
@@ -96,8 +91,7 @@ class ItcNewsService {
         final anchor = item.querySelector('a');
         if (anchor == null) continue;
 
-        final title =
-            anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -111,15 +105,17 @@ class ItcNewsService {
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.itc,
-          category: MessageCategory.itcNews,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.itc,
+            category: MessageCategory.itcNews,
+          ),
+        );
       }
 
       return messages;

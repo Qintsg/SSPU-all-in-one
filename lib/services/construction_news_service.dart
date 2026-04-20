@@ -52,8 +52,7 @@ class ConstructionNewsService {
       if (allLists.isEmpty) return [];
 
       // 首页有两个 ul.lis 区块：第一个是建设要闻，第二个是通知公告
-      final targetIndex =
-          category == MessageCategory.constructionNews ? 0 : 1;
+      final targetIndex = category == MessageCategory.constructionNews ? 0 : 1;
       if (targetIndex >= allLists.length) return [];
 
       final targetList = allLists[targetIndex];
@@ -65,8 +64,7 @@ class ConstructionNewsService {
         final anchor = item.querySelector('a[title]');
         if (anchor == null) continue;
 
-        final title =
-            anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -79,15 +77,17 @@ class ConstructionNewsService {
 
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.construction,
-          category: category,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.construction,
+            category: category,
+          ),
+        );
       }
 
       return messages;
@@ -95,7 +95,6 @@ class ConstructionNewsService {
       return [];
     }
   }
-
 
   /// 基于 URL 生成稳定的消息唯一 ID
   String _generateId(String url) {

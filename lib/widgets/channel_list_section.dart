@@ -78,8 +78,8 @@ class _ChannelListSectionState extends State<ChannelListSection> {
       final subcats = channelSubcategories[channel.id];
       if (subcats != null) {
         for (final sub in subcats) {
-          _categoryEnabledMap[sub.category.name] =
-              await _messageState.isCategoryEnabled(sub.category.name);
+          _categoryEnabledMap[sub.category.name] = await _messageState
+              .isCategoryEnabled(sub.category.name);
         }
       }
     }
@@ -130,8 +130,9 @@ class _ChannelListSectionState extends State<ChannelListSection> {
     final theme = FluentTheme.of(context);
     final enabled = _enabledMap[channel.id] ?? false;
     // 未实现的渠道，描述显示"暂未接入"
-    final subtitle =
-        channel.implemented ? channel.description : '${channel.description}（暂未接入）';
+    final subtitle = channel.implemented
+        ? channel.description
+        : '${channel.description}（暂未接入）';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -274,9 +275,7 @@ class _ChannelListSectionState extends State<ChannelListSection> {
         context,
         builder: (ctx, close) => InfoBar(
           title: Text(message),
-          severity: enabled
-              ? InfoBarSeverity.success
-              : InfoBarSeverity.warning,
+          severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.warning,
           action: IconButton(
             icon: const Icon(FluentIcons.clear),
             onPressed: close,
@@ -289,10 +288,7 @@ class _ChannelListSectionState extends State<ChannelListSection> {
   /// 刷新间隔变更处理
   /// [channel] 渠道配置
   /// [minutes] 新的间隔分钟数
-  Future<void> _onIntervalChanged(
-    ChannelConfig channel,
-    int minutes,
-  ) async {
+  Future<void> _onIntervalChanged(ChannelConfig channel, int minutes) async {
     await _messageState.setChannelInterval(channel.id, minutes);
     setState(() => _intervalMap[channel.id] = minutes);
     if (channel.implemented) {
@@ -302,10 +298,7 @@ class _ChannelListSectionState extends State<ChannelListSection> {
 
   /// 构建子分类开关区域
   /// 显示渠道下所有子分类的独立开关
-  Widget _buildSubcategoryToggles(
-    BuildContext context,
-    ChannelConfig channel,
-  ) {
+  Widget _buildSubcategoryToggles(BuildContext context, ChannelConfig channel) {
     final theme = FluentTheme.of(context);
     final subcats = channelSubcategories[channel.id]!;
     final channelEnabled = _enabledMap[channel.id] ?? false;
@@ -316,22 +309,16 @@ class _ChannelListSectionState extends State<ChannelListSection> {
         // 区域标题
         Text('内容分类', style: theme.typography.bodyStrong),
         const SizedBox(height: 4),
-        Text(
-          '单独控制每个分类的显示，关闭后该分类消息将不再展示',
-          style: theme.typography.caption,
-        ),
+        Text('单独控制每个分类的显示，关闭后该分类消息将不再展示', style: theme.typography.caption),
         const SizedBox(height: 8),
         // 每个子分类一行（名称 + 开关）
         ...subcats.map((sub) {
-          final catEnabled =
-              _categoryEnabledMap[sub.category.name] ?? true;
+          final catEnabled = _categoryEnabledMap[sub.category.name] ?? true;
           return Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Row(
               children: [
-                Expanded(
-                  child: Text(sub.name, style: theme.typography.body),
-                ),
+                Expanded(child: Text(sub.name, style: theme.typography.body)),
                 ToggleSwitch(
                   checked: catEnabled,
                   // 渠道未启用时子分类开关置灰不可操作

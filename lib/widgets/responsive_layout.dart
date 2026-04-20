@@ -17,7 +17,8 @@ class ResponsiveBuilder extends StatelessWidget {
     BuildContext context,
     DeviceType deviceType,
     BoxConstraints constraints,
-  ) builder;
+  )
+  builder;
 
   const ResponsiveBuilder({super.key, required this.builder});
 

@@ -61,9 +61,7 @@ class WereadWebViewService {
       final completer = Completer<bool>();
 
       _headlessWebView = HeadlessInAppWebView(
-        initialUrlRequest: URLRequest(
-          url: WebUri('https://weread.qq.com/'),
-        ),
+        initialUrlRequest: URLRequest(url: WebUri('https://weread.qq.com/')),
         initialSettings: InAppWebViewSettings(
           // 允许 JavaScript 执行
           javaScriptEnabled: true,
