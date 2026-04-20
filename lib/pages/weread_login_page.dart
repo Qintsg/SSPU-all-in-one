@@ -13,6 +13,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../services/weread_auth_service.dart';
+import '../services/weread_webview_service.dart';
 import '../theme/fluent_tokens.dart';
 
 /// 微信读书 Web 版登录 URL
@@ -85,7 +86,11 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
 
     try {
       final cookieManager = CookieManager.instance();
-      final wereadUrl = WebUri('https://weread.qq.com/');
+      // 同时获取主域和 API 子域的 Cookie，确保覆盖所有鉴权字段
+      final urls = [
+        WebUri('https://weread.qq.com/'),
+        WebUri('https://i.weread.qq.com/'),
+      ];
       String? lastCookieStr;
 
       for (int attempt = 1; attempt <= _maxRetries; attempt++) {
@@ -93,32 +98,55 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
         await Future.delayed(Duration(seconds: attempt));
         if (!mounted) return;
 
-        // 通过原生 API 获取所有 Cookie（含 HttpOnly）
-        final cookies = await cookieManager.getCookies(
-          url: wereadUrl,
-          webViewController: _controller,
-        );
+        // 收集所有域的 Cookie，去重（以 name 为键，后者覆盖前者）
+        final cookieMap = <String, String>{};
+        for (final url in urls) {
+          final cookies = await cookieManager.getCookies(
+            url: url,
+            webViewController: _controller,
+          );
+          for (final c in cookies) {
+            cookieMap[c.name] = c.value.toString();
+          }
+        }
 
         // 组装 Cookie 字符串
-        final cookieStr = cookies
-            .map((c) => '${c.name}=${c.value}')
+        final cookieStr = cookieMap.entries
+            .map((e) => '${e.key}=${e.value}')
             .join('; ');
         lastCookieStr = cookieStr;
 
+        // DEBUG: 打印获取到的 Cookie 键名帮助诊断
+        debugPrint('[WereadLogin] 第 $attempt 次尝试，Cookie 键名: ${cookieMap.keys.toList()}');
+
         // 检查关键字段
-        final hasKey = cookies.any((c) => c.name == 'wr_skey');
-        final hasVid = cookies.any((c) => c.name == 'wr_vid');
+        final hasKey = cookieMap.containsKey('wr_skey');
+        final hasVid = cookieMap.containsKey('wr_vid');
 
         if (hasKey && hasVid) {
           // 关键字段就绪，保存到本地
           final saved =
               await WereadAuthService.instance.saveCookies(cookieStr);
           if (saved && mounted) {
+            debugPrint('[WereadLogin] Cookie 保存成功，全部键名: ${cookieMap.keys.toList()}');
+
+            // 在 WebView 内直接验证 Cookie 有效性（避免 session 绑定问题）
+            final valid = await WereadAuthService.instance.validateCookie(
+              webViewController: _controller,
+            );
+            debugPrint('[WereadLogin] WebView 内验证结果: $valid');
+
+            // 启动后台 HeadlessInAppWebView 保持微信读书登录态
+            // 供设置页校验/刷新等操作使用
+            unawaited(WereadWebViewService.instance.ensureInitialized());
+
             setState(() {
               _extracting = false;
               _result = _CookieResult(
                 success: true,
-                message: 'Cookie 提取并保存成功！',
+                message: valid
+                    ? 'Cookie 提取并验证成功！'
+                    : 'Cookie 已保存，但验证未通过（可能需要重新扫码）',
               );
             });
             return;
