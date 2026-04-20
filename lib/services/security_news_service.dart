@@ -108,8 +108,7 @@ class SecurityNewsService {
         final anchor = item.querySelector('a[title]');
         if (anchor == null) continue;
 
-        final title =
-            anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -124,15 +123,17 @@ class SecurityNewsService {
 
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.securityDept,
-          category: category,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.securityDept,
+            category: category,
+          ),
+        );
       }
 
       return messages;

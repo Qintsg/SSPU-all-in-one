@@ -37,11 +37,10 @@ class WereadApiService {
   /// 书架中 bookId 以 "MP_WXS_" 开头的是公众号
   /// :return: 书架原始 JSON 数据，失败返回 null
   Future<Map<String, dynamic>?> getShelf() async {
-    return _getJson('$_apiBase/shelf/sync', queryParameters: {
-      'synckey': 0,
-      'teenmode': 0,
-      'album': 1,
-    });
+    return _getJson(
+      '$_apiBase/shelf/sync',
+      queryParameters: {'synckey': 0, 'teenmode': 0, 'album': 1},
+    );
   }
 
   /// 从书架数据中提取已关注的公众号列表
@@ -79,11 +78,10 @@ class WereadApiService {
     int offset = 0,
     int count = 20,
   }) async {
-    return _getJson('$_apiBase/book/articles', queryParameters: {
-      'bookId': bookId,
-      'offset': offset,
-      'count': count,
-    });
+    return _getJson(
+      '$_apiBase/book/articles',
+      queryParameters: {'bookId': bookId, 'offset': offset, 'count': count},
+    );
   }
 
   /// 获取公众号的全部文章（自动翻页，限制最大条数）
@@ -126,9 +124,7 @@ class WereadApiService {
   /// [bookId] 书籍/公众号 bookId
   /// :return: 详情 JSON 数据，失败返回 null
   Future<Map<String, dynamic>?> getBookInfo(String bookId) async {
-    return _getJson('$_apiBase/book/info', queryParameters: {
-      'bookId': bookId,
-    });
+    return _getJson('$_apiBase/book/info', queryParameters: {'bookId': bookId});
   }
 
   // ==================== 搜索 ====================
@@ -137,14 +133,11 @@ class WereadApiService {
   /// [keyword] 搜索关键词
   /// [count] 结果数量，默认 20
   /// :return: 搜索结果 JSON 数据，失败返回 null
-  Future<Map<String, dynamic>?> search(
-    String keyword, {
-    int count = 20,
-  }) async {
-    return _getJson('$_apiBase/mp/search', queryParameters: {
-      'keyword': keyword,
-      'count': count,
-    });
+  Future<Map<String, dynamic>?> search(String keyword, {int count = 20}) async {
+    return _getJson(
+      '$_apiBase/mp/search',
+      queryParameters: {'keyword': keyword, 'count': count},
+    );
   }
 
   // ==================== 内部工具方法 ====================
@@ -262,25 +255,19 @@ class WereadApiService {
     // 尝试 reviews 字段（weread v2 接口常用格式）
     final reviews = data['reviews'] as List<dynamic>?;
     if (reviews != null && reviews.isNotEmpty) {
-      return reviews
-          .whereType<Map<String, dynamic>>()
-          .toList();
+      return reviews.whereType<Map<String, dynamic>>().toList();
     }
 
     // 尝试 articles 字段
     final articles = data['articles'] as List<dynamic>?;
     if (articles != null && articles.isNotEmpty) {
-      return articles
-          .whereType<Map<String, dynamic>>()
-          .toList();
+      return articles.whereType<Map<String, dynamic>>().toList();
     }
 
     // 尝试 data 嵌套字段
     final nested = data['data'] as List<dynamic>?;
     if (nested != null && nested.isNotEmpty) {
-      return nested
-          .whereType<Map<String, dynamic>>()
-          .toList();
+      return nested.whereType<Map<String, dynamic>>().toList();
     }
 
     return [];

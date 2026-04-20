@@ -62,8 +62,7 @@ class StudentAffairsService {
         final anchor = item.querySelector('a[title]');
         if (anchor == null) continue;
 
-        final title =
-            anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -76,15 +75,17 @@ class StudentAffairsService {
 
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.studentAffairs,
-          category: category,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.studentAffairs,
+            category: category,
+          ),
+        );
       }
 
       return messages;
@@ -92,7 +93,6 @@ class StudentAffairsService {
       return [];
     }
   }
-
 
   /// 基于 URL 生成稳定的消息唯一 ID
   String _generateId(String url) {

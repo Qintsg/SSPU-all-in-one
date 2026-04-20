@@ -58,12 +58,15 @@ class MessageTile extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: FluentSpacing.s + FluentSpacing.xxs, horizontal: FluentSpacing.m),
+          padding: const EdgeInsets.symmetric(
+            vertical: FluentSpacing.s + FluentSpacing.xxs,
+            horizontal: FluentSpacing.m,
+          ),
           decoration: BoxDecoration(
             color: isHovered
                 ? (isDark
-                    ? FluentDarkColors.hoverFill
-                    : FluentLightColors.hoverFill)
+                      ? FluentDarkColors.hoverFill
+                      : FluentLightColors.hoverFill)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(FluentRadius.large),
           ),
@@ -73,14 +76,16 @@ class MessageTile extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                margin: const EdgeInsets.only(right: FluentSpacing.s + FluentSpacing.xxs),
+                margin: const EdgeInsets.only(
+                  right: FluentSpacing.s + FluentSpacing.xxs,
+                ),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isRead
                       ? Colors.transparent
                       : (isDark
-                          ? FluentDarkColors.unreadIndicator
-                          : FluentLightColors.unreadIndicator),
+                            ? FluentDarkColors.unreadIndicator
+                            : FluentLightColors.unreadIndicator),
                 ),
               ),
 
@@ -96,24 +101,17 @@ class MessageTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
+                    const SizedBox(
+                      height: FluentSpacing.xs + FluentSpacing.xxs,
+                    ),
                     // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        _buildTag(
-                          message.sourceType.label,
-                          Colors.blue,
-                        ),
-                        _buildTag(
-                          message.sourceName.label,
-                          Colors.teal,
-                        ),
-                        _buildTag(
-                          message.category.label,
-                          Colors.orange,
-                        ),
+                        _buildTag(message.sourceType.label, Colors.blue),
+                        _buildTag(message.sourceName.label, Colors.teal),
+                        _buildTag(message.category.label, Colors.orange),
                       ],
                     ),
                   ],
@@ -156,10 +154,7 @@ class MessageTile extends StatelessWidget {
                         Tooltip(
                           message: '标为已读',
                           child: IconButton(
-                            icon: const Icon(
-                              FluentIcons.read,
-                              size: 14,
-                            ),
+                            icon: const Icon(FluentIcons.read, size: 14),
                             onPressed: onMarkRead,
                           ),
                         ),

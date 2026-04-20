@@ -107,7 +107,9 @@ class SspuOfficialService {
       final document = html_parser.parse(htmlText);
 
       // 官网列表: .col_news_con 限定主内容区，排除页脚 .foot-left 中的固定栏目
-      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
+      final newsItems = document.querySelectorAll(
+        '.col_news_con ul.news_list li.news',
+      );
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
@@ -133,15 +135,17 @@ class SspuOfficialService {
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.sspuOfficial,
-          category: category,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.sspuOfficial,
+            category: category,
+          ),
+        );
       }
 
       return messages;

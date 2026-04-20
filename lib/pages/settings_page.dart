@@ -126,19 +126,15 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showSuccessBar(String message) {
     displayInfoBar(
       context,
-      builder: (infoBarContext, close) => InfoBar(
-        title: Text(message),
-        severity: InfoBarSeverity.success,
-      ),
+      builder: (infoBarContext, close) =>
+          InfoBar(title: Text(message), severity: InfoBarSeverity.success),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const ScaffoldPage(
-        content: Center(child: ProgressRing()),
-      );
+      return const ScaffoldPage(content: Center(child: ProgressRing()));
     }
 
     return ScaffoldPage(
@@ -155,26 +151,68 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 基础设置组
-                  buildSettingsNavItem(context: context, index: 0, selectedIndex: _selectedTab, icon: FluentIcons.lock, label: '安全', onTap: () => setState(() => _selectedTab = 0)),
+                  buildSettingsNavItem(
+                    context: context,
+                    index: 0,
+                    selectedIndex: _selectedTab,
+                    icon: FluentIcons.lock,
+                    label: '安全',
+                    onTap: () => setState(() => _selectedTab = 0),
+                  ),
                   const SizedBox(height: FluentSpacing.xxs),
-                  buildSettingsNavItem(context: context, index: 1, selectedIndex: _selectedTab, icon: FluentIcons.chrome_close, label: '窗口行为', onTap: () => setState(() => _selectedTab = 1)),
+                  buildSettingsNavItem(
+                    context: context,
+                    index: 1,
+                    selectedIndex: _selectedTab,
+                    icon: FluentIcons.chrome_close,
+                    label: '窗口行为',
+                    onTap: () => setState(() => _selectedTab = 1),
+                  ),
                   const SizedBox(height: FluentSpacing.xxs),
-                  buildSettingsNavItem(context: context, index: 2, selectedIndex: _selectedTab, icon: FluentIcons.ringer, label: '消息推送', onTap: () => setState(() => _selectedTab = 2)),
+                  buildSettingsNavItem(
+                    context: context,
+                    index: 2,
+                    selectedIndex: _selectedTab,
+                    icon: FluentIcons.ringer,
+                    label: '消息推送',
+                    onTap: () => setState(() => _selectedTab = 2),
+                  ),
                   // 分隔线
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     child: Divider(),
                   ),
                   // 渠道设置组
-                  buildSettingsNavItem(context: context, index: 3, selectedIndex: _selectedTab, icon: FluentIcons.education, label: '职能部门', onTap: () => setState(() => _selectedTab = 3)),
+                  buildSettingsNavItem(
+                    context: context,
+                    index: 3,
+                    selectedIndex: _selectedTab,
+                    icon: FluentIcons.education,
+                    label: '职能部门',
+                    onTap: () => setState(() => _selectedTab = 3),
+                  ),
                   const SizedBox(height: FluentSpacing.xxs),
-                  buildSettingsNavItem(context: context, index: 4, selectedIndex: _selectedTab, icon: FluentIcons.library, label: '教学单位', onTap: () => setState(() => _selectedTab = 4)),
+                  buildSettingsNavItem(
+                    context: context,
+                    index: 4,
+                    selectedIndex: _selectedTab,
+                    icon: FluentIcons.library,
+                    label: '教学单位',
+                    onTap: () => setState(() => _selectedTab = 4),
+                  ),
                   // 分隔线
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     child: Divider(),
                   ),
-                  buildSettingsNavItem(context: context, index: 5, selectedIndex: _selectedTab, icon: FluentIcons.chat, label: '微信', onTap: () => setState(() => _selectedTab = 5)),
+                  buildSettingsNavItem(
+                    context: context,
+                    index: 5,
+                    selectedIndex: _selectedTab,
+                    icon: FluentIcons.chat,
+                    label: '微信',
+                    onTap: () => setState(() => _selectedTab = 5),
+                  ),
                 ],
               ),
             ),
@@ -189,9 +227,12 @@ class _SettingsPageState extends State<SettingsPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: _buildContentPanel(context)
-                .animate(key: ValueKey(_selectedTab))
-                .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
-                .slideY(begin: 0.02, end: 0),
+                  .animate(key: ValueKey(_selectedTab))
+                  .fadeIn(
+                    duration: FluentDuration.slow,
+                    curve: FluentEasing.decelerate,
+                  )
+                  .slideY(begin: 0.02, end: 0),
             ),
           ),
         ],
@@ -246,7 +287,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('密码保护', style: FluentTheme.of(context).typography.bodyStrong),
+                      Text(
+                        '密码保护',
+                        style: FluentTheme.of(context).typography.bodyStrong,
+                      ),
                       const SizedBox(height: FluentSpacing.xxs),
                       Text(
                         _isPasswordEnabled
@@ -286,9 +330,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   Button(
                     child: const Text('修改密码'),
-                    onPressed: () => showChangePasswordDialog(context).then((ok) {
-                      if (ok && mounted) _showSuccessBar('密码已修改');
-                    }),
+                    onPressed: () =>
+                        showChangePasswordDialog(context).then((ok) {
+                          if (ok && mounted) _showSuccessBar('密码已修改');
+                        }),
                   ),
                   const SizedBox(width: FluentSpacing.m),
                   FilledButton(
@@ -329,9 +374,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('关闭按钮行为', style: FluentTheme.of(context).typography.bodyStrong),
+                      Text(
+                        '关闭按钮行为',
+                        style: FluentTheme.of(context).typography.bodyStrong,
+                      ),
                       const SizedBox(height: FluentSpacing.xxs),
-                      Text('选择点击窗口关闭按钮时的操作', style: FluentTheme.of(context).typography.caption),
+                      Text(
+                        '选择点击窗口关闭按钮时的操作',
+                        style: FluentTheme.of(context).typography.caption,
+                      ),
                     ],
                   ),
                 ),
@@ -376,9 +427,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('启用消息推送', style: FluentTheme.of(context).typography.bodyStrong),
+                      Text(
+                        '启用消息推送',
+                        style: FluentTheme.of(context).typography.bodyStrong,
+                      ),
                       const SizedBox(height: FluentSpacing.xxs),
-                      Text('当自动刷新发现新消息时推送系统通知', style: FluentTheme.of(context).typography.caption),
+                      Text(
+                        '当自动刷新发现新消息时推送系统通知',
+                        style: FluentTheme.of(context).typography.caption,
+                      ),
                     ],
                   ),
                 ),
@@ -400,7 +457,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   size: 20,
                   color: _notificationEnabled
                       ? null
-                      : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
+                      : FluentTheme.of(
+                          context,
+                        ).inactiveColor.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: FluentSpacing.m),
                 Expanded(
@@ -409,20 +468,26 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       Text(
                         '勿扰时段',
-                        style: FluentTheme.of(context).typography.bodyStrong?.copyWith(
-                          color: _notificationEnabled
-                              ? null
-                              : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
-                        ),
+                        style: FluentTheme.of(context).typography.bodyStrong
+                            ?.copyWith(
+                              color: _notificationEnabled
+                                  ? null
+                                  : FluentTheme.of(
+                                      context,
+                                    ).inactiveColor.withValues(alpha: 0.4),
+                            ),
                       ),
                       const SizedBox(height: FluentSpacing.xxs),
                       Text(
                         '在指定时间段内不推送通知',
-                        style: FluentTheme.of(context).typography.caption?.copyWith(
-                          color: _notificationEnabled
-                              ? null
-                              : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
-                        ),
+                        style: FluentTheme.of(context).typography.caption
+                            ?.copyWith(
+                              color: _notificationEnabled
+                                  ? null
+                                  : FluentTheme.of(
+                                      context,
+                                    ).inactiveColor.withValues(alpha: 0.4),
+                            ),
                       ),
                     ],
                   ),
@@ -451,15 +516,23 @@ class _SettingsPageState extends State<SettingsPage> {
                       minute: _dndStartMinute,
                       onChanged: (h, m) async {
                         await _messageState.setDndTime(
-                          startHour: h, startMinute: m,
-                          endHour: _dndEndHour, endMinute: _dndEndMinute,
+                          startHour: h,
+                          startMinute: m,
+                          endHour: _dndEndHour,
+                          endMinute: _dndEndMinute,
                         );
-                        setState(() { _dndStartHour = h; _dndStartMinute = m; });
+                        setState(() {
+                          _dndStartHour = h;
+                          _dndStartMinute = m;
+                        });
                       },
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('—', style: FluentTheme.of(context).typography.bodyStrong),
+                      child: Text(
+                        '—',
+                        style: FluentTheme.of(context).typography.bodyStrong,
+                      ),
                     ),
                     buildTimePicker(
                       context: context,
@@ -468,10 +541,15 @@ class _SettingsPageState extends State<SettingsPage> {
                       minute: _dndEndMinute,
                       onChanged: (h, m) async {
                         await _messageState.setDndTime(
-                          startHour: _dndStartHour, startMinute: _dndStartMinute,
-                          endHour: h, endMinute: m,
+                          startHour: _dndStartHour,
+                          startMinute: _dndStartMinute,
+                          endHour: h,
+                          endMinute: m,
                         );
-                        setState(() { _dndEndHour = h; _dndEndMinute = m; });
+                        setState(() {
+                          _dndEndHour = h;
+                          _dndEndMinute = m;
+                        });
                       },
                     ),
                   ],
@@ -518,11 +596,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       size: 16,
                       color: _wereadAuthenticated
                           ? (isDark
-                              ? FluentDarkColors.statusSuccess
-                              : FluentLightColors.statusSuccess)
+                                ? FluentDarkColors.statusSuccess
+                                : FluentLightColors.statusSuccess)
                           : (isDark
-                              ? FluentDarkColors.statusWarning
-                              : FluentLightColors.statusWarning),
+                                ? FluentDarkColors.statusWarning
+                                : FluentLightColors.statusWarning),
                     ),
                     const SizedBox(width: FluentSpacing.s),
                     Text(
@@ -536,7 +614,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         height: 14,
                         child: ProgressRing(strokeWidth: 2),
                       ),
-                      const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
+                      const SizedBox(
+                        width: FluentSpacing.xs + FluentSpacing.xxs,
+                      ),
                       Text('校验中...', style: theme.typography.caption),
                     ],
                   ],
@@ -569,7 +649,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: const Text('校验有效性'),
                       ),
                       Button(
-                        onPressed: _wereadChecking ? null : _refreshWereadCookie,
+                        onPressed: _wereadChecking
+                            ? null
+                            : _refreshWereadCookie,
                         child: const Text('刷新 Cookie'),
                       ),
                       Button(
@@ -604,31 +686,36 @@ class _SettingsPageState extends State<SettingsPage> {
                     ],
                   ),
                   const SizedBox(height: FluentSpacing.s),
-                  ...(_followedMps.map((mp) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        Icon(FluentIcons.chat, size: 16,
-                            color: theme.accentColor),
-                        const SizedBox(width: FluentSpacing.s),
-                        Expanded(
-                          child: Text(
-                            mp['name'] ?? '',
-                            style: theme.typography.body,
-                            overflow: TextOverflow.ellipsis,
+                  ...(_followedMps.map(
+                    (mp) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            FluentIcons.chat,
+                            size: 16,
+                            color: theme.accentColor,
                           ),
-                        ),
-                        if ((mp['intro'] ?? '').isNotEmpty)
-                          Flexible(
+                          const SizedBox(width: FluentSpacing.s),
+                          Expanded(
                             child: Text(
-                              mp['intro'] ?? '',
-                              style: theme.typography.caption,
+                              mp['name'] ?? '',
+                              style: theme.typography.body,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                      ],
+                          if ((mp['intro'] ?? '').isNotEmpty)
+                            Flexible(
+                              child: Text(
+                                mp['intro'] ?? '',
+                                style: theme.typography.caption,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ))),
+                  )),
                 ],
               ),
             ),
@@ -637,10 +724,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
 
         // 渠道开关
-        ChannelListSection(
-          title: '微信渠道',
-          channels: wechatChannels,
-        ),
+        ChannelListSection(title: '微信渠道', channels: wechatChannels),
         const SizedBox(height: FluentSpacing.l),
 
         // SSPU 推荐公众号列表
@@ -665,29 +749,35 @@ class _SettingsPageState extends State<SettingsPage> {
         if (valid) {
           await _loadFollowedMps();
           if (mounted) {
-            displayInfoBar(context, builder: (ctx, close) {
-              return InfoBar(
-                title: const Text('Cookie 有效'),
-                severity: InfoBarSeverity.success,
-                action: IconButton(
-                  icon: const Icon(FluentIcons.clear),
-                  onPressed: close,
-                ),
-              );
-            });
+            displayInfoBar(
+              context,
+              builder: (ctx, close) {
+                return InfoBar(
+                  title: const Text('Cookie 有效'),
+                  severity: InfoBarSeverity.success,
+                  action: IconButton(
+                    icon: const Icon(FluentIcons.clear),
+                    onPressed: close,
+                  ),
+                );
+              },
+            );
           }
         } else {
           if (mounted) {
-            displayInfoBar(context, builder: (ctx, close) {
-              return InfoBar(
-                title: const Text('Cookie 已失效，请重新配置'),
-                severity: InfoBarSeverity.error,
-                action: IconButton(
-                  icon: const Icon(FluentIcons.clear),
-                  onPressed: close,
-                ),
-              );
-            });
+            displayInfoBar(
+              context,
+              builder: (ctx, close) {
+                return InfoBar(
+                  title: const Text('Cookie 已失效，请重新配置'),
+                  severity: InfoBarSeverity.error,
+                  action: IconButton(
+                    icon: const Icon(FluentIcons.clear),
+                    onPressed: close,
+                  ),
+                );
+              },
+            );
           }
         }
       }
@@ -705,16 +795,21 @@ class _SettingsPageState extends State<SettingsPage> {
       );
       if (mounted) {
         setState(() => _wereadChecking = false);
-        displayInfoBar(context, builder: (ctx, close) {
-          return InfoBar(
-            title: Text(success ? 'Cookie 刷新成功' : 'Cookie 刷新失败'),
-            severity: success ? InfoBarSeverity.success : InfoBarSeverity.error,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
-          );
-        });
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: Text(success ? 'Cookie 刷新成功' : 'Cookie 刷新失败'),
+              severity: success
+                  ? InfoBarSeverity.success
+                  : InfoBarSeverity.error,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
       }
     } catch (_) {
       if (mounted) setState(() => _wereadChecking = false);
@@ -729,16 +824,19 @@ class _SettingsPageState extends State<SettingsPage> {
         _wereadAuthenticated = false;
         _followedMps = [];
       });
-      displayInfoBar(context, builder: (ctx, close) {
-        return InfoBar(
-          title: const Text('Cookie 已清除'),
-          severity: InfoBarSeverity.info,
-          action: IconButton(
-            icon: const Icon(FluentIcons.clear),
-            onPressed: close,
-          ),
-        );
-      });
+      displayInfoBar(
+        context,
+        builder: (ctx, close) {
+          return InfoBar(
+            title: const Text('Cookie 已清除'),
+            severity: InfoBarSeverity.info,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          );
+        },
+      );
     }
   }
 
@@ -788,29 +886,35 @@ class _SettingsPageState extends State<SettingsPage> {
           // 保存成功后自动加载公众号列表
           await _loadFollowedMps();
           if (mounted) {
-            displayInfoBar(context, builder: (ctx, close) {
-              return InfoBar(
-                title: const Text('Cookie 保存成功'),
-                severity: InfoBarSeverity.success,
-                action: IconButton(
-                  icon: const Icon(FluentIcons.clear),
-                  onPressed: close,
-                ),
-              );
-            });
+            displayInfoBar(
+              context,
+              builder: (ctx, close) {
+                return InfoBar(
+                  title: const Text('Cookie 保存成功'),
+                  severity: InfoBarSeverity.success,
+                  action: IconButton(
+                    icon: const Icon(FluentIcons.clear),
+                    onPressed: close,
+                  ),
+                );
+              },
+            );
           }
         } else {
           if (mounted) {
-            displayInfoBar(context, builder: (ctx, close) {
-              return InfoBar(
-                title: const Text('Cookie 格式无效，缺少 wr_skey 或 wr_vid'),
-                severity: InfoBarSeverity.error,
-                action: IconButton(
-                  icon: const Icon(FluentIcons.clear),
-                  onPressed: close,
-                ),
-              );
-            });
+            displayInfoBar(
+              context,
+              builder: (ctx, close) {
+                return InfoBar(
+                  title: const Text('Cookie 格式无效，缺少 wr_skey 或 wr_vid'),
+                  severity: InfoBarSeverity.error,
+                  action: IconButton(
+                    icon: const Icon(FluentIcons.clear),
+                    onPressed: close,
+                  ),
+                );
+              },
+            );
           }
         }
       }
@@ -829,27 +933,28 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 打开微信读书扫码登录页
   /// 登录成功后自动提取 Cookie 并保存
   Future<void> _openWereadLogin(BuildContext context) async {
-    final success = await Navigator.of(context).push<bool>(
-      FluentPageRoute(
-        builder: (_) => const WereadLoginPage(),
-      ),
-    );
+    final success = await Navigator.of(
+      context,
+    ).push<bool>(FluentPageRoute(builder: (_) => const WereadLoginPage()));
 
     // 登录成功后刷新状态
     if (success == true && mounted) {
       setState(() => _wereadAuthenticated = true);
       await _loadFollowedMps();
       if (mounted) {
-        displayInfoBar(context, builder: (ctx, close) {
-          return InfoBar(
-            title: const Text('扫码登录成功，Cookie 已保存'),
-            severity: InfoBarSeverity.success,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
-          );
-        });
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: const Text('扫码登录成功，Cookie 已保存'),
+              severity: InfoBarSeverity.success,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
       }
     }
   }
@@ -878,14 +983,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (mpBookId != null) {
       // 找到公众号 → 跳转到其文章列表页
-      final detailUrl =
-          'https://weread.qq.com/web/reader/$mpBookId';
+      final detailUrl = 'https://weread.qq.com/web/reader/$mpBookId';
       Navigator.of(context).push(
         FluentPageRoute(
-          builder: (_) => WebViewPage(
-            url: detailUrl,
-            initialTitle: keyword,
-          ),
+          builder: (_) => WebViewPage(url: detailUrl, initialTitle: keyword),
         ),
       );
     } else {
@@ -899,16 +1000,19 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
       if (context.mounted) {
-        displayInfoBar(context, builder: (ctx, close) {
-          return InfoBar(
-            title: Text('未找到公众号「$keyword」，请在微信读书中手动搜索'),
-            severity: InfoBarSeverity.warning,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
-          );
-        });
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: Text('未找到公众号「$keyword」，请在微信读书中手动搜索'),
+              severity: InfoBarSeverity.warning,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
       }
     }
   }
@@ -951,8 +1055,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        Icon(FluentIcons.chat, size: 14,
-                            color: theme.accentColor),
+                        Icon(
+                          FluentIcons.chat,
+                          size: 14,
+                          color: theme.accentColor,
+                        ),
                         const SizedBox(width: FluentSpacing.xs),
                         Expanded(
                           child: Text(

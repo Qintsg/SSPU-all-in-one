@@ -92,7 +92,12 @@ class WechatArticleService {
         });
       } else {
         // 没有详情也保留条目
-        mpList.add({'bookId': bookId, 'name': bookId, 'intro': '', 'cover': ''});
+        mpList.add({
+          'bookId': bookId,
+          'name': bookId,
+          'intro': '',
+          'cover': '',
+        });
       }
     }
 
@@ -192,7 +197,8 @@ class WechatArticleService {
     }
 
     // 格式 2: 直接字段
-    final url = article['url']?.toString() ??
+    final url =
+        article['url']?.toString() ??
         article['originalUrl']?.toString() ??
         article['mp_url']?.toString();
     return url;
