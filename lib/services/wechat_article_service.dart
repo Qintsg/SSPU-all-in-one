@@ -251,7 +251,7 @@ class WechatArticleService {
     if (title == null || title.isEmpty) return null;
 
     // 文章 URL — 微信读书可能提供 url 或 mp_url 字段
-    final url = _extractArticleUrl(article);
+    final url = _extractArticleUrl(article, bookId);
     if (url == null || url.isEmpty) return null;
 
     // 发布日期 — Unix 时间戳转 YYYY-MM-DD
@@ -306,18 +306,28 @@ class WechatArticleService {
   /// 适配多种数据结构
   /// [article] 文章 JSON 数据
   /// :return: URL 字符串
-  String? _extractArticleUrl(Map<String, dynamic> article) {
-    // 格式 1: review 嵌套结构
+  String? _extractArticleUrl(Map<String, dynamic> article, String bookId) {
+    // 格式 1: review 嵌套结构 — 尝试 mpInfo 中的直接 URL 字段
     final review = article['review'] as Map<String, dynamic>?;
     if (review != null) {
       final mpInfo = review['mpInfo'] as Map<String, dynamic>?;
       if (mpInfo != null) {
         final mpUrl = mpInfo['originalUrl']?.toString();
         if (mpUrl != null && mpUrl.isNotEmpty) return mpUrl;
+        final docUrl = mpInfo['doc_url']?.toString();
+        if (docUrl != null && docUrl.isNotEmpty) return docUrl;
       }
     }
 
-    // 格式 2: 直接字段
+    // 格式 2: 用 bookId 编码构造微信读书 MP Reader URL
+    final reviewId = article['reviewId']?.toString() ??
+        review?['reviewId']?.toString();
+    if (reviewId != null && reviewId.isNotEmpty) {
+      final bookStrId = calculateBookStrId(bookId);
+      return 'https://weread.qq.com/web/mp/reader/$bookStrId?reviewId=${Uri.encodeComponent(reviewId)}';
+    }
+
+    // 格式 3: 直接字段
     final url =
         article['url']?.toString() ??
         article['originalUrl']?.toString() ??
@@ -336,7 +346,7 @@ class WechatArticleService {
     if (review != null) {
       final mpInfo = review['mpInfo'] as Map<String, dynamic>?;
       if (mpInfo != null) {
-        timestamp = _toInt(mpInfo['create_time'] ?? mpInfo['publish_time']);
+        timestamp = _toInt(mpInfo['time'] ?? mpInfo['create_time'] ?? mpInfo['publish_time']);
       }
       // review 自身的创建时间
       timestamp ??= _toInt(review['createTime'] ?? review['create_time']);
@@ -381,5 +391,50 @@ class WechatArticleService {
     if (value is double) return value.toInt();
     if (value is String) return int.tryParse(value);
     return null;
+  }
+
+  // ==================== bookId 编码 ====================
+
+  /// 将 bookId 编码为微信读书 reader URL 中的 infoId
+  static String calculateBookStrId(String bookId) {
+    final digest = md5.convert(utf8.encode(bookId)).toString();
+    final buf = StringBuffer(digest.substring(0, 3));
+
+    final (code, transformedIds) = _transformId(bookId);
+    buf.write(code);
+    buf.write('2');
+    buf.write(digest.substring(digest.length - 2));
+
+    for (var i = 0; i < transformedIds.length; i++) {
+      var hexLen = transformedIds[i].length.toRadixString(16);
+      if (hexLen.length == 1) hexLen = '0$hexLen';
+      buf.write(hexLen);
+      buf.write(transformedIds[i]);
+      if (i < transformedIds.length - 1) buf.write('g');
+    }
+
+    var result = buf.toString();
+    if (result.length < 20) {
+      result += digest.substring(0, 20 - result.length);
+    }
+    result += md5.convert(utf8.encode(result)).toString().substring(0, 3);
+    return result;
+  }
+
+  static (String, List<String>) _transformId(String bookId) {
+    if (RegExp(r'^\d+
+).hasMatch(bookId)) {
+      final ary = <String>[];
+      for (var i = 0; i < bookId.length; i += 9) {
+        final end = (i + 9 > bookId.length) ? bookId.length : i + 9;
+        ary.add(int.parse(bookId.substring(i, end)).toRadixString(16));
+      }
+      return ('3', ary);
+    }
+    final buf = StringBuffer();
+    for (var i = 0; i < bookId.length; i++) {
+      buf.write(bookId.codeUnitAt(i).toRadixString(16));
+    }
+    return ('4', [buf.toString()]);
   }
 }
