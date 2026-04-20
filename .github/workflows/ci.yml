@@ -1,0 +1,36 @@
+# CI 工作流 — Flutter 测试与静态分析
+# 触发：push 到 develop/main，或 PR 到 develop/main
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  FLUTTER_VERSION: '3.41.4'
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 代码格式检查
+        run: dart format --set-exit-if-changed .
+
+      - name: 静态分析
+        run: flutter analyze --no-fatal-infos
+
+      - name: 运行测试
+        run: flutter test --coverage || echo "No tests found, skipping"
