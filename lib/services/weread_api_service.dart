@@ -11,10 +11,11 @@
  */
 
 import 'dart:convert';
-import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-import 'http_service.dart';
 import 'weread_auth_service.dart';
+import 'weread_webview_service.dart';
 
 /// 微信读书 API 服务（单例）
 /// 封装对 i.weread.qq.com 的 REST API 请求
@@ -23,11 +24,12 @@ class WereadApiService {
 
   static final WereadApiService instance = WereadApiService._();
 
-  final HttpService _http = HttpService.instance;
   final WereadAuthService _auth = WereadAuthService.instance;
+  final WereadWebViewService _webViewService = WereadWebViewService.instance;
 
-  /// 微信读书 API 基础 URL
-  static const String _apiBase = 'https://i.weread.qq.com';
+  /// 微信读书 Web 端 API 基础 URL
+  /// 使用 weread.qq.com/web 路径（同源）而非 i.weread.qq.com（跨域）
+  static const String _apiBase = 'https://weread.qq.com/web';
 
   // ==================== 书架相关 ====================
 
@@ -147,8 +149,8 @@ class WereadApiService {
 
   // ==================== 内部工具方法 ====================
 
-  /// 通用 JSON GET 请求
-  /// 自动注入 Cookie 认证头，处理错误
+  /// 通用 JSON GET 请求 — 通过 HeadlessInAppWebView 的 JS fetch 执行
+  /// 微信读书 Cookie 与 WebView2 session 绑定，外部 HTTP 客户端无法使用
   /// [url] 完整请求 URL
   /// [queryParameters] URL 查询参数
   /// :return: 响应 JSON 数据，失败返回 null
@@ -159,40 +161,95 @@ class WereadApiService {
     final cookie = await _auth.getCookieString();
     if (cookie == null || cookie.isEmpty) return null;
 
+    // 拼接查询参数到 URL
+    final uri = Uri.parse(url).replace(
+      queryParameters: queryParameters?.map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
+    );
+
+    // 优先通过 WebView 内部 JS fetch 执行（Cookie session 绑定）
+    final controller = _webViewService.controller;
+    if (controller != null && _webViewService.isReady) {
+      return _getJsonViaWebView(controller, uri.toString());
+    }
+
+    // WebView 未就绪时尝试初始化
+    final initialized = await _webViewService.ensureInitialized();
+    if (initialized && _webViewService.controller != null) {
+      return _getJsonViaWebView(_webViewService.controller!, uri.toString());
+    }
+
+    debugPrint('[WereadApi] WebView 未就绪，无法执行 API 请求: $url');
+    return null;
+  }
+
+  /// 通过 WebView JS fetch 执行 GET 请求
+  /// 使用 callAsyncJavaScript 执行 fetch 并解析 JSON 响应
+  /// [controller] WebView 控制器
+  /// [fullUrl] 完整请求 URL（含查询参数）
+  /// :return: 解析后的 JSON Map，失败返回 null
+  Future<Map<String, dynamic>?> _getJsonViaWebView(
+    InAppWebViewController controller,
+    String fullUrl,
+  ) async {
     try {
-      final response = await _http.get<dynamic>(
-        url,
-        queryParameters: queryParameters,
-        options: Options(
-          headers: {
-            'Cookie': cookie,
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://weread.qq.com/',
-            'Origin': 'https://weread.qq.com',
-          },
-          responseType: ResponseType.json,
-        ),
+      final result = await controller.callAsyncJavaScript(
+        functionBody: '''
+          try {
+            const resp = await fetch(url, {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'Accept': 'application/json, text/plain, */*'
+              }
+            });
+            const status = resp.status;
+            if (status !== 200) {
+              return { __error: true, status: status };
+            }
+            const data = await resp.json();
+            return data;
+          } catch (e) {
+            return { __error: true, message: e.toString() };
+          }
+        ''',
+        arguments: {'url': fullUrl},
       );
 
-      // 响应可能是 Map 或需要 JSON 解码的字符串
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        // 检查业务错误码
-        final errCode = data['errCode'] ?? data['errcode'];
-        if (errCode != null && errCode != 0) return null;
-        return data;
+      if (result == null || result.error != null) {
+        debugPrint('[WereadApi] WebView JS 执行失败: ${result?.error}');
+        return null;
       }
-      if (data is String) {
-        final decoded = json.decode(data);
-        if (decoded is Map<String, dynamic>) return decoded;
+
+      final value = result.value;
+      Map<String, dynamic>? data;
+
+      if (value is Map<String, dynamic>) {
+        data = value;
+      } else if (value is String) {
+        final decoded = json.decode(value);
+        if (decoded is Map<String, dynamic>) data = decoded;
       }
-      return null;
-    } on DioException {
-      // 网络错误静默失败，由调用方处理
-      return null;
-    } catch (_) {
+
+      if (data == null) return null;
+
+      // 检查内部错误标记
+      if (data['__error'] == true) {
+        debugPrint('[WereadApi] fetch 失败: $data');
+        return null;
+      }
+
+      // 检查业务错误码
+      final errCode = data['errCode'] ?? data['errcode'];
+      if (errCode != null && errCode != 0) {
+        debugPrint('[WereadApi] 业务错误: errCode=$errCode');
+        return null;
+      }
+
+      return data;
+    } catch (e) {
+      debugPrint('[WereadApi] _getJsonViaWebView 异常: $e');
       return null;
     }
   }

@@ -14,6 +14,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/message_item.dart';
 import '../models/channel_config.dart';
 import '../services/auto_refresh_service.dart';
+import '../services/wechat_article_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
@@ -157,6 +158,77 @@ class _InfoPageState extends State<InfoPage> {
 
       // 根据渠道开关过滤并排序
       await _filterByEnabledChannels();
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// 刷新微信公众号文章：通过 WechatArticleService 获取已关注公众号的推文
+  Future<void> _refreshWechatArticles() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final articles = await WechatArticleService.instance.fetchArticles(
+        maxCount: 50,
+      );
+
+      if (articles.isEmpty) {
+        if (mounted) {
+          displayInfoBar(context, builder: (ctx, close) {
+            return InfoBar(
+              title: const Text('未获取到微信公众号文章'),
+              content: const Text('请确认已在设置中配置微信读书 Cookie 并关注公众号'),
+              severity: InfoBarSeverity.warning,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          });
+        }
+        return;
+      }
+
+      // 与已有消息合并
+      final merged = _stateService.mergeMessages(_allMessages, articles);
+      _allMessages
+        ..clear()
+        ..addAll(merged);
+
+      // 持久化
+      await _stateService.saveMessages(_allMessages);
+
+      // 过滤并排序
+      await _filterByEnabledChannels();
+
+      if (mounted) {
+        displayInfoBar(context, builder: (ctx, close) {
+          return InfoBar(
+            title: Text('已获取 ${articles.length} 篇微信公众号文章'),
+            severity: InfoBarSeverity.success,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        displayInfoBar(context, builder: (ctx, close) {
+          return InfoBar(
+            title: const Text('刷新微信公众号文章失败'),
+            content: Text(e.toString()),
+            severity: InfoBarSeverity.error,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          );
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -450,9 +522,9 @@ class _InfoPageState extends State<InfoPage> {
             ],
           ),
         ),
-        // 刷新微信公众号/服务号消息（占位）
+        // 刷新微信公众号/服务号消息
         Button(
-          onPressed: null,
+          onPressed: _isLoading ? null : _refreshWechatArticles,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
