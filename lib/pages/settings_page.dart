@@ -992,18 +992,17 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// 关注指定公众号（虚拟关注，存本地）
-  /// 通过微信读书搜索 API 获取 bookId，存入本地关注列表
+  /// 从微信读书书架同步公众号到本地关注列表
+  /// 微信读书已下架搜索API，改用书架同步方式
   /// [context] 构建上下文
-  /// [keyword] 公众号名称（搜索关键词）
-  Future<void> _followMpAccount(BuildContext context, String keyword) async {
+  Future<void> _syncMpsFromShelf(BuildContext context) async {
     // 显示加载状态
     if (context.mounted) {
       displayInfoBar(
         context,
         builder: (ctx, close) {
           return InfoBar(
-            title: Text('正在搜索「$keyword」...'),
+            title: const Text('正在从书架同步公众号...'),
             severity: InfoBarSeverity.info,
             action: IconButton(
               icon: const Icon(FluentIcons.clear),
@@ -1014,20 +1013,18 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     }
 
-    // 调用虚拟关注接口：搜索 + 存本地
-    final result = await WechatArticleService.instance.followMpBySearch(keyword);
+    final addedCount = await WechatArticleService.instance.syncFromShelf();
 
     if (!context.mounted) return;
 
-    if (result != null) {
-      // 关注成功，刷新列表
+    if (addedCount > 0) {
       await _loadFollowedMps();
       if (context.mounted) {
         displayInfoBar(
           context,
           builder: (ctx, close) {
             return InfoBar(
-              title: Text('已关注「${result['name']}」'),
+              title: Text('已从书架同步 $addedCount 个公众号'),
               severity: InfoBarSeverity.success,
               action: IconButton(
                 icon: const Icon(FluentIcons.clear),
@@ -1037,14 +1034,27 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         );
       }
-    } else {
-      // 搜索失败或未找到
+    } else if (addedCount == 0) {
       displayInfoBar(
         context,
         builder: (ctx, close) {
           return InfoBar(
-            title: Text('未找到公众号「$keyword」，请检查 Cookie 是否有效'),
+            title: const Text('书架中没有新的公众号，请先在微信读书App中添加公众号文章到书架'),
             severity: InfoBarSeverity.warning,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          );
+        },
+      );
+    } else {
+      displayInfoBar(
+        context,
+        builder: (ctx, close) {
+          return InfoBar(
+            title: const Text('同步失败，请检查 Cookie 是否有效'),
+            severity: InfoBarSeverity.error,
             action: IconButton(
               icon: const Icon(FluentIcons.clear),
               onPressed: close,
@@ -1078,8 +1088,14 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: FluentSpacing.s),
             Text(
               '以下为上海第二工业大学官方认可的微信公众号，'
-              '在微信读书中关注即可自动采集推文',
+              '请先在微信读书App中将公众号文章添加到书架，再点击同步',
               style: theme.typography.caption,
+            ),
+            const SizedBox(height: FluentSpacing.s),
+            // 从书架同步按钮
+            FilledButton(
+              onPressed: () => _syncMpsFromShelf(context),
+              child: const Text('从书架同步公众号'),
             ),
             const SizedBox(height: FluentSpacing.m),
             // 公众号网格列表（每行 3 个）
@@ -1106,12 +1122,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // 在微信读书中搜索并关注该公众号
-                        HyperlinkButton(
-                          onPressed: () =>
-                              _followMpAccount(context, account.name),
-                          child: const Text('关注'),
-                        ),
+                        // 微信读书已下架搜索关注，仅展示名称
                       ],
                     ),
                   ),

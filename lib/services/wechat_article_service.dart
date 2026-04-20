@@ -90,6 +90,40 @@ class WechatArticleService {
     return null;
   }
 
+  /// 从微信读书书架同步公众号到本地关注列表
+  /// 调用书架API，提取 MP_WXS_ 开头的 bookId，合并到本地
+  /// :return: 新增的公众号数量；失败返回 -1
+  Future<int> syncFromShelf() async {
+    final hasCookie = await _auth.hasCookies();
+    if (!hasCookie) return -1;
+
+    // 获取书架中的公众号 bookId
+    final shelfMpIds = await _api.getFollowedMpBookIds();
+    if (shelfMpIds.isEmpty) return 0;
+
+    final localMps = await getLocalFollowedMps();
+    var addedCount = 0;
+
+    for (final bookId in shelfMpIds) {
+      if (localMps.containsKey(bookId)) continue;
+
+      // 尝试从API获取名称
+      String mpName = bookId;
+      final info = await _api.getBookInfo(bookId);
+      if (info != null) {
+        mpName = _extractString(info, 'title') ?? bookId;
+      }
+
+      localMps[bookId] = mpName;
+      addedCount++;
+    }
+
+    if (addedCount > 0) {
+      await _saveLocalFollowedMps(localMps);
+    }
+    return addedCount;
+  }
+
   /// 直接用已知 bookId 和名称关注（用于 SSPU 推荐列表快速关注）
   /// [bookId] 公众号 bookId
   /// [name] 公众号名称
