@@ -4,6 +4,14 @@
 
 ---
 
+## [Unreleased]
+
+### 修复
+
+- 修复 macOS Runner 的 Xcode 配置引用错误，恢复 Flutter 生成配置与 CocoaPods 支持文件的正确加载，解决 `flutter build macos` 编译失败问题
+
+---
+
 ## [0.0.1-alpha] - 2026-04-18
 
 ### 新增
