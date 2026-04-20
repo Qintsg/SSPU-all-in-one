@@ -6,6 +6,8 @@
  * @Date : 2026-04-18
  */
 
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/channel_config.dart';
@@ -16,6 +18,7 @@ import '../widgets/password_dialogs.dart';
 import '../widgets/settings_widgets.dart';
 import '../widgets/channel_list_section.dart';
 import '../services/weread_auth_service.dart';
+import '../services/weread_webview_service.dart';
 import '../services/wechat_article_service.dart';
 import '../models/sspu_wechat_accounts.dart';
 import '../theme/fluent_tokens.dart';
@@ -97,6 +100,10 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndEM = await _messageState.getDndEndMinute();
     // 检查微信读书认证状态
     final wereadHasCookie = await _wereadAuth.hasCookies();
+    // 如果已有 Cookie，启动后台 WebView 保持会话（供校验/刷新使用）
+    if (wereadHasCookie) {
+      unawaited(WereadWebViewService.instance.ensureInitialized());
+    }
     if (mounted) {
       setState(() {
         _isPasswordEnabled = isSet;
@@ -644,7 +651,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _checkWereadAuth() async {
     setState(() => _wereadChecking = true);
     try {
-      final valid = await _wereadAuth.validateCookie();
+      final valid = await _wereadAuth.validateCookie(
+        webViewController: WereadWebViewService.instance.controller,
+      );
       if (mounted) {
         setState(() {
           _wereadAuthenticated = valid;
@@ -689,7 +698,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _refreshWereadCookie() async {
     setState(() => _wereadChecking = true);
     try {
-      final success = await _wereadAuth.renewCookie();
+      final success = await _wereadAuth.renewCookie(
+        webViewController: WereadWebViewService.instance.controller,
+      );
       if (mounted) {
         setState(() => _wereadChecking = false);
         displayInfoBar(context, builder: (ctx, close) {
