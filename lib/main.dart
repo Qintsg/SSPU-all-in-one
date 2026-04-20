@@ -15,9 +15,14 @@ import 'pages/agreement_page.dart';
 import 'services/password_service.dart';
 import 'services/storage_service.dart';
 import 'services/tray_service.dart';
+import 'services/notification_service.dart';
+import 'services/auto_refresh_service.dart';
 
 /// 全局字体族名称
-const String kFontFamily = 'MiSans';
+import 'theme/fluent_tokens.dart';
+
+/// 字体族常量（已迁移至 FluentTokenTheme.fontFamily，保留兼容引用）
+const String kFontFamily = FluentTokenTheme.fontFamily;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +34,10 @@ void main() async {
 
   // 初始化系统托盘图标与菜单
   await TrayService.instance.init();
+
+  // 初始化通知服务和自动刷新服务
+  await NotificationService.instance.init();
+  await AutoRefreshService.instance.init();
 
   runApp(const SSPUApp());
 }
@@ -272,18 +281,8 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
     return FluentApp(
       navigatorKey: _navigatorKey,
       title: 'SSPU All-in-One',
-      theme: FluentThemeData(
-        accentColor: Colors.blue,
-        brightness: Brightness.light,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: kFontFamily,
-      ),
-      darkTheme: FluentThemeData(
-        accentColor: Colors.blue,
-        brightness: Brightness.dark,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: kFontFamily,
-      ),
+      theme: FluentTokenTheme.light(),
+      darkTheme: FluentTokenTheme.dark(),
       themeMode: ThemeMode.system,
       localizationsDelegates: FluentLocalizations.localizationsDelegates,
       supportedLocales: FluentLocalizations.supportedLocales,

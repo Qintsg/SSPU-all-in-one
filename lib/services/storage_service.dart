@@ -25,6 +25,9 @@ class StorageKeys {
 
   /// 关闭行为偏好（ask / minimize / exit）
   static const String closeBehavior = 'close_behavior';
+
+  /// 结构化数据前缀（JSON 序列化存储）
+  static const String dataPrefix = 'data_';
 }
 
 /// 统一数据存储服务
@@ -144,5 +147,108 @@ class StorageService {
   /// [behavior] 可选值：ask（每次询问）、minimize（最小化到托盘）、exit（直接退出）
   static Future<void> setCloseBehavior(String behavior) async {
     await setString(StorageKeys.closeBehavior, behavior);
+  }
+
+  // ==================== 结构化数据操作 ====================
+
+  /// 保存结构化数据（JSON 序列化后存储）
+  /// [collection] 数据集合名（如 'bookmarks', 'notes'）
+  /// [key] 数据项唯一标识
+  /// [data] 要存储的 Map 数据
+  static Future<void> saveData(
+    String collection,
+    String key,
+    Map<String, dynamic> data,
+  ) async {
+    final storageKey = '${StorageKeys.dataPrefix}${collection}_$key';
+    final jsonStr = jsonEncode(data);
+    await setString(storageKey, jsonStr);
+    // 同步更新集合索引（记录该集合下有哪些 key）
+    await _addToIndex(collection, key);
+  }
+
+  /// 读取单条结构化数据
+  /// 返回 null 表示数据不存在
+  static Future<Map<String, dynamic>?> getData(
+    String collection,
+    String key,
+  ) async {
+    final storageKey = '${StorageKeys.dataPrefix}${collection}_$key';
+    final jsonStr = await getString(storageKey);
+    if (jsonStr == null) return null;
+    return jsonDecode(jsonStr) as Map<String, dynamic>;
+  }
+
+  /// 读取集合内全部数据
+  /// 返回 key → data 的映射表
+  static Future<Map<String, Map<String, dynamic>>> getAllData(
+    String collection,
+  ) async {
+    final keys = await _getIndex(collection);
+    final result = <String, Map<String, dynamic>>{};
+    for (final key in keys) {
+      final data = await getData(collection, key);
+      if (data != null) result[key] = data;
+    }
+    return result;
+  }
+
+  /// 删除单条结构化数据
+  static Future<void> removeData(String collection, String key) async {
+    final storageKey = '${StorageKeys.dataPrefix}${collection}_$key';
+    await remove(storageKey);
+    await _removeFromIndex(collection, key);
+  }
+
+  /// 清空指定集合的所有数据
+  static Future<void> clearCollection(String collection) async {
+    final keys = await _getIndex(collection);
+    for (final key in keys) {
+      final storageKey = '${StorageKeys.dataPrefix}${collection}_$key';
+      await remove(storageKey);
+    }
+    // 删除索引本身
+    await remove('${StorageKeys.dataPrefix}${collection}_index');
+  }
+
+  /// 获取集合内数据条数
+  static Future<int> getCollectionCount(String collection) async {
+    final keys = await _getIndex(collection);
+    return keys.length;
+  }
+
+  /// 清除所有应用数据（危险操作，仅用于重置）
+  static Future<void> clearAll() async {
+    final prefs = await _instance;
+    await prefs.clear();
+  }
+
+  // ==================== 集合索引管理（内部） ====================
+
+  /// 获取集合的 key 索引列表
+  static Future<List<String>> _getIndex(String collection) async {
+    final indexKey = '${StorageKeys.dataPrefix}${collection}_index';
+    final jsonStr = await getString(indexKey);
+    if (jsonStr == null) return [];
+    final list = jsonDecode(jsonStr) as List<dynamic>;
+    return list.cast<String>();
+  }
+
+  /// 向集合索引中添加 key（去重）
+  static Future<void> _addToIndex(String collection, String key) async {
+    final keys = await _getIndex(collection);
+    if (!keys.contains(key)) {
+      keys.add(key);
+      final indexKey = '${StorageKeys.dataPrefix}${collection}_index';
+      await setString(indexKey, jsonEncode(keys));
+    }
+  }
+
+  /// 从集合索引中移除 key
+  static Future<void> _removeFromIndex(String collection, String key) async {
+    final keys = await _getIndex(collection);
+    keys.remove(key);
+    final indexKey = '${StorageKeys.dataPrefix}${collection}_index';
+    await setString(indexKey, jsonEncode(keys));
   }
 }

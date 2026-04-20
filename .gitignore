@@ -103,5 +103,7 @@ ehthumbs.db
 Desktop.ini
 *~
 
-# Dida365 本地镜像（允许提交，不忽略）
-# .github/dida365-state.md
+# Dida365 本地镜像与 Copilot 运行时状态
+.github/dida365-state.md
+.github/session-state.md
+.github/copilot-runtime/

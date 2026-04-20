@@ -9,6 +9,7 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 import '../services/password_service.dart';
+import '../theme/fluent_tokens.dart';
 
 /// 锁定页面
 /// 当用户设置密码保护后，应用启动时显示此页面
@@ -161,7 +162,7 @@ class _LockPageState extends State<LockPage>
       child: ScaffoldPage(
         content: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(FluentSpacing.xxxl),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -171,23 +172,23 @@ class _LockPageState extends State<LockPage>
                   width: 80,
                   height: 80,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: FluentSpacing.xxl),
 
                 // 应用名称
                 Text(
                   'SSPU All-in-One',
                   style: theme.typography.subtitle,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: FluentSpacing.s),
                 Text(
                   '应用已锁定',
                   style: theme.typography.bodyLarge?.copyWith(
                     color: isDark
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : Colors.black.withValues(alpha: 0.6),
+                        ? FluentDarkColors.textSecondary
+                        : FluentLightColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: FluentSpacing.xxxl + FluentSpacing.s),
 
                 // 密码输入区域（带抖动动画）
                 AnimatedBuilder(
@@ -209,21 +210,23 @@ class _LockPageState extends State<LockPage>
                           revealMode: PasswordRevealMode.peekAlways,
                           onSubmitted: (_) => _handleUnlock(),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: FluentSpacing.s),
 
                         // 错误提示
                         if (_errorMessage != null)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.only(bottom: FluentSpacing.s),
                             child: Text(
                               _errorMessage!,
                               style: theme.typography.caption?.copyWith(
-                                color: Colors.red,
+                                color: isDark
+                                    ? FluentDarkColors.statusError
+                                    : FluentLightColors.statusError,
                               ),
                             ),
                           ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: FluentSpacing.s),
 
                         // 解锁按钮
                         SizedBox(
