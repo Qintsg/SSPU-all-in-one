@@ -261,6 +261,12 @@ class MessageItem {
   /// 内容分类（tag3）
   final MessageCategory category;
 
+  /// 微信公众号 bookId（仅微信渠道有值，用于 per-account 通知控制）
+  final String? mpBookId;
+
+  /// 微信公众号名称（仅微信渠道有值，用于来源显示）
+  final String? mpName;
+
   const MessageItem({
     required this.id,
     required this.title,
@@ -269,9 +275,11 @@ class MessageItem {
     required this.sourceType,
     required this.sourceName,
     required this.category,
+    this.mpBookId,
+    this.mpName,
   });
 
-  /// 从 JSON 反序列化
+  /// 从 JSON 反序列化（兼容旧数据中无 mpBookId/mpName 的情况）
   factory MessageItem.fromJson(Map<String, dynamic> json) {
     return MessageItem(
       id: json['id'] as String,
@@ -287,6 +295,8 @@ class MessageItem {
       category: MessageCategory.values.firstWhere(
         (category) => category.name == json['category'],
       ),
+      mpBookId: json['mpBookId'] as String?,
+      mpName: json['mpName'] as String?,
     );
   }
 
@@ -299,5 +309,7 @@ class MessageItem {
     'sourceType': sourceType.name,
     'sourceName': sourceName.name,
     'category': category.name,
+    if (mpBookId != null) 'mpBookId': mpBookId,
+    if (mpName != null) 'mpName': mpName,
   };
 }

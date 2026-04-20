@@ -271,11 +271,25 @@ class _InfoPageState extends State<InfoPage> {
     final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
     final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
 
+    // 预加载单个公众号通知开关状态（用于 per-mp 过滤）
+    final mpEnabledCache = <String, bool>{};
+    for (final msg in _allMessages) {
+      if (msg.mpBookId != null && !mpEnabledCache.containsKey(msg.mpBookId)) {
+        mpEnabledCache[msg.mpBookId!] = await _stateService
+            .isMpNotificationEnabled(msg.mpBookId!);
+      }
+    }
+
     // 过滤掉已关闭渠道的消息
     _allMessages.removeWhere((msg) {
       // 微信渠道按 sourceType 判断
       if (msg.sourceType == MessageSourceType.wechatPublic) {
-        return !wechatPublicEnabled;
+        if (!wechatPublicEnabled) return true;
+        // 渠道启用时进一步检查单个公众号开关
+        if (msg.mpBookId != null) {
+          return !(mpEnabledCache[msg.mpBookId] ?? true);
+        }
+        return false;
       }
       if (msg.sourceType == MessageSourceType.wechatService) {
         return !wechatServiceEnabled;

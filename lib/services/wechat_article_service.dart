@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 import '../models/message_item.dart';
+import 'message_state_service.dart';
 import 'weread_api_service.dart';
 import 'weread_auth_service.dart';
 
@@ -26,6 +27,7 @@ class WechatArticleService {
 
   final WereadApiService _api = WereadApiService.instance;
   final WereadAuthService _auth = WereadAuthService.instance;
+  final MessageStateService _stateService = MessageStateService.instance;
 
   /// 每个公众号默认获取的文章条数
   static const int _perMpArticleCount = 10;
@@ -47,9 +49,13 @@ class WechatArticleService {
 
     final allMessages = <MessageItem>[];
 
-    // 逐个公众号获取文章
+    // 逐个公众号获取文章（跳过通知关闭的公众号）
     for (final bookId in mpBookIds) {
       if (allMessages.length >= maxCount) break;
+
+      // 检查该公众号的通知开关，关闭则跳过采集
+      final mpEnabled = await _stateService.isMpNotificationEnabled(bookId);
+      if (!mpEnabled) continue;
 
       final articles = await _api.getAllArticles(
         bookId,
@@ -62,7 +68,7 @@ class WechatArticleService {
       for (final article in articles) {
         if (allMessages.length >= maxCount) break;
 
-        final msgItem = _articleToMessageItem(article, mpName);
+        final msgItem = _articleToMessageItem(article, mpName, bookId);
         if (msgItem != null) {
           allMessages.add(msgItem);
         }
@@ -122,10 +128,12 @@ class WechatArticleService {
   /// 适配微信读书 book/articles 接口的多种返回格式
   /// [article] 单篇文章的 JSON 数据
   /// [mpName] 公众号名称（用于兜底来源显示）
+  /// [bookId] 公众号 bookId（用于 per-account 标识）
   /// :return: MessageItem 实例，无法解析时返回 null
   MessageItem? _articleToMessageItem(
     Map<String, dynamic> article,
     String mpName,
+    String bookId,
   ) {
     // 文章标题 — 可能在 review.mpInfo.title 或直接 title
     final title = _extractArticleTitle(article);
@@ -149,6 +157,8 @@ class WechatArticleService {
       sourceType: MessageSourceType.wechatPublic,
       sourceName: MessageSourceName.wechatPublicPlaceholder,
       category: MessageCategory.wechatArticle,
+      mpBookId: bookId,
+      mpName: mpName,
     );
   }
 

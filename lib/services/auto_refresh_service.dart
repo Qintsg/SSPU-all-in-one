@@ -395,15 +395,27 @@ class AutoRefreshService {
       final notifEnabled = await _stateService.isNotificationEnabled();
       final inDnd = await _stateService.isInDndPeriod();
       if (notifEnabled && !inDnd) {
-        if (newMessages.length == 1) {
+        // 过滤掉单个公众号通知关闭的消息
+        final notifiableMessages = <MessageItem>[];
+        for (final msg in newMessages) {
+          if (msg.mpBookId != null) {
+            final mpEnabled = await _stateService.isMpNotificationEnabled(
+              msg.mpBookId!,
+            );
+            if (!mpEnabled) continue;
+          }
+          notifiableMessages.add(msg);
+        }
+
+        if (notifiableMessages.length == 1) {
           await _notificationService.show(
             title: '新消息',
-            body: newMessages.first.title,
+            body: notifiableMessages.first.title,
           );
-        } else {
+        } else if (notifiableMessages.length > 1) {
           await _notificationService.show(
-            title: '${newMessages.length} 条新消息',
-            body: newMessages.take(3).map((m) => m.title).join('\n'),
+            title: '${notifiableMessages.length} 条新消息',
+            body: notifiableMessages.take(3).map((m) => m.title).join('\n'),
           );
         }
       }

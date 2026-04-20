@@ -175,6 +175,30 @@ class MessageStateService {
     );
   }
 
+  // ==================== 单个公众号通知开关 ====================
+
+  /// 生成公众号通知开关的存储键名
+  /// [mpBookId] 公众号的 bookId（如 MP_WXS_xxx）
+  static String _mpNotificationKey(String mpBookId) =>
+      'mp_${mpBookId}_notification_enabled';
+
+  /// 获取指定公众号的通知开关（默认开启）
+  /// [mpBookId] 公众号 bookId
+  /// :return: 是否启用该公众号的通知
+  Future<bool> isMpNotificationEnabled(String mpBookId) async {
+    return await StorageService.getBool(
+      _mpNotificationKey(mpBookId),
+      defaultValue: true,
+    );
+  }
+
+  /// 设置指定公众号的通知开关
+  /// [mpBookId] 公众号 bookId
+  /// [enabled] 是否启用
+  Future<void> setMpNotificationEnabled(String mpBookId, bool enabled) async {
+    await StorageService.setBool(_mpNotificationKey(mpBookId), enabled);
+  }
+
   // ==================== 通用渠道开关与间隔管理 ====================
 
   /// 生成渠道启用状态的存储键名

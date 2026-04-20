@@ -82,6 +82,9 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 已关注的公众号列表
   List<Map<String, String>> _followedMps = [];
 
+  /// 单个公众号通知开关状态缓存（key = bookId）
+  Map<String, bool> _mpNotificationEnabled = {};
+
   @override
   void initState() {
     super.initState();
@@ -712,6 +715,24 @@ class _SettingsPageState extends State<SettingsPage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                          // 单个公众号通知开关
+                          const SizedBox(width: FluentSpacing.s),
+                          Tooltip(
+                            message: '控制是否接收该公众号的推文通知',
+                            child: ToggleSwitch(
+                              checked:
+                                  _mpNotificationEnabled[mp['bookId']] ?? true,
+                              onChanged: (value) async {
+                                final bookId = mp['bookId'] ?? '';
+                                if (bookId.isEmpty) return;
+                                await MessageStateService.instance
+                                    .setMpNotificationEnabled(bookId, value);
+                                setState(() {
+                                  _mpNotificationEnabled[bookId] = value;
+                                });
+                              },
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -922,11 +943,23 @@ class _SettingsPageState extends State<SettingsPage> {
     controller.dispose();
   }
 
-  /// 加载已关注的公众号列表
+  /// 加载已关注的公众号列表及其通知开关状态
   Future<void> _loadFollowedMps() async {
     final mps = await _wechatService.getFollowedMpList();
+    // 加载每个公众号的通知开关状态
+    final stateService = MessageStateService.instance;
+    final enabledMap = <String, bool>{};
+    for (final mp in mps) {
+      final bookId = mp['bookId'] ?? '';
+      if (bookId.isNotEmpty) {
+        enabledMap[bookId] = await stateService.isMpNotificationEnabled(bookId);
+      }
+    }
     if (mounted) {
-      setState(() => _followedMps = mps);
+      setState(() {
+        _followedMps = mps;
+        _mpNotificationEnabled = enabledMap;
+      });
     }
   }
 
@@ -1068,14 +1101,12 @@ class _SettingsPageState extends State<SettingsPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // TODO: 关注按钮暂时隐藏，待搜索跳转功能完善后启用
-                        // HyperlinkButton(
-                        //   onPressed: () => _openWereadSearch(
-                        //     context,
-                        //     account.name,
-                        //   ),
-                        //   child: const Text('关注'),
-                        // ),
+                        // 在微信读书中搜索并关注该公众号
+                        HyperlinkButton(
+                          onPressed: () =>
+                              _openWereadSearch(context, account.name),
+                          child: const Text('关注'),
+                        ),
                       ],
                     ),
                   ),
