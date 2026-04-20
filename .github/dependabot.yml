@@ -1,0 +1,26 @@
+# Dependabot 配置 — 自动检测依赖更新
+# 参考：https://docs.github.com/en/code-security/dependabot
+version: 2
+updates:
+  # Flutter/Dart 依赖（pub）
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps(flutter)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "ci"
+      - "dependencies"
+    commit-message:
+      prefix: "deps(actions)"
