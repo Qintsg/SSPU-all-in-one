@@ -15,6 +15,7 @@ import 'package:crypto/crypto.dart';
 
 import '../models/message_item.dart';
 import 'message_state_service.dart';
+import 'storage_service.dart';
 import 'weread_api_service.dart';
 import 'weread_auth_service.dart';
 
@@ -29,13 +30,93 @@ class WechatArticleService {
   final WereadAuthService _auth = WereadAuthService.instance;
   final MessageStateService _stateService = MessageStateService.instance;
 
+  /// 本地关注列表的存储键（JSON 格式：{bookId: name, ...}）
+  static const String _keyFollowedMps = 'wechat_followed_mps';
+
   /// 每个公众号默认获取的文章条数
   static const int _perMpArticleCount = 10;
+
+  // ==================== 本地关注管理 ====================
+
+  /// 获取本地存储的关注公众号列表
+  /// :return: {bookId: name} 映射
+  Future<Map<String, String>> getLocalFollowedMps() async {
+    final json = await StorageService.getString(_keyFollowedMps);
+    if (json == null || json.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is Map) {
+        return decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
+      }
+    } catch (_) {}
+    return {};
+  }
+
+  /// 保存本地关注列表
+  Future<void> _saveLocalFollowedMps(Map<String, String> mps) async {
+    await StorageService.setString(_keyFollowedMps, jsonEncode(mps));
+  }
+
+  /// 通过搜索关注公众号（虚拟关注，不依赖微信读书书架）
+  /// 搜索公众号名称 → 获取 bookId → 存本地
+  /// [keyword] 公众号名称
+  /// :return: 关注结果 {bookId, name}; 失败返回 null
+  Future<Map<String, String>?> followMpBySearch(String keyword) async {
+    final hasCookie = await _auth.hasCookies();
+    if (!hasCookie) return null;
+
+    final searchResult = await _api.search(keyword);
+    if (searchResult == null) return null;
+
+    // 从搜索结果中找第一个公众号（bookId 以 MP_WXS_ 开头）
+    final books = searchResult['books'] as List<dynamic>?;
+    if (books == null || books.isEmpty) return null;
+
+    for (final item in books) {
+      final bookInfo = (item is Map) ? item['bookInfo'] as Map<String, dynamic>? : null;
+      if (bookInfo == null) continue;
+
+      final bookId = bookInfo['bookId']?.toString();
+      final title = bookInfo['title']?.toString();
+      if (bookId != null && bookId.startsWith('MP_WXS_') && title != null) {
+        // 存入本地关注列表
+        final mps = await getLocalFollowedMps();
+        mps[bookId] = title;
+        await _saveLocalFollowedMps(mps);
+        return {'bookId': bookId, 'name': title};
+      }
+    }
+
+    return null;
+  }
+
+  /// 直接用已知 bookId 和名称关注（用于 SSPU 推荐列表快速关注）
+  /// [bookId] 公众号 bookId
+  /// [name] 公众号名称
+  Future<void> followMpDirectly(String bookId, String name) async {
+    final mps = await getLocalFollowedMps();
+    mps[bookId] = name;
+    await _saveLocalFollowedMps(mps);
+  }
+
+  /// 取消关注公众号
+  /// [bookId] 公众号 bookId
+  Future<void> unfollowMp(String bookId) async {
+    final mps = await getLocalFollowedMps();
+    mps.remove(bookId);
+    await _saveLocalFollowedMps(mps);
+  }
+
+  /// 检查是否已关注
+  Future<bool> isFollowed(String bookId) async {
+    final mps = await getLocalFollowedMps();
+    return mps.containsKey(bookId);
+  }
 
   // ==================== 公开接口 ====================
 
   /// 获取所有已关注公众号的最新文章
-  /// 遍历书架中的公众号，逐个拉取文章列表
+  /// 从本地关注列表读取 bookId，而非微信读书书架
   /// [maxCount] 最终返回的最大文章总数
   /// :return: 统一格式的消息列表
   Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
@@ -43,14 +124,16 @@ class WechatArticleService {
     final hasCookie = await _auth.hasCookies();
     if (!hasCookie) return [];
 
-    // 获取已关注的公众号 bookId 列表
-    final mpBookIds = await _api.getFollowedMpBookIds();
-    if (mpBookIds.isEmpty) return [];
+    // 从本地存储获取关注的公众号 bookId 列表
+    final followedMps = await getLocalFollowedMps();
+    if (followedMps.isEmpty) return [];
 
     final allMessages = <MessageItem>[];
 
     // 逐个公众号获取文章（跳过通知关闭的公众号）
-    for (final bookId in mpBookIds) {
+    for (final entry in followedMps.entries) {
+      final bookId = entry.key;
+      final mpName = entry.value;
       if (allMessages.length >= maxCount) break;
 
       // 检查该公众号的通知开关，关闭则跳过采集
@@ -61,9 +144,6 @@ class WechatArticleService {
         bookId,
         maxCount: _perMpArticleCount,
       );
-
-      // 获取公众号名称（用作来源显示）
-      final mpName = await _getMpName(bookId);
 
       for (final article in articles) {
         if (allMessages.length >= maxCount) break;
@@ -79,50 +159,47 @@ class WechatArticleService {
   }
 
   /// 获取已关注的公众号列表（用于设置页展示）
+  /// 从本地存储读取，不再依赖微信读书书架
   /// :return: 公众号信息列表 [{bookId, name, intro, cover}]
   Future<List<Map<String, String>>> getFollowedMpList() async {
-    final hasCookie = await _auth.hasCookies();
-    if (!hasCookie) return [];
+    final followedMps = await getLocalFollowedMps();
+    if (followedMps.isEmpty) return [];
 
-    final mpBookIds = await _api.getFollowedMpBookIds();
     final mpList = <Map<String, String>>[];
 
-    for (final bookId in mpBookIds) {
-      final info = await _api.getBookInfo(bookId);
-      if (info != null) {
-        mpList.add({
-          'bookId': bookId,
-          'name': _extractString(info, 'title') ?? bookId,
-          'intro': _extractString(info, 'intro') ?? '',
-          'cover': _extractString(info, 'cover') ?? '',
-        });
-      } else {
-        // 没有详情也保留条目
-        mpList.add({
-          'bookId': bookId,
-          'name': bookId,
-          'intro': '',
-          'cover': '',
-        });
+    // 尝试从 API 获取详细信息（如果有 Cookie）
+    final hasCookie = await _auth.hasCookies();
+
+    for (final entry in followedMps.entries) {
+      final bookId = entry.key;
+      final localName = entry.value;
+
+      if (hasCookie) {
+        final info = await _api.getBookInfo(bookId);
+        if (info != null) {
+          mpList.add({
+            'bookId': bookId,
+            'name': _extractString(info, 'title') ?? localName,
+            'intro': _extractString(info, 'intro') ?? '',
+            'cover': _extractString(info, 'cover') ?? '',
+          });
+          continue;
+        }
       }
+
+      // API 不可用时用本地名称
+      mpList.add({
+        'bookId': bookId,
+        'name': localName,
+        'intro': '',
+        'cover': '',
+      });
     }
 
     return mpList;
   }
 
   // ==================== 内部转换方法 ====================
-
-  /// 获取公众号名称
-  /// 优先从 bookInfo 接口获取，失败则用 bookId 截断显示
-  /// [bookId] 公众号 bookId
-  /// :return: 公众号名称
-  Future<String> _getMpName(String bookId) async {
-    final info = await _api.getBookInfo(bookId);
-    if (info != null) {
-      return _extractString(info, 'title') ?? bookId;
-    }
-    return bookId;
-  }
 
   /// 将 API 返回的文章数据转换为 MessageItem
   /// 适配微信读书 book/articles 接口的多种返回格式
