@@ -176,17 +176,20 @@ class _InfoPageState extends State<InfoPage> {
 
       if (articles.isEmpty) {
         if (mounted) {
-          displayInfoBar(context, builder: (ctx, close) {
-            return InfoBar(
-              title: const Text('未获取到微信公众号文章'),
-              content: const Text('请确认已在设置中配置微信读书 Cookie 并关注公众号'),
-              severity: InfoBarSeverity.warning,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          });
+          displayInfoBar(
+            context,
+            builder: (ctx, close) {
+              return InfoBar(
+                title: const Text('未获取到微信公众号文章'),
+                content: const Text('请确认已在设置中配置微信读书 Cookie 并关注公众号'),
+                severity: InfoBarSeverity.warning,
+                action: IconButton(
+                  icon: const Icon(FluentIcons.clear),
+                  onPressed: close,
+                ),
+              );
+            },
+          );
         }
         return;
       }
@@ -204,30 +207,36 @@ class _InfoPageState extends State<InfoPage> {
       await _filterByEnabledChannels();
 
       if (mounted) {
-        displayInfoBar(context, builder: (ctx, close) {
-          return InfoBar(
-            title: Text('已获取 ${articles.length} 篇微信公众号文章'),
-            severity: InfoBarSeverity.success,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
-          );
-        });
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: Text('已获取 ${articles.length} 篇微信公众号文章'),
+              severity: InfoBarSeverity.success,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
-        displayInfoBar(context, builder: (ctx, close) {
-          return InfoBar(
-            title: const Text('刷新微信公众号文章失败'),
-            content: Text(e.toString()),
-            severity: InfoBarSeverity.error,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
-          );
-        });
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: const Text('刷新微信公众号文章失败'),
+              content: Text(e.toString()),
+              severity: InfoBarSeverity.error,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
       }
     } finally {
       if (mounted) {
@@ -253,8 +262,8 @@ class _InfoPageState extends State<InfoPage> {
     final categoryEnabledCache = <String, bool>{};
     for (final entry in channelSubcategories.entries) {
       for (final sub in entry.value) {
-        categoryEnabledCache[sub.category.name] =
-            await _stateService.isCategoryEnabled(sub.category.name);
+        categoryEnabledCache[sub.category.name] = await _stateService
+            .isCategoryEnabled(sub.category.name);
       }
     }
 
@@ -325,8 +334,7 @@ class _InfoPageState extends State<InfoPage> {
               child: const Text('确认'),
               onPressed: () {
                 final text = controller.text.trim();
-                final count =
-                    text.isEmpty ? 20 : (int.tryParse(text) ?? 20);
+                final count = text.isEmpty ? 20 : (int.tryParse(text) ?? 20);
                 Navigator.pop(dialogContext, count.clamp(1, 200));
               },
             ),
@@ -355,14 +363,12 @@ class _InfoPageState extends State<InfoPage> {
       }
 
       // 来源类型筛选
-      if (_filterSourceType != null &&
-          msg.sourceType != _filterSourceType) {
+      if (_filterSourceType != null && msg.sourceType != _filterSourceType) {
         return false;
       }
 
       // 来源名称筛选
-      if (_filterSourceName != null &&
-          msg.sourceName != _filterSourceName) {
+      if (_filterSourceName != null && msg.sourceName != _filterSourceName) {
         return false;
       }
 
@@ -404,10 +410,8 @@ class _InfoPageState extends State<InfoPage> {
     if (mounted) {
       Navigator.of(context).push(
         FluentPageRoute(
-          builder: (_) => WebViewPage(
-            url: message.url,
-            initialTitle: message.title,
-          ),
+          builder: (_) =>
+              WebViewPage(url: message.url, initialTitle: message.title),
         ),
       );
       setState(() {});
@@ -435,9 +439,10 @@ class _InfoPageState extends State<InfoPage> {
             const SizedBox(height: FluentSpacing.s),
 
             // ==================== 筛选栏 ====================
-            _buildFilterBar(theme, isDark)
-              .animate()
-              .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate),
+            _buildFilterBar(theme, isDark).animate().fadeIn(
+              duration: FluentDuration.slow,
+              curve: FluentEasing.decelerate,
+            ),
             const SizedBox(height: FluentSpacing.m),
 
             // ==================== 消息列表 ====================
@@ -445,35 +450,33 @@ class _InfoPageState extends State<InfoPage> {
               child: _isLoading
                   ? const Center(child: ProgressRing())
                   : _filteredMessages.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                FluentIcons.inbox,
-                                size: 48,
-                                color: theme.resources.textFillColorSecondary,
-                              ),
-                              const SizedBox(height: FluentSpacing.m),
-                              Text(
-                                '暂无消息',
-                                style: theme.typography.body?.copyWith(
-                                  color:
-                                      theme.resources.textFillColorSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: FluentSpacing.s),
-                              Text(
-                                '点击上方刷新按钮获取最新消息',
-                                style: theme.typography.caption?.copyWith(
-                                  color:
-                                      theme.resources.textFillColorSecondary,
-                                ),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            FluentIcons.inbox,
+                            size: 48,
+                            color: theme.resources.textFillColorSecondary,
                           ),
-                        )
-                      : _buildMessageList(theme, isDark),
+                          const SizedBox(height: FluentSpacing.m),
+                          Text(
+                            '暂无消息',
+                            style: theme.typography.body?.copyWith(
+                              color: theme.resources.textFillColorSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: FluentSpacing.s),
+                          Text(
+                            '点击上方刷新按钮获取最新消息',
+                            style: theme.typography.caption?.copyWith(
+                              color: theme.resources.textFillColorSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _buildMessageList(theme, isDark),
             ),
 
             // ==================== 分页栏 ====================
@@ -683,9 +686,15 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.sports:
         return [MessageCategory.sportsNotice, MessageCategory.sportsEvent];
       case MessageSourceName.securityDept:
-        return [MessageCategory.securityNews, MessageCategory.securityEducation];
+        return [
+          MessageCategory.securityNews,
+          MessageCategory.securityEducation,
+        ];
       case MessageSourceName.construction:
-        return [MessageCategory.constructionNews, MessageCategory.constructionNotice];
+        return [
+          MessageCategory.constructionNews,
+          MessageCategory.constructionNotice,
+        ];
       case MessageSourceName.newsCenter:
         return [MessageCategory.campusNews];
       case MessageSourceName.studentAffairs:
@@ -748,15 +757,9 @@ class _InfoPageState extends State<InfoPage> {
       value: value,
       placeholder: Text(label),
       items: [
-        ComboBoxItem<T?>(
-          value: null,
-          child: Text('全部$label'),
-        ),
+        ComboBoxItem<T?>(value: null, child: Text('全部$label')),
         ...items.map(
-          (item) => ComboBoxItem<T?>(
-            value: item,
-            child: Text(itemLabel(item)),
-          ),
+          (item) => ComboBoxItem<T?>(value: item, child: Text(itemLabel(item))),
         ),
       ],
       onChanged: (selectedValue) => onChanged(selectedValue),

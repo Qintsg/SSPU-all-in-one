@@ -38,16 +38,10 @@ class NotificationService {
   /// [title] 通知标题
   /// [body] 通知内容（可选）
   /// 返回 LocalNotification 实例，可用于后续关闭或销毁
-  Future<LocalNotification> show({
-    required String title,
-    String? body,
-  }) async {
+  Future<LocalNotification> show({required String title, String? body}) async {
     _ensureInitialized();
 
-    final notification = LocalNotification(
-      title: title,
-      body: body,
-    );
+    final notification = LocalNotification(title: title, body: body);
 
     await localNotifier.notify(notification);
     return notification;
@@ -110,9 +104,7 @@ class NotificationService {
   /// 确保已初始化，否则抛出异常
   void _ensureInitialized() {
     if (!_initialized) {
-      throw StateError(
-        'NotificationService 未初始化，请先调用 init()',
-      );
+      throw StateError('NotificationService 未初始化，请先调用 init()');
     }
   }
 }

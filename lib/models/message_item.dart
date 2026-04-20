@@ -292,12 +292,12 @@ class MessageItem {
 
   /// 序列化为 JSON
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'date': date,
-        'url': url,
-        'sourceType': sourceType.name,
-        'sourceName': sourceName.name,
-        'category': category.name,
-      };
+    'id': id,
+    'title': title,
+    'date': date,
+    'url': url,
+    'sourceType': sourceType.name,
+    'sourceName': sourceName.name,
+    'category': category.name,
+  };
 }

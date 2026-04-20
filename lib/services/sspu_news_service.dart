@@ -108,7 +108,9 @@ class SspuNewsService {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
+      final newsItems = document.querySelectorAll(
+        '.col_news_con ul.news_list li.news',
+      );
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
@@ -117,8 +119,7 @@ class SspuNewsService {
         if (anchor == null) continue;
 
         // 优先使用 title 属性（完整标题），否则用文本内容
-        final title = anchor.attributes['title']?.trim() ??
-            anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -132,15 +133,17 @@ class SspuNewsService {
         // 生成唯一 ID（基于 URL 的 MD5 哈希，确保去重）
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.infoDisclosure,
-          category: category,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.infoDisclosure,
+            category: category,
+          ),
+        );
       }
 
       return messages;

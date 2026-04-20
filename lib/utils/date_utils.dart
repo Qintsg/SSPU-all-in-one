@@ -23,8 +23,9 @@ String normalizeDate(String rawDate) {
   if (cleaned.isEmpty) return rawDate.trim();
 
   // 完整格式: YYYY-MM-DD 或 YYYY/MM/DD
-  final fullMatch =
-      RegExp(r'^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$').firstMatch(cleaned);
+  final fullMatch = RegExp(
+    r'^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$',
+  ).firstMatch(cleaned);
   if (fullMatch != null) {
     final year = fullMatch.group(1)!;
     final month = int.parse(fullMatch.group(2)!).toString().padLeft(2, '0');
@@ -33,8 +34,7 @@ String normalizeDate(String rawDate) {
   }
 
   // 短格式: MM-DD 或 MM/DD，需补全年份
-  final shortMatch =
-      RegExp(r'^(\d{1,2})[/\-](\d{1,2})$').firstMatch(cleaned);
+  final shortMatch = RegExp(r'^(\d{1,2})[/\-](\d{1,2})$').firstMatch(cleaned);
   if (shortMatch != null) {
     final month = int.parse(shortMatch.group(1)!);
     final day = int.parse(shortMatch.group(2)!);
