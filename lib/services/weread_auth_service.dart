@@ -11,6 +11,7 @@
  */
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'http_service.dart';
 import 'storage_service.dart';
@@ -113,39 +114,152 @@ class WereadAuthService {
   // ==================== 有效性验证 ====================
 
   /// 在线验证 Cookie 是否仍然有效
-  /// 通过调用书架接口判断：返回正常数据说明 Cookie 有效
+  /// 优先通过 WebView 内执行 fetch 验证（避免 session 绑定问题），
+  /// 若无可用 WebView 控制器则回退到 Dio 请求
+  /// [webViewController] 可选的 InAppWebViewController 用于 WebView 内验证
   /// :return: Cookie 是否有效
-  Future<bool> validateCookie() async {
+  Future<bool> validateCookie({
+    dynamic webViewController,
+  }) async {
+    // 优先使用 WebView 内 JS 验证（Cookie 自动携带，避免 session 绑定问题）
+    if (webViewController != null) {
+      return _validateViaWebView(webViewController);
+    }
+
+    // 回退：使用 Dio 外部请求验证
+    return _validateViaDio();
+  }
+
+  /// 通过 WebView 内 JS fetch 验证 Cookie 有效性
+  /// 使用 callAsyncJavaScript 正确处理 async/await（evaluateJavascript 对 Promise 返回 {})
+  Future<bool> _validateViaWebView(dynamic controller) async {
+    try {
+      // callAsyncJavaScript 能正确等待 Promise resolve，返回 CallAsyncJavaScriptResult
+      final callResult = await controller.callAsyncJavaScript(
+        functionBody: '''
+          try {
+            const resp = await fetch(
+              '/web/shelf/sync?synckey=0&teenmode=0',
+              { credentials: 'include' }
+            );
+            if (!resp.ok) {
+              return { status: resp.status, ok: false };
+            }
+            const data = await resp.json();
+            const errcode = data.errcode || data.errCode;
+            return {
+              status: resp.status,
+              ok: true,
+              errcode: errcode || 0,
+            };
+          } catch (e) {
+            return { status: -1, ok: false, error: e.message };
+          }
+        ''',
+      );
+
+      debugPrint('[WereadAuth] WebView 验证结果: ${callResult?.value}, error: ${callResult?.error}');
+      if (callResult == null || callResult.error != null) return false;
+
+      final value = callResult.value;
+      if (value is Map) {
+        final ok = value['ok'] == true;
+        final errcode = value['errcode'];
+        return ok && (errcode == null || errcode == 0);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[WereadAuth] WebView 验证异常: $e');
+      return false;
+    }
+  }
+
+  /// 通过 Dio 外部 HTTP 请求验证 Cookie（回退方案）
+  Future<bool> _validateViaDio() async {
     final cookie = await getCookieString();
     if (cookie == null || cookie.isEmpty) return false;
 
+    debugPrint('[WereadAuth] Dio 验证，Cookie 键名: ${cookie.split(';').map((p) => p.trim().split('=').first).toList()}');
+
     try {
-      // 通过获取用户书架来测试 Cookie 有效性
       final response = await _http.get<Map<String, dynamic>>(
         '$_apiBaseUrl/shelf/sync',
         queryParameters: {'synckey': 0, 'teenmode': 0, 'album': 1},
         options: Options(
           headers: _buildHeaders(cookie),
           responseType: ResponseType.json,
+          validateStatus: (status) => status != null && status < 500,
         ),
       );
 
-      // 接口返回 errCode 非 0 表示认证失败
+      debugPrint('[WereadAuth] Dio 验证状态码: ${response.statusCode}');
+      if (response.statusCode == 401) return false;
+
       final data = response.data;
       if (data == null) return false;
-      // errCode == -2012 表示 Cookie 过期
       final errCode = data['errCode'] ?? data['errcode'];
       if (errCode != null && errCode != 0) return false;
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[WereadAuth] Dio 验证异常: $e');
       return false;
     }
   }
 
   /// 尝试刷新 Cookie
-  /// 微信读书 Web 版提供 /web/login/renewal 接口可延长 Cookie 有效期
+  /// 优先通过 WebView 内执行 renewal 请求，若无可用 WebView 则回退到 Dio
+  /// [webViewController] 可选的 InAppWebViewController
   /// :return: 刷新是否成功
-  Future<bool> renewCookie() async {
+  Future<bool> renewCookie({
+    dynamic webViewController,
+  }) async {
+    if (webViewController != null) {
+      return _renewViaWebView(webViewController);
+    }
+    return _renewViaDio();
+  }
+
+  /// 通过 WebView 内 JS fetch 刷新 Cookie
+  /// 使用 callAsyncJavaScript 正确处理 async/await
+  Future<bool> _renewViaWebView(dynamic controller) async {
+    try {
+      final callResult = await controller.callAsyncJavaScript(
+        functionBody: '''
+          try {
+            const resp = await fetch('/web/login/renewal', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ rq: '%2Fweb%2Fbook%2Fread' })
+            });
+            const data = await resp.json();
+            return { status: resp.status, succ: data.succ || 0 };
+          } catch (e) {
+            return { status: -1, error: e.message };
+          }
+        ''',
+      );
+
+      debugPrint('[WereadAuth] WebView renewal 结果: ${callResult?.value}, error: ${callResult?.error}');
+      if (callResult == null || callResult.error != null) return false;
+
+      final value = callResult.value;
+      if (value is Map && value['succ'] == 1) {
+        await StorageService.setInt(
+          _keyLastUpdate,
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[WereadAuth] WebView renewal 异常: $e');
+      return false;
+    }
+  }
+
+  /// 通过 Dio 外部 HTTP 请求刷新 Cookie（回退方案）
+  Future<bool> _renewViaDio() async {
     final cookie = await getCookieString();
     if (cookie == null || cookie.isEmpty) return false;
 
@@ -194,6 +308,11 @@ class WereadAuthService {
           '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Referer': '$_baseUrl/',
       'Origin': _baseUrl,
+      // 模拟浏览器跨域请求头，微信读书服务端校验这些字段
+      'Sec-Fetch-Site': 'same-site',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Dest': 'empty',
+      'Accept': 'application/json, text/plain, */*',
     };
   }
 
