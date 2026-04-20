@@ -154,9 +154,7 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
                   Checkbox(
                     checked: rememberChoice,
                     onChanged: (value) {
-                      setDialogState(
-                        () => rememberChoice = value ?? false,
-                      );
+                      setDialogState(() => rememberChoice = value ?? false);
                     },
                     content: const Text('以后都使用此选项'),
                   ),
@@ -294,9 +292,7 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 根据初始化、EULA 和密码验证状态构建首屏
   Widget _buildHome() {
     if (!_isInitialized) {
-      return const ScaffoldPage(
-        content: Center(child: ProgressRing()),
-      );
+      return const ScaffoldPage(content: Center(child: ProgressRing()));
     }
 
     // 未接受 EULA 时显示空白页并弹出协议对话框
@@ -304,9 +300,7 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
       return Builder(
         builder: (context) {
           _showEulaDialog(context);
-          return const ScaffoldPage(
-            content: Center(child: ProgressRing()),
-          );
+          return const ScaffoldPage(content: Center(child: ProgressRing()));
         },
       );
     }

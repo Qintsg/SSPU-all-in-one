@@ -214,9 +214,7 @@ class _LogInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     assert(() {
       // ignore: avoid_print
-      print(
-        '[HTTP] ← ${response.statusCode} ${response.requestOptions.uri}',
-      );
+      print('[HTTP] ← ${response.statusCode} ${response.requestOptions.uri}');
       return true;
     }());
     handler.next(response);

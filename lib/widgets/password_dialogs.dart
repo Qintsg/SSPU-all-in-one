@@ -234,8 +234,9 @@ Future<bool> showChangePasswordDialog(BuildContext context) async {
                   final newPassword = newPasswordController.text;
                   final confirm = confirmController.text;
 
-                  final isOldCorrect =
-                      await PasswordService.verifyPassword(oldPassword);
+                  final isOldCorrect = await PasswordService.verifyPassword(
+                    oldPassword,
+                  );
                   if (!isOldCorrect) {
                     setDialogState(() => errorMessage = '当前密码错误');
                     return;

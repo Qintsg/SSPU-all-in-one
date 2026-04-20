@@ -46,8 +46,7 @@ class CampusNewsService {
         final anchor = item.querySelector('a');
         if (anchor == null) continue;
 
-        final title =
-            anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -59,15 +58,17 @@ class CampusNewsService {
 
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.newsCenter,
-          category: MessageCategory.campusNews,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.newsCenter,
+            category: MessageCategory.campusNews,
+          ),
+        );
       }
 
       return messages;

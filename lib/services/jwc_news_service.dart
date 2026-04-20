@@ -104,7 +104,9 @@ class JwcNewsService {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
+      final newsItems = document.querySelectorAll(
+        '.col_news_con ul.news_list li.news',
+      );
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
@@ -112,8 +114,7 @@ class JwcNewsService {
         final anchor = item.querySelector('span.news_title a');
         if (anchor == null) continue;
 
-        final title =
-            anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
@@ -127,15 +128,17 @@ class JwcNewsService {
         // 基于 URL 的 MD5 生成唯一 ID
         final messageId = _generateId(fullUrl);
 
-        messages.add(MessageItem(
-          id: messageId,
-          title: title,
-          date: date,
-          url: fullUrl,
-          sourceType: MessageSourceType.schoolWebsite,
-          sourceName: MessageSourceName.jwc,
-          category: category,
-        ));
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.jwc,
+            category: category,
+          ),
+        );
       }
 
       return messages;

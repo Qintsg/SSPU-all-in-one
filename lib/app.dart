@@ -36,53 +36,50 @@ class _AppShellState extends State<AppShell> {
     // 规避 Flutter Windows 引擎已知的 AXTree 更新报错
     return ExcludeSemantics(
       child: NavigationView(
-      transitionBuilder: (child, animation) {
-        return EntrancePageTransition(
-          animation: animation,
-          child: child,
-        );
-      },
-      pane: NavigationPane(
-        selected: _selectedIndex,
-        onChanged: (index) => setState(() => _selectedIndex = index),
-        // 自动响应屏幕宽度切换显示模式，内建 toggle 按钮
-        displayMode: PaneDisplayMode.auto,
-        items: [
-          PaneItem(
-            icon: const Icon(FluentIcons.home),
-            title: const Text('主页'),
-            body: const HomePage(),
-          ),
-          PaneItem(
-            icon: const Icon(FluentIcons.education),
-            title: const Text('教务中心'),
-            body: const AcademicPage(),
-          ),
-          PaneItem(
-            icon: const Icon(FluentIcons.info),
-            title: const Text('信息中心'),
-            body: const InfoPage(),
-          ),
-          PaneItem(
-            icon: const Icon(FluentIcons.link),
-            title: const Text('快速跳转'),
-            body: const QuickLinksPage(),
-          ),
-        ],
-        // 设置项放在导航栏底部
-        footerItems: [
-          PaneItem(
-            icon: const Icon(FluentIcons.settings),
-            title: const Text('设置'),
-            body: SettingsPage(onLock: widget.onLock),
-          ),
-          PaneItem(
-            icon: const Icon(FluentIcons.info_solid),
-            title: const Text('关于'),
-            body: const AboutPage(),
-          ),
-        ],
-      ),
+        transitionBuilder: (child, animation) {
+          return EntrancePageTransition(animation: animation, child: child);
+        },
+        pane: NavigationPane(
+          selected: _selectedIndex,
+          onChanged: (index) => setState(() => _selectedIndex = index),
+          // 自动响应屏幕宽度切换显示模式，内建 toggle 按钮
+          displayMode: PaneDisplayMode.auto,
+          items: [
+            PaneItem(
+              icon: const Icon(FluentIcons.home),
+              title: const Text('主页'),
+              body: const HomePage(),
+            ),
+            PaneItem(
+              icon: const Icon(FluentIcons.education),
+              title: const Text('教务中心'),
+              body: const AcademicPage(),
+            ),
+            PaneItem(
+              icon: const Icon(FluentIcons.info),
+              title: const Text('信息中心'),
+              body: const InfoPage(),
+            ),
+            PaneItem(
+              icon: const Icon(FluentIcons.link),
+              title: const Text('快速跳转'),
+              body: const QuickLinksPage(),
+            ),
+          ],
+          // 设置项放在导航栏底部
+          footerItems: [
+            PaneItem(
+              icon: const Icon(FluentIcons.settings),
+              title: const Text('设置'),
+              body: SettingsPage(onLock: widget.onLock),
+            ),
+            PaneItem(
+              icon: const Icon(FluentIcons.info_solid),
+              title: const Text('关于'),
+              body: const AboutPage(),
+            ),
+          ],
+        ),
       ),
     );
   }

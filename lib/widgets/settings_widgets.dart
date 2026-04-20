@@ -39,26 +39,20 @@ Widget buildIntervalSelector({
           size: 14,
           color: enabled
               ? FluentTheme.of(context).inactiveColor
-              : FluentTheme.of(context)
-                  .inactiveColor
-                  .withValues(alpha: 0.4),
+              : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
         ),
         const SizedBox(width: 8),
         Text(
           '自动刷新：',
           style: FluentTheme.of(context).typography.caption?.copyWith(
-                color: enabled
-                    ? null
-                    : FluentTheme.of(context)
-                        .inactiveColor
-                        .withValues(alpha: 0.4),
-              ),
+            color: enabled
+                ? null
+                : FluentTheme.of(context).inactiveColor.withValues(alpha: 0.4),
+          ),
         ),
         const SizedBox(width: 4),
         ComboBox<int>(
-          value: kIntervalOptions.containsKey(currentValue)
-              ? currentValue
-              : 0,
+          value: kIntervalOptions.containsKey(currentValue) ? currentValue : 0,
           items: kIntervalOptions.entries
               .map(
                 (entry) => ComboBoxItem<int>(
@@ -107,8 +101,8 @@ Widget buildSettingsNavItem({
           color: isSelected
               ? theme.accentColor.withValues(alpha: 0.1)
               : hovered
-                  ? theme.inactiveColor.withValues(alpha: 0.06)
-                  : Colors.transparent,
+              ? theme.inactiveColor.withValues(alpha: 0.06)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -124,17 +118,14 @@ Widget buildSettingsNavItem({
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? theme.accentColor : null,
-            ),
+            Icon(icon, size: 16, color: isSelected ? theme.accentColor : null),
             const SizedBox(width: 10),
             Text(
               label,
               style: isSelected
-                  ? theme.typography.bodyStrong
-                      ?.copyWith(color: theme.accentColor)
+                  ? theme.typography.bodyStrong?.copyWith(
+                      color: theme.accentColor,
+                    )
                   : theme.typography.body,
             ),
           ],
@@ -159,10 +150,7 @@ Widget buildTimePicker({
   return Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Text(
-        '$label ',
-        style: FluentTheme.of(context).typography.caption,
-      ),
+      Text('$label ', style: FluentTheme.of(context).typography.caption),
       ComboBox<int>(
         value: hour,
         items: List.generate(
@@ -178,10 +166,7 @@ Widget buildTimePicker({
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(
-          ':',
-          style: FluentTheme.of(context).typography.bodyStrong,
-        ),
+        child: Text(':', style: FluentTheme.of(context).typography.bodyStrong),
       ),
       ComboBox<int>(
         value: [0, 15, 30, 45].contains(minute) ? minute : 0,
@@ -221,22 +206,13 @@ Widget buildChannelToggle({
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: FluentTheme.of(context).typography.bodyStrong,
-            ),
+            Text(title, style: FluentTheme.of(context).typography.bodyStrong),
             const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: FluentTheme.of(context).typography.caption,
-            ),
+            Text(subtitle, style: FluentTheme.of(context).typography.caption),
           ],
         ),
       ),
-      ToggleSwitch(
-        checked: value,
-        onChanged: onChanged,
-      ),
+      ToggleSwitch(checked: value, onChanged: onChanged),
     ],
   );
 }
@@ -274,17 +250,14 @@ Widget buildNavTab({
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: isSelected ? theme.accentColor : null,
-          ),
+          Icon(icon, size: 16, color: isSelected ? theme.accentColor : null),
           const SizedBox(width: 6),
           Text(
             label,
             style: isSelected
-                ? theme.typography.bodyStrong
-                    ?.copyWith(color: theme.accentColor)
+                ? theme.typography.bodyStrong?.copyWith(
+                    color: theme.accentColor,
+                  )
                 : theme.typography.body,
           ),
         ],
