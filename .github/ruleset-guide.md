@@ -13,7 +13,6 @@
 |------|------|
 | Restrict deletions | ✅ |
 | Require linear history | ✅ |
-| Require signed commits | ✅ |
 | Block force pushes | ✅ |
 | Require pull request before merging | ✅ |
 | Required approvals | 1 |
@@ -33,7 +32,6 @@
 |------|------|
 | Restrict deletions | ✅ |
 | Require linear history | ✅ |
-| Require signed commits | ✅ |
 | Block force pushes | ✅ |
 | Require pull request before merging | ✅ |
 | Required approvals | 1 |
