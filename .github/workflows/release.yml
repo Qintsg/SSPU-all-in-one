@@ -1,0 +1,246 @@
+# 全平台构建与 Release 工作流
+# 触发方式：手动触发或推送 tag
+name: Build & Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (如 0.1.0-alpha)'
+        required: true
+        default: '0.1.0-alpha'
+  push:
+    tags:
+      - 'v*'
+
+# 全局环境变量
+env:
+  FLUTTER_VERSION: '3.32.1'
+
+jobs:
+  # ============================================================
+  # Windows 构建
+  # ============================================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Windows
+        run: flutter build windows --release
+
+      - name: 打包 Windows 产物
+        run: |
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "sspu-all-in-one-windows-x64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: sspu-all-in-one-windows-x64.zip
+
+  # ============================================================
+  # Linux 构建
+  # ============================================================
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Linux 依赖
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Linux
+        run: flutter build linux --release
+
+      - name: 打包 Linux 产物
+        run: |
+          cd build/linux/x64/release/bundle
+          tar -czf "$GITHUB_WORKSPACE/sspu-all-in-one-linux-x64.tar.gz" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: sspu-all-in-one-linux-x64.tar.gz
+
+  # ============================================================
+  # macOS 构建
+  # ============================================================
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 macOS
+        run: flutter build macos --release
+
+      - name: 打包 macOS 产物
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r "$GITHUB_WORKSPACE/sspu-all-in-one-macos.zip" "sspu_all_in_one.app"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: sspu-all-in-one-macos.zip
+
+  # ============================================================
+  # Android APK 构建
+  # ============================================================
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 APK
+        run: flutter build apk --release
+
+      - name: 重命名 APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk sspu-all-in-one-android.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: sspu-all-in-one-android.apk
+
+  # ============================================================
+  # Web 构建
+  # ============================================================
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Web
+        run: flutter build web --release
+
+      - name: 打包 Web 产物
+        run: |
+          cd build/web
+          tar -czf "$GITHUB_WORKSPACE/sspu-all-in-one-web.tar.gz" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: sspu-all-in-one-web.tar.gz
+
+  # ============================================================
+  # 创建 Release
+  # ============================================================
+  create-release:
+    needs: [build-windows, build-linux, build-macos, build-android, build-web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+          name: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+          body: |
+            ## SSPU All-in-One ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+
+            上海第二工业大学校园综合服务应用 — 首个 Alpha 预览版
+
+            ### ✅ 已完成功能
+            - 🏠 校园首页 — 快捷入口与校园概览
+            - 📰 信息中心 — 多频道校园新闻聚合（教务处、学生处、校园新闻等）
+            - 🔔 微信公众号/服务号消息推送（通过微信读书 API）
+            - ⚙️ 设置页 — 微信读书登录、频道管理、自动刷新配置
+            - 🔗 快捷链接 — 常用校园网站入口
+            - 🎓 学业页面 — 学业信息展示
+            - 🔒 应用锁屏 — 密码保护
+            - 🌐 内置 WebView 浏览器
+            - 🪟 Windows 桌面端支持（系统托盘、窗口管理）
+
+            ### ⚠️ 已知问题 / 未完成功能
+            - 微信读书公众号「关注」快捷入口暂未启用（搜索 API 限制）
+            - 单个公众号通知开关功能未实现
+            - iOS 端未经测试（缺少 Apple 开发者证书）
+            - macOS 端编译配置可能仍需调整
+            - Linux 端 WebView 依赖（webkit2gtk）需手动安装
+            - Android APK 为 debug 签名，仅供测试
+            - Web 端部分功能（系统通知、WebView）不可用
+            - 自动刷新服务在后台可能被系统限制
+            - 无自动更新机制
+
+            ### 📦 下载说明
+            | 平台 | 文件 | 说明 |
+            |------|------|------|
+            | Windows x64 | `sspu-all-in-one-windows-x64.zip` | 解压即用 |
+            | Linux x64 | `sspu-all-in-one-linux-x64.tar.gz` | 需安装 libwebkit2gtk-4.1 |
+            | macOS | `sspu-all-in-one-macos.zip` | 未签名，需右键打开 |
+            | Android | `sspu-all-in-one-android.apk` | debug 签名，需允许未知来源 |
+            | Web | `sspu-all-in-one-web.tar.gz` | 需部署到 Web 服务器 |
+
+            ### 🔧 技术栈
+            - Flutter 3.32.1 / Dart 3.11.1
+            - fluent_ui (Windows Fluent Design)
+            - flutter_inappwebview 6.1.5
+            - window_manager / tray_manager
+          draft: false
+          prerelease: true
+          files: |
+            artifacts/windows-build/sspu-all-in-one-windows-x64.zip
+            artifacts/linux-build/sspu-all-in-one-linux-x64.tar.gz
+            artifacts/macos-build/sspu-all-in-one-macos.zip
+            artifacts/android-build/sspu-all-in-one-android.apk
+            artifacts/web-build/sspu-all-in-one-web.tar.gz
