@@ -42,9 +42,9 @@ class WebContentService {
   Future<String> fetchBodyText(String url) async {
     final doc = await fetchDocument(url);
     // 移除脚本和样式标签，避免干扰正文
-    doc
-        .querySelectorAll('script, style, noscript')
-        .forEach((element) => element.remove());
+    doc.querySelectorAll('script, style, noscript').forEach(
+      (element) => element.remove(),
+    );
     return doc.body?.text.trim() ?? '';
   }
 

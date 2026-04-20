@@ -118,7 +118,9 @@ class WereadAuthService {
   /// 若无可用 WebView 控制器则回退到 Dio 请求
   /// [webViewController] 可选的 InAppWebViewController 用于 WebView 内验证
   /// :return: Cookie 是否有效
-  Future<bool> validateCookie({dynamic webViewController}) async {
+  Future<bool> validateCookie({
+    dynamic webViewController,
+  }) async {
     // 优先使用 WebView 内 JS 验证（Cookie 自动携带，避免 session 绑定问题）
     if (webViewController != null) {
       return _validateViaWebView(webViewController);
@@ -156,9 +158,7 @@ class WereadAuthService {
         ''',
       );
 
-      debugPrint(
-        '[WereadAuth] WebView 验证结果: ${callResult?.value}, error: ${callResult?.error}',
-      );
+      debugPrint('[WereadAuth] WebView 验证结果: ${callResult?.value}, error: ${callResult?.error}');
       if (callResult == null || callResult.error != null) return false;
 
       final value = callResult.value;
@@ -179,9 +179,7 @@ class WereadAuthService {
     final cookie = await getCookieString();
     if (cookie == null || cookie.isEmpty) return false;
 
-    debugPrint(
-      '[WereadAuth] Dio 验证，Cookie 键名: ${cookie.split(';').map((p) => p.trim().split('=').first).toList()}',
-    );
+    debugPrint('[WereadAuth] Dio 验证，Cookie 键名: ${cookie.split(';').map((p) => p.trim().split('=').first).toList()}');
 
     try {
       final response = await _http.get<Map<String, dynamic>>(
@@ -212,7 +210,9 @@ class WereadAuthService {
   /// 优先通过 WebView 内执行 renewal 请求，若无可用 WebView 则回退到 Dio
   /// [webViewController] 可选的 InAppWebViewController
   /// :return: 刷新是否成功
-  Future<bool> renewCookie({dynamic webViewController}) async {
+  Future<bool> renewCookie({
+    dynamic webViewController,
+  }) async {
     if (webViewController != null) {
       return _renewViaWebView(webViewController);
     }
@@ -240,9 +240,7 @@ class WereadAuthService {
         ''',
       );
 
-      debugPrint(
-        '[WereadAuth] WebView renewal 结果: ${callResult?.value}, error: ${callResult?.error}',
-      );
+      debugPrint('[WereadAuth] WebView renewal 结果: ${callResult?.value}, error: ${callResult?.error}');
       if (callResult == null || callResult.error != null) return false;
 
       final value = callResult.value;
@@ -358,9 +356,8 @@ class WereadAuthService {
     }
 
     // 重新组装 Cookie 字符串
-    final newCookie = parsed.entries
-        .map((e) => '${e.key}=${e.value}')
-        .join('; ');
+    final newCookie =
+        parsed.entries.map((e) => '${e.key}=${e.value}').join('; ');
     await StorageService.setString(_keyCookieString, newCookie);
 
     // 更新分离存储的关键字段

@@ -4,28 +4,15 @@
 
 ---
 
-## [0.1.5-alpha] - 2026-04-21
-
-### 新增
-
-- Release 新增 Windows x64 / arm64 安装器、Android arm32 / arm64 / x64 APK、iOS arm64 未签名应用包、macOS universal DMG、Linux x64 / arm64 压缩包、Web JavaScript / WebAssembly 压缩包
-- Issue 模板升级为表单式模板，补充平台、环境、复现、日志、验收标准等必填信息
-
-### 变更
-
-- PR CI 精简为 `flutter analyze`，草稿 PR 仅保留自动标签工作流
-- GitHub Actions 官方 action 升级到 Node.js 24 runtime 兼容版本，消除 Node.js 20 deprecation warning
-- 删除 CodeQL PR 安全扫描工作流
-- 移除 PR 阶段跨平台 build check，平台构建集中到 Release 工作流
+## [Unreleased]
 
 ### 修复
 
 - 修复 macOS Runner 的 Xcode 配置引用错误，恢复 Flutter 生成配置与 CocoaPods 支持文件的正确加载，解决 `flutter build macos` 编译失败问题
-- 修复 Android 启动阶段调用桌面插件导致黑屏闪退的问题，并同步 Android / iOS / macOS / Linux / Web 的应用名称与图标资源
 
 ---
 
-## [0.1.0-alpha] - 2026-04-20
+## [0.0.1-alpha] - 2026-04-18
 
 ### 新增
 

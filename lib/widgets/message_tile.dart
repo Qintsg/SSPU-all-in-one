@@ -58,15 +58,12 @@ class MessageTile extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(
-            vertical: FluentSpacing.s + FluentSpacing.xxs,
-            horizontal: FluentSpacing.m,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: FluentSpacing.s + FluentSpacing.xxs, horizontal: FluentSpacing.m),
           decoration: BoxDecoration(
             color: isHovered
                 ? (isDark
-                      ? FluentDarkColors.hoverFill
-                      : FluentLightColors.hoverFill)
+                    ? FluentDarkColors.hoverFill
+                    : FluentLightColors.hoverFill)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(FluentRadius.large),
           ),
@@ -76,16 +73,14 @@ class MessageTile extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                margin: const EdgeInsets.only(
-                  right: FluentSpacing.s + FluentSpacing.xxs,
-                ),
+                margin: const EdgeInsets.only(right: FluentSpacing.s + FluentSpacing.xxs),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isRead
                       ? Colors.transparent
                       : (isDark
-                            ? FluentDarkColors.unreadIndicator
-                            : FluentLightColors.unreadIndicator),
+                          ? FluentDarkColors.unreadIndicator
+                          : FluentLightColors.unreadIndicator),
                 ),
               ),
 
@@ -101,20 +96,24 @@ class MessageTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(
-                      height: FluentSpacing.xs + FluentSpacing.xxs,
-                    ),
-                    // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类 + 公众号名称
+                    const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
+                    // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        _buildTag(message.sourceType.label, Colors.blue),
-                        _buildTag(message.sourceName.label, Colors.teal),
-                        _buildTag(message.category.label, Colors.orange),
-                        if (message.mpName != null &&
-                            message.mpName!.isNotEmpty)
-                          _buildTag(message.mpName!, Colors.magenta),
+                        _buildTag(
+                          message.sourceType.label,
+                          Colors.blue,
+                        ),
+                        _buildTag(
+                          message.sourceName.label,
+                          Colors.teal,
+                        ),
+                        _buildTag(
+                          message.category.label,
+                          Colors.orange,
+                        ),
                       ],
                     ),
                   ],
@@ -128,9 +127,9 @@ class MessageTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 日期时间；旧缓存中 date 为空时从 timestamp 兜底恢复日期。
+                  // 日期
                   Text(
-                    _formatDisplayDateTime(message),
+                    message.date,
                     style: theme.typography.caption?.copyWith(
                       color: theme.resources.textFillColorSecondary,
                     ),
@@ -157,7 +156,10 @@ class MessageTile extends StatelessWidget {
                         Tooltip(
                           message: '标为已读',
                           child: IconButton(
-                            icon: const Icon(FluentIcons.read, size: 14),
+                            icon: const Icon(
+                              FluentIcons.read,
+                              size: 14,
+                            ),
                             onPressed: onMarkRead,
                           ),
                         ),
@@ -170,35 +172,6 @@ class MessageTile extends StatelessWidget {
         );
       },
     );
-  }
-
-  /// 格式化消息展示日期时间，保证当天官网消息不会只显示时间。
-  String _formatDisplayDateTime(MessageItem message) {
-    final displayDate = message.date.trim().isNotEmpty
-        ? message.date.trim()
-        : message.timestamp != null
-        ? _formatDate(message.timestamp!)
-        : '';
-
-    if (message.timestamp == null || displayDate.isEmpty) {
-      return displayDate;
-    }
-    return '$displayDate ${_formatTime(message.timestamp!)}';
-  }
-
-  /// 格式化时间戳为 YYYY-MM-DD，用于修复旧缓存中的空日期。
-  String _formatDate(int timestampMs) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(timestampMs);
-    final year = dt.year.toString().padLeft(4, '0');
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
-  }
-
-  /// 格式化时间戳为 HH:mm
-  String _formatTime(int timestampMs) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(timestampMs);
-    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   /// 构建标签 badge

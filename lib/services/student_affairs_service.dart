@@ -30,20 +30,18 @@ class StudentAffairsService {
   final HttpService _http = HttpService.instance;
 
   /// 获取学工要闻（首页 ul#xgdt 区块）
-  Future<List<MessageItem>> fetchNews({Set<String>? knownMessageIds}) async {
+  Future<List<MessageItem>> fetchNews() async {
     return _fetchFromHomepage(
       selector: 'ul#xgdt li',
       category: MessageCategory.studentNews,
-      knownMessageIds: knownMessageIds,
     );
   }
 
   /// 获取通知公告（首页 ul.tzgg 区块）
-  Future<List<MessageItem>> fetchNotices({Set<String>? knownMessageIds}) async {
+  Future<List<MessageItem>> fetchNotices() async {
     return _fetchFromHomepage(
       selector: 'ul.tzgg li',
       category: MessageCategory.studentNotice,
-      knownMessageIds: knownMessageIds,
     );
   }
 
@@ -51,7 +49,6 @@ class StudentAffairsService {
   Future<List<MessageItem>> _fetchFromHomepage({
     required String selector,
     required MessageCategory category,
-    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(_baseUrl);
@@ -65,32 +62,29 @@ class StudentAffairsService {
         final anchor = item.querySelector('a[title]');
         if (anchor == null) continue;
 
-        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title =
+            anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
-
-        final messageId = _generateId(fullUrl);
-        if (knownMessageIds?.contains(messageId) ?? false) break;
 
         // 提取日期（span.time 内为 MM-DD 格式，通过统一工具补全年份）
         final dateSpan = item.querySelector('span.time');
         final rawDate = dateSpan?.text.trim() ?? '';
         final date = normalizeDate(rawDate);
 
-        messages.add(
-          MessageItem(
-            id: messageId,
-            title: title,
-            date: date,
-            url: fullUrl,
-            sourceType: MessageSourceType.schoolWebsite,
-            sourceName: MessageSourceName.studentAffairs,
-            category: category,
-            timestamp: MessageItem.computeTimestamp(date),
-          ),
-        );
+        final messageId = _generateId(fullUrl);
+
+        messages.add(MessageItem(
+          id: messageId,
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: MessageSourceName.studentAffairs,
+          category: category,
+        ));
       }
 
       return messages;
@@ -98,6 +92,7 @@ class StudentAffairsService {
       return [];
     }
   }
+
 
   /// 基于 URL 生成稳定的消息唯一 ID
   String _generateId(String url) {

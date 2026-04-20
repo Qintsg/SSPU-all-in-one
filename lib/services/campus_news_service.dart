@@ -29,9 +29,7 @@ class CampusNewsService {
   final HttpService _http = HttpService.instance;
 
   /// 获取综合新闻（首页 1432 栏目区块）
-  Future<List<MessageItem>> fetchCampusNews({
-    Set<String>? knownMessageIds,
-  }) async {
+  Future<List<MessageItem>> fetchCampusNews() async {
     try {
       final htmlText = await _http.fetchText(_baseUrl);
       final document = html_parser.parse(htmlText);
@@ -48,31 +46,28 @@ class CampusNewsService {
         final anchor = item.querySelector('a');
         if (anchor == null) continue;
 
-        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title =
+            anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        final messageId = _generateId(fullUrl);
-        if (knownMessageIds?.contains(messageId) ?? false) break;
-
         // 提取日期（span.riqi 内为 YYYY-MM-DD）并规范化格式
         final dateSpan = item.querySelector('span.riqi');
         final date = normalizeDate(dateSpan?.text.trim() ?? '');
 
-        messages.add(
-          MessageItem(
-            id: messageId,
-            title: title,
-            date: date,
-            url: fullUrl,
-            sourceType: MessageSourceType.schoolWebsite,
-            sourceName: MessageSourceName.newsCenter,
-            category: MessageCategory.campusNews,
-            timestamp: MessageItem.computeTimestamp(date),
-          ),
-        );
+        final messageId = _generateId(fullUrl);
+
+        messages.add(MessageItem(
+          id: messageId,
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: MessageSourceName.newsCenter,
+          category: MessageCategory.campusNews,
+        ));
       }
 
       return messages;

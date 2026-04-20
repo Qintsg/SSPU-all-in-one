@@ -8,8 +8,6 @@
  * @Date : 2026-04-19
  */
 
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:local_notifier/local_notifier.dart';
 
 /// 系统通知服务（单例）
@@ -22,14 +20,10 @@ class NotificationService {
 
   bool _initialized = false;
 
-  /// 当前插件只在 Windows 发行目标启用，其他平台保留无通知运行能力。
-  bool get isAvailable => !kIsWeb && Platform.isWindows;
-
   /// 初始化通知插件
   /// 应在 app 启动时调用一次
   Future<void> init() async {
     if (_initialized) return;
-    if (!isAvailable) return;
 
     // 设置应用名称，用于 Windows 通知中心显示
     await localNotifier.setup(
@@ -44,10 +38,16 @@ class NotificationService {
   /// [title] 通知标题
   /// [body] 通知内容（可选）
   /// 返回 LocalNotification 实例，可用于后续关闭或销毁
-  Future<LocalNotification> show({required String title, String? body}) async {
+  Future<LocalNotification> show({
+    required String title,
+    String? body,
+  }) async {
     _ensureInitialized();
 
-    final notification = LocalNotification(title: title, body: body);
+    final notification = LocalNotification(
+      title: title,
+      body: body,
+    );
 
     await localNotifier.notify(notification);
     return notification;
@@ -110,7 +110,9 @@ class NotificationService {
   /// 确保已初始化，否则抛出异常
   void _ensureInitialized() {
     if (!_initialized) {
-      throw StateError('NotificationService 未初始化，请先调用 init()');
+      throw StateError(
+        'NotificationService 未初始化，请先调用 init()',
+      );
     }
   }
 }

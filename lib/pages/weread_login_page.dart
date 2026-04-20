@@ -13,6 +13,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../services/weread_auth_service.dart';
+import '../services/weread_webview_service.dart';
 import '../theme/fluent_tokens.dart';
 
 /// 微信读书 Web 版登录 URL
@@ -62,8 +63,7 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
     if (_extracting || _result != null) return;
 
     // 判断是否已离开登录页（URL 不再包含 #login 且非空白页）
-    final isLoggedIn =
-        url.startsWith(_wereadHomePrefix) ||
+    final isLoggedIn = url.startsWith(_wereadHomePrefix) ||
         (url.startsWith('https://weread.qq.com/') &&
             !url.contains('#login') &&
             url != 'https://weread.qq.com/' &&
@@ -117,9 +117,7 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
         lastCookieStr = cookieStr;
 
         // DEBUG: 打印获取到的 Cookie 键名帮助诊断
-        debugPrint(
-          '[WereadLogin] 第 $attempt 次尝试，Cookie 键名: ${cookieMap.keys.toList()}',
-        );
+        debugPrint('[WereadLogin] 第 $attempt 次尝试，Cookie 键名: ${cookieMap.keys.toList()}');
 
         // 检查关键字段
         final hasKey = cookieMap.containsKey('wr_skey');
@@ -127,11 +125,10 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
 
         if (hasKey && hasVid) {
           // 关键字段就绪，保存到本地
-          final saved = await WereadAuthService.instance.saveCookies(cookieStr);
+          final saved =
+              await WereadAuthService.instance.saveCookies(cookieStr);
           if (saved && mounted) {
-            debugPrint(
-              '[WereadLogin] Cookie 保存成功，全部键名: ${cookieMap.keys.toList()}',
-            );
+            debugPrint('[WereadLogin] Cookie 保存成功，全部键名: ${cookieMap.keys.toList()}');
 
             // 在 WebView 内直接验证 Cookie 有效性（避免 session 绑定问题）
             final valid = await WereadAuthService.instance.validateCookie(
@@ -139,9 +136,10 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
             );
             debugPrint('[WereadLogin] WebView 内验证结果: $valid');
 
-            // HeadlessInAppWebView 改为按需初始化，避免在登录页仍持有可见
-            // WebView 时再并发创建后台实例。需要时由 WereadApiService
-            // 或手动保存 Cookie 后的 reinitialize() 拉起。
+            // 启动后台 HeadlessInAppWebView 保持微信读书登录态
+            // 供设置页校验/刷新等操作使用
+            unawaited(WereadWebViewService.instance.ensureInitialized());
+
             setState(() {
               _extracting = false;
               _result = _CookieResult(
@@ -169,8 +167,7 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
           _extracting = false;
           _result = _CookieResult(
             success: false,
-            message:
-                '未获取到 wr_skey/wr_vid（已获取字段：$keyInfo）。'
+            message: '未获取到 wr_skey/wr_vid（已获取字段：$keyInfo）。'
                 '请确认已完成微信扫码并等待页面跳转到书架',
           );
         });
@@ -179,7 +176,10 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
       if (mounted) {
         setState(() {
           _extracting = false;
-          _result = _CookieResult(success: false, message: '提取失败：$error');
+          _result = _CookieResult(
+            success: false,
+            message: '提取失败：$error',
+          );
         });
       }
     }
@@ -204,8 +204,7 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 16,
-                      height: 16,
+                      width: 16, height: 16,
                       child: ProgressRing(strokeWidth: 2),
                     ),
                     SizedBox(width: 8),
@@ -227,11 +226,11 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
                       size: 16,
                       color: _result!.success
                           ? (isDark
-                                ? FluentDarkColors.statusSuccess
-                                : FluentLightColors.statusSuccess)
+                              ? FluentDarkColors.statusSuccess
+                              : FluentLightColors.statusSuccess)
                           : (isDark
-                                ? FluentDarkColors.statusError
-                                : FluentLightColors.statusError),
+                              ? FluentDarkColors.statusError
+                              : FluentLightColors.statusError),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -280,10 +279,8 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
             const SizedBox(height: 12),
             Text('WebView 初始化失败', style: theme.typography.bodyStrong),
             const SizedBox(height: 8),
-            Text(
-              '请确保系统已安装 Microsoft Edge WebView2 运行时',
-              style: theme.typography.caption,
-            ),
+            Text('请确保系统已安装 Microsoft Edge WebView2 运行时',
+                style: theme.typography.caption),
           ],
         ),
       );
@@ -363,7 +360,9 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
           padding: const EdgeInsets.all(FluentSpacing.m),
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: theme.resources.dividerStrokeColorDefault),
+              top: BorderSide(
+                color: theme.resources.dividerStrokeColorDefault,
+              ),
             ),
           ),
           child: Text(

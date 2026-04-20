@@ -131,7 +131,10 @@ class MessageStateService {
 
   /// 设置最新公开信息渠道启用状态
   Future<void> setLatestInfoEnabled(bool enabled) async {
-    await StorageService.setBool(MessageChannelKeys.latestInfoEnabled, enabled);
+    await StorageService.setBool(
+      MessageChannelKeys.latestInfoEnabled,
+      enabled,
+    );
   }
 
   /// 获取通知公示渠道是否启用（默认启用）
@@ -144,12 +147,17 @@ class MessageStateService {
 
   /// 设置通知公示渠道启用状态
   Future<void> setNoticeEnabled(bool enabled) async {
-    await StorageService.setBool(MessageChannelKeys.noticeEnabled, enabled);
+    await StorageService.setBool(
+      MessageChannelKeys.noticeEnabled,
+      enabled,
+    );
   }
 
   /// 获取微信公众号渠道是否启用（默认关闭 — 占位）
   Future<bool> isWechatPublicEnabled() async {
-    return await StorageService.getBool(MessageChannelKeys.wechatPublicEnabled);
+    return await StorageService.getBool(
+      MessageChannelKeys.wechatPublicEnabled,
+    );
   }
 
   /// 设置微信公众号渠道启用状态
@@ -173,30 +181,6 @@ class MessageStateService {
       MessageChannelKeys.wechatServiceEnabled,
       enabled,
     );
-  }
-
-  // ==================== 单个公众号通知开关 ====================
-
-  /// 生成公众号通知开关的存储键名
-  /// [mpBookId] 公众号的 bookId（如 MP_WXS_xxx）
-  static String _mpNotificationKey(String mpBookId) =>
-      'mp_${mpBookId}_notification_enabled';
-
-  /// 获取指定公众号的通知开关（默认开启）
-  /// [mpBookId] 公众号 bookId
-  /// :return: 是否启用该公众号的通知
-  Future<bool> isMpNotificationEnabled(String mpBookId) async {
-    return await StorageService.getBool(
-      _mpNotificationKey(mpBookId),
-      defaultValue: true,
-    );
-  }
-
-  /// 设置指定公众号的通知开关
-  /// [mpBookId] 公众号 bookId
-  /// [enabled] 是否启用
-  Future<void> setMpNotificationEnabled(String mpBookId, bool enabled) async {
-    await StorageService.setBool(_mpNotificationKey(mpBookId), enabled);
   }
 
   // ==================== 通用渠道开关与间隔管理 ====================
@@ -228,7 +212,10 @@ class MessageStateService {
   /// [channelId] 渠道唯一标识
   /// [enabled] 是否启用
   Future<void> setChannelEnabled(String channelId, bool enabled) async {
-    await StorageService.setBool(_channelEnabledKey(channelId), enabled);
+    await StorageService.setBool(
+      _channelEnabledKey(channelId),
+      enabled,
+    );
   }
 
   // ==================== 子分类（tag3）开关管理 ====================
@@ -257,7 +244,10 @@ class MessageStateService {
   /// [categoryName] MessageCategory 枚举的 .name 值
   /// [enabled] 是否启用
   Future<void> setCategoryEnabled(String categoryName, bool enabled) async {
-    await StorageService.setBool(_categoryEnabledKey(categoryName), enabled);
+    await StorageService.setBool(
+      _categoryEnabledKey(categoryName),
+      enabled,
+    );
   }
 
   /// 获取指定渠道的自动刷新间隔
@@ -268,7 +258,9 @@ class MessageStateService {
     String channelId, {
     int defaultValue = 0,
   }) async {
-    return (await StorageService.getInt(_channelIntervalKey(channelId))) ??
+    return (await StorageService.getInt(
+          _channelIntervalKey(channelId),
+        )) ??
         defaultValue;
   }
 
@@ -276,7 +268,10 @@ class MessageStateService {
   /// [channelId] 渠道唯一标识
   /// [minutes] 间隔分钟数（0 = 关闭）
   Future<void> setChannelInterval(String channelId, int minutes) async {
-    await StorageService.setInt(_channelIntervalKey(channelId), minutes);
+    await StorageService.setInt(
+      _channelIntervalKey(channelId),
+      minutes,
+    );
   }
 
   // ==================== 自动刷新间隔管理（旧接口，保持兼容） ====================
@@ -291,18 +286,26 @@ class MessageStateService {
 
   /// 设置最新公开信息自动刷新间隔（分钟）
   Future<void> setLatestInfoInterval(int minutes) async {
-    await StorageService.setInt(MessageChannelKeys.latestInfoInterval, minutes);
+    await StorageService.setInt(
+      MessageChannelKeys.latestInfoInterval,
+      minutes,
+    );
   }
 
   /// 获取通知公示自动刷新间隔（分钟，0 = 关闭，默认 60）
   Future<int> getNoticeInterval() async {
-    return (await StorageService.getInt(MessageChannelKeys.noticeInterval)) ??
+    return (await StorageService.getInt(
+          MessageChannelKeys.noticeInterval,
+        )) ??
         60;
   }
 
   /// 设置通知公示自动刷新间隔（分钟）
   Future<void> setNoticeInterval(int minutes) async {
-    await StorageService.setInt(MessageChannelKeys.noticeInterval, minutes);
+    await StorageService.setInt(
+      MessageChannelKeys.noticeInterval,
+      minutes,
+    );
   }
 
   /// 获取微信公众号自动刷新间隔（分钟，0 = 关闭，默认 0）
@@ -357,33 +360,49 @@ class MessageStateService {
 
   /// 获取勿扰模式是否开启（默认关闭）
   Future<bool> isDndEnabled() async {
-    return await StorageService.getBool(MessageChannelKeys.dndEnabled);
+    return await StorageService.getBool(
+      MessageChannelKeys.dndEnabled,
+    );
   }
 
   /// 设置勿扰模式开关
   Future<void> setDndEnabled(bool enabled) async {
-    await StorageService.setBool(MessageChannelKeys.dndEnabled, enabled);
+    await StorageService.setBool(
+      MessageChannelKeys.dndEnabled,
+      enabled,
+    );
   }
 
   /// 获取勿扰开始时间（默认 22:00）
   Future<int> getDndStartHour() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndStartHour)) ?? 22;
+    return (await StorageService.getInt(
+          MessageChannelKeys.dndStartHour,
+        )) ??
+        22;
   }
 
   /// 获取勿扰开始分钟（默认 0）
   Future<int> getDndStartMinute() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndStartMinute)) ??
+    return (await StorageService.getInt(
+          MessageChannelKeys.dndStartMinute,
+        )) ??
         0;
   }
 
   /// 获取勿扰结束时间（默认 7:00）
   Future<int> getDndEndHour() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndEndHour)) ?? 7;
+    return (await StorageService.getInt(
+          MessageChannelKeys.dndEndHour,
+        )) ??
+        7;
   }
 
   /// 获取勿扰结束分钟（默认 0）
   Future<int> getDndEndMinute() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndEndMinute)) ?? 0;
+    return (await StorageService.getInt(
+          MessageChannelKeys.dndEndMinute,
+        )) ??
+        0;
   }
 
   /// 设置勿扰时间段（一次性保存开始和结束时间）
@@ -393,10 +412,22 @@ class MessageStateService {
     required int endHour,
     required int endMinute,
   }) async {
-    await StorageService.setInt(MessageChannelKeys.dndStartHour, startHour);
-    await StorageService.setInt(MessageChannelKeys.dndStartMinute, startMinute);
-    await StorageService.setInt(MessageChannelKeys.dndEndHour, endHour);
-    await StorageService.setInt(MessageChannelKeys.dndEndMinute, endMinute);
+    await StorageService.setInt(
+      MessageChannelKeys.dndStartHour,
+      startHour,
+    );
+    await StorageService.setInt(
+      MessageChannelKeys.dndStartMinute,
+      startMinute,
+    );
+    await StorageService.setInt(
+      MessageChannelKeys.dndEndHour,
+      endHour,
+    );
+    await StorageService.setInt(
+      MessageChannelKeys.dndEndMinute,
+      endMinute,
+    );
   }
 
   /// 判断当前时间是否在勿扰时段内
@@ -453,35 +484,22 @@ class MessageStateService {
     }
   }
 
-  /// 清除所有微信公众号类型的预存文章
-  /// 保留其他渠道的消息不受影响
-  /// :return: 被清除的文章数量
-  Future<int> clearWechatArticles() async {
-    final messages = await loadMessages();
-    final before = messages.length;
-    messages.removeWhere(
-      (msg) => msg.sourceType == MessageSourceType.wechatPublic,
-    );
-    await saveMessages(messages);
-    return before - messages.length;
-  }
-
   /// 将新抓取的消息与已有消息合并（按 ID 去重）
   /// [existingMessages] 已有消息列表
   /// [newMessages] 新抓取的消息列表
-  /// 返回合并后的列表（已存消息保持原样，避免刷新覆盖原始时间）
+  /// 返回合并后的列表（新消息覆盖同 ID 旧消息）
   List<MessageItem> mergeMessages(
     List<MessageItem> existingMessages,
     List<MessageItem> newMessages,
   ) {
     final messageMap = <String, MessageItem>{};
-    // 先放旧消息，保留首次获取时记录的时间与字段。
+    // 先放旧消息
     for (final msg in existingMessages) {
       messageMap[msg.id] = msg;
     }
-    // 只补充新增消息，已有文章不再被新抓取结果覆盖。
+    // 新消息覆盖同 ID 的旧消息
     for (final msg in newMessages) {
-      messageMap.putIfAbsent(msg.id, () => msg);
+      messageMap[msg.id] = msg;
     }
     return messageMap.values.toList();
   }

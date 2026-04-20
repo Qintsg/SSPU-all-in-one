@@ -131,114 +131,102 @@ class AboutPage extends StatelessWidget {
       children: [
         // 软件信息
         Card(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? FluentDarkColors.backgroundSecondary
-                          : FluentLightColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 96,
-                      height: 96,
-                    ),
-                  ),
-                  const SizedBox(width: FluentSpacing.l),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('SSPU All-in-One', style: typography.subtitle),
-                        const SizedBox(height: FluentSpacing.xs),
-                        Text('版本 0.0.1-alpha', style: typography.caption),
-                        const SizedBox(height: FluentSpacing.l),
-                        _buildInfoRow(context, '著作人', 'Qintsg'),
-                        const SizedBox(height: FluentSpacing.s),
-                        _buildInfoRow(context, '许可证', 'MIT License'),
-                      ],
-                    ),
-                  ),
-                ],
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? FluentDarkColors.backgroundSecondary
+                      : FluentLightColors.backgroundSecondary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 96,
+                  height: 96,
+                ),
               ),
-            )
-            .animate()
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
+              const SizedBox(width: FluentSpacing.l),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SSPU All-in-One', style: typography.subtitle),
+                    const SizedBox(height: FluentSpacing.xs),
+                    Text('版本 0.0.1-alpha', style: typography.caption),
+                    const SizedBox(height: FluentSpacing.l),
+                    _buildInfoRow(context, '著作人', 'Qintsg'),
+                    const SizedBox(height: FluentSpacing.s),
+                    _buildInfoRow(context, '许可证', 'MIT License'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate()
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.l),
 
         // 操作按钮
         Card(
-              child: Column(
-                children: [
-                  _buildActionTile(
-                    context,
-                    icon: FluentIcons.open_source,
-                    title: 'GitHub 仓库',
-                    subtitle: 'Qintsg/SSPU-all-in-one',
-                    onTap: () =>
-                        _openUrl('https://github.com/Qintsg/SSPU-all-in-one'),
-                  ),
-                  const Divider(),
-                  _buildActionTile(
-                    context,
-                    icon: FluentIcons.document_set,
-                    title: '使用协议',
-                    subtitle: '查看完整使用协议条款',
-                    onTap: () => Navigator.of(context).push(
-                      FluentPageRoute(
-                        builder: (_) => const _AgreementNavigationWrapper(),
-                      ),
-                    ),
-                  ),
-                ],
+          child: Column(
+            children: [
+              _buildActionTile(
+                context,
+                icon: FluentIcons.open_source,
+                title: 'GitHub 仓库',
+                subtitle: 'Qintsg/SSPU-all-in-one',
+                onTap: () => _openUrl(
+                    'https://github.com/Qintsg/SSPU-all-in-one'),
               ),
-            )
-            .animate(delay: 100.ms)
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
+              const Divider(),
+              _buildActionTile(
+                context,
+                icon: FluentIcons.document_set,
+                title: '使用协议',
+                subtitle: '查看完整使用协议条款',
+                onTap: () => Navigator.of(context).push(
+                  FluentPageRoute(
+                    builder: (_) => const _AgreementNavigationWrapper(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ).animate(delay: 100.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.l),
 
         // 开源项目列表
         Text('使用/参考的开源项目', style: typography.bodyStrong),
         const SizedBox(height: FluentSpacing.s),
         Card(
-              child: Column(
-                children: _openSourceProjects.asMap().entries.map((entry) {
-                  final project = entry.value;
-                  final isLast = entry.key == _openSourceProjects.length - 1;
-                  return Column(
-                    children: [
-                      _buildActionTile(
-                        context,
-                        icon: FluentIcons.code,
-                        title: project.name,
-                        subtitle: '${project.description} · ${project.license}',
-                        onTap: () => _openUrl(project.url),
-                      ),
-                      if (!isLast) const Divider(),
-                    ],
-                  );
-                }).toList(),
-              ),
-            )
-            .animate(delay: 200.ms)
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
+          child: Column(
+            children: _openSourceProjects.asMap().entries.map((entry) {
+              final project = entry.value;
+              final isLast = entry.key == _openSourceProjects.length - 1;
+              return Column(
+                children: [
+                  _buildActionTile(
+                    context,
+                    icon: FluentIcons.code,
+                    title: project.name,
+                    subtitle: '${project.description} · ${project.license}',
+                    onTap: () => _openUrl(project.url),
+                  ),
+                  if (!isLast) const Divider(),
+                ],
+              );
+            }).toList(),
+          ),
+        ).animate(delay: 200.ms)
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.05, end: 0),
       ],
     );
   }
@@ -275,14 +263,12 @@ class AboutPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: typography.body),
-                    Text(
-                      subtitle,
-                      style: typography.caption?.copyWith(
-                        color: FluentTheme.of(
-                          context,
-                        ).resources.textFillColorSecondary,
-                      ),
-                    ),
+                    Text(subtitle,
+                        style: typography.caption?.copyWith(
+                          color: FluentTheme.of(context)
+                              .resources
+                              .textFillColorSecondary,
+                        )),
                   ],
                 ),
               ),

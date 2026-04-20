@@ -24,7 +24,8 @@ class LockPage extends StatefulWidget {
   State<LockPage> createState() => _LockPageState();
 }
 
-class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
+class _LockPageState extends State<LockPage>
+    with TickerProviderStateMixin {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
@@ -57,16 +58,16 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _shakeAnimation =
-        TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 0, end: -10), weight: 1),
-          TweenSequenceItem(tween: Tween(begin: -10, end: 10), weight: 2),
-          TweenSequenceItem(tween: Tween(begin: 10, end: -10), weight: 2),
-          TweenSequenceItem(tween: Tween(begin: -10, end: 10), weight: 2),
-          TweenSequenceItem(tween: Tween(begin: 10, end: 0), weight: 1),
-        ]).animate(
-          CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
-        );
+    _shakeAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: -10), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -10, end: 10), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 10, end: -10), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -10, end: 10), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 10, end: 0), weight: 1),
+    ]).animate(CurvedAnimation(
+      parent: _shakeController,
+      curve: Curves.easeInOut,
+    ));
 
     // 初始化解锁动画（缩放 + 淡出）
     _unlockController = AnimationController(
@@ -76,10 +77,9 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
     _unlockScale = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _unlockController, curve: Curves.easeOut),
     );
-    _unlockOpacity = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _unlockController, curve: Curves.easeIn));
+    _unlockOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _unlockController, curve: Curves.easeIn),
+    );
 
     // 自动聚焦到密码输入框
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -153,7 +153,10 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
       builder: (context, child) {
         return Opacity(
           opacity: _unlockOpacity.value,
-          child: Transform.scale(scale: _unlockScale.value, child: child),
+          child: Transform.scale(
+            scale: _unlockScale.value,
+            child: child,
+          ),
         );
       },
       child: ScaffoldPage(
@@ -164,11 +167,18 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                Image.asset('assets/images/logo.png', width: 80, height: 80),
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: 80,
+                  height: 80,
+                ),
                 const SizedBox(height: FluentSpacing.xxl),
 
                 // 应用名称
-                Text('SSPU All-in-One', style: theme.typography.subtitle),
+                Text(
+                  'SSPU All-in-One',
+                  style: theme.typography.subtitle,
+                ),
                 const SizedBox(height: FluentSpacing.s),
                 Text(
                   '应用已锁定',
@@ -205,9 +215,7 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
                         // 错误提示
                         if (_errorMessage != null)
                           Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: FluentSpacing.s,
-                            ),
+                            padding: const EdgeInsets.only(bottom: FluentSpacing.s),
                             child: Text(
                               _errorMessage!,
                               style: theme.typography.caption?.copyWith(

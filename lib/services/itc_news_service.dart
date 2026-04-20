@@ -33,14 +33,10 @@ class ItcNewsService {
 
   /// 获取最新消息
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchNews({
-    int maxCount = 20,
-    Set<String>? knownMessageIds,
-  }) async {
+  Future<List<MessageItem>> fetchNews({int maxCount = 20}) async {
     return _fetchFromColumn(
       columnPath: _newsPath,
       maxCount: maxCount,
-      knownMessageIds: knownMessageIds,
     );
   }
 
@@ -58,7 +54,6 @@ class ItcNewsService {
   Future<List<MessageItem>> _fetchFromColumn({
     required String columnPath,
     required int maxCount,
-    Set<String>? knownMessageIds,
     int maxPages = 10,
   }) async {
     final messages = <MessageItem>[];
@@ -67,7 +62,6 @@ class ItcNewsService {
     while (messages.length < maxCount && currentPage <= maxPages) {
       final pageMessages = await _fetchSinglePage(
         url: _buildPageUrl(columnPath, currentPage),
-        knownMessageIds: knownMessageIds,
       );
 
       if (pageMessages.isEmpty) break;
@@ -88,7 +82,6 @@ class ItcNewsService {
   /// 选择器: 匹配 class 以 'n' 开头的 li 元素（n1, n2, n3...）
   Future<List<MessageItem>> _fetchSinglePage({
     required String url,
-    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(url);
@@ -103,33 +96,30 @@ class ItcNewsService {
         final anchor = item.querySelector('a');
         if (anchor == null) continue;
 
-        final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
+        final title =
+            anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 基于 URL 的 MD5 生成唯一 ID
-        final messageId = _generateId(fullUrl);
-        if (knownMessageIds?.contains(messageId) ?? false) break;
-
         // 提取日期（span 元素中的文本）并规范化格式
         final dateSpan = item.querySelector('span');
         final date = normalizeDate(dateSpan?.text.trim() ?? '');
 
-        messages.add(
-          MessageItem(
-            id: messageId,
-            title: title,
-            date: date,
-            url: fullUrl,
-            sourceType: MessageSourceType.schoolWebsite,
-            sourceName: MessageSourceName.itc,
-            category: MessageCategory.itcNews,
-            timestamp: MessageItem.computeTimestamp(date),
-          ),
-        );
+        // 基于 URL 的 MD5 生成唯一 ID
+        final messageId = _generateId(fullUrl);
+
+        messages.add(MessageItem(
+          id: messageId,
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: MessageSourceName.itc,
+          category: MessageCategory.itcNews,
+        ));
       }
 
       return messages;

@@ -37,29 +37,21 @@ class SspuOfficialService {
 
   /// 获取通知公告
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchNotices({
-    int maxCount = 20,
-    Set<String>? knownMessageIds,
-  }) async {
+  Future<List<MessageItem>> fetchNotices({int maxCount = 20}) async {
     return _fetchFromColumn(
       columnPath: _noticePath,
       category: MessageCategory.sspuNotice,
       maxCount: maxCount,
-      knownMessageIds: knownMessageIds,
     );
   }
 
   /// 获取学术活动讲座
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchActivities({
-    int maxCount = 20,
-    Set<String>? knownMessageIds,
-  }) async {
+  Future<List<MessageItem>> fetchActivities({int maxCount = 20}) async {
     return _fetchFromColumn(
       columnPath: _activityPath,
       category: MessageCategory.sspuActivity,
       maxCount: maxCount,
-      knownMessageIds: knownMessageIds,
     );
   }
 
@@ -79,7 +71,6 @@ class SspuOfficialService {
     required String columnPath,
     required MessageCategory category,
     required int maxCount,
-    Set<String>? knownMessageIds,
     int maxPages = 20,
   }) async {
     final messages = <MessageItem>[];
@@ -89,7 +80,6 @@ class SspuOfficialService {
       final pageMessages = await _fetchSinglePage(
         url: _buildPageUrl(columnPath, currentPage),
         category: category,
-        knownMessageIds: knownMessageIds,
       );
 
       if (pageMessages.isEmpty) break;
@@ -111,16 +101,13 @@ class SspuOfficialService {
   Future<List<MessageItem>> _fetchSinglePage({
     required String url,
     required MessageCategory category,
-    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
       // 官网列表: .col_news_con 限定主内容区，排除页脚 .foot-left 中的固定栏目
-      final newsItems = document.querySelectorAll(
-        '.col_news_con ul.news_list li.news',
-      );
+      final newsItems = document.querySelectorAll('.col_news_con ul.news_list li.news');
       final messages = <MessageItem>[];
 
       for (final item in newsItems) {
@@ -139,26 +126,22 @@ class SspuOfficialService {
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
-        // 基于 URL 的 MD5 生成唯一 ID
-        final messageId = _generateId(fullUrl);
-        if (knownMessageIds?.contains(messageId) ?? false) break;
-
         // 提取日期（div.news_meta）并规范化格式
         final dateEl = item.querySelector('div.news_meta');
         final date = normalizeDate(dateEl?.text.trim() ?? '');
 
-        messages.add(
-          MessageItem(
-            id: messageId,
-            title: title,
-            date: date,
-            url: fullUrl,
-            sourceType: MessageSourceType.schoolWebsite,
-            sourceName: MessageSourceName.sspuOfficial,
-            category: category,
-            timestamp: MessageItem.computeTimestamp(date),
-          ),
-        );
+        // 基于 URL 的 MD5 生成唯一 ID
+        final messageId = _generateId(fullUrl);
+
+        messages.add(MessageItem(
+          id: messageId,
+          title: title,
+          date: date,
+          url: fullUrl,
+          sourceType: MessageSourceType.schoolWebsite,
+          sourceName: MessageSourceName.sspuOfficial,
+          category: category,
+        ));
       }
 
       return messages;

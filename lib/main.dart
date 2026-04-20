@@ -6,11 +6,7 @@
  * @Date : 2026-04-18
  */
 
-import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'app.dart';
@@ -21,7 +17,6 @@ import 'services/storage_service.dart';
 import 'services/tray_service.dart';
 import 'services/notification_service.dart';
 import 'services/auto_refresh_service.dart';
-import 'utils/webview_env.dart';
 
 /// 全局字体族名称
 import 'theme/fluent_tokens.dart';
@@ -29,42 +24,18 @@ import 'theme/fluent_tokens.dart';
 /// 字体族常量（已迁移至 FluentTokenTheme.fontFamily，保留兼容引用）
 const String kFontFamily = FluentTokenTheme.fontFamily;
 
-/// 桌面窗口插件仅在 Flutter 桌面平台注册。
-bool get _supportsDesktopShell =>
-    !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
-
-/// WebView2 和本地通知当前只面向 Windows 发行包启用。
-bool get _supportsWindowsServices => !kIsWeb && Platform.isWindows;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Windows 平台：在 runApp() 前初始化 WebView2 环境
-  // 必须在任何 WebView 实例创建前完成，否则会触发 RPC_E_DISCONNECTED (-2147417848)
-  if (_supportsWindowsServices) {
-    final availableVersion = await WebViewEnvironment.getAvailableVersion();
-    if (availableVersion != null) {
-      // 使用 LOCALAPPDATA 下的专属目录，避免安装到只读路径时崩溃
-      final localAppData =
-          Platform.environment['LOCALAPPDATA'] ?? Platform.localeName;
-      globalWebViewEnvironment = await WebViewEnvironment.create(
-        settings: WebViewEnvironmentSettings(
-          userDataFolder: '$localAppData\\sspu_all_in_one\\WebView2',
-        ),
-      );
-    }
-  }
-
   await StorageService.init();
 
-  if (_supportsDesktopShell) {
-    // 桌面端拦截关闭事件并提供系统托盘入口。
-    await windowManager.ensureInitialized();
-    await windowManager.setPreventClose(true);
-    await TrayService.instance.init();
-  }
+  // 初始化窗口管理器，拦截默认关闭行为
+  await windowManager.ensureInitialized();
+  await windowManager.setPreventClose(true);
 
-  // 非 Windows 平台不注册 Windows 通知插件，避免 Android 启动时调用缺失通道。
+  // 初始化系统托盘图标与菜单
+  await TrayService.instance.init();
+
+  // 初始化通知服务和自动刷新服务
   await NotificationService.instance.init();
   await AutoRefreshService.instance.init();
 
@@ -100,19 +71,15 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   @override
   void initState() {
     super.initState();
-    if (_supportsDesktopShell) {
-      windowManager.addListener(this);
-      trayManager.addListener(this);
-    }
+    windowManager.addListener(this);
+    trayManager.addListener(this);
     _initApp();
   }
 
   @override
   void dispose() {
-    if (_supportsDesktopShell) {
-      windowManager.removeListener(this);
-      trayManager.removeListener(this);
-    }
+    windowManager.removeListener(this);
+    trayManager.removeListener(this);
     super.dispose();
   }
 
@@ -140,8 +107,6 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 根据用户偏好执行：最小化到托盘 / 直接退出 / 弹窗询问
   @override
   void onWindowClose() async {
-    if (!_supportsDesktopShell) return;
-
     final isPreventClose = await windowManager.isPreventClose();
     if (!isPreventClose) return;
 
@@ -164,8 +129,6 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 显示关闭确认对话框，提供最小化/退出两个选项
   /// 勾选"以后都使用此选项"可持久化用户选择
   void _showCloseConfirmDialog() {
-    if (!_supportsDesktopShell) return;
-
     final ctx = _navigatorKey.currentContext;
     // 若导航器上下文不可用（极端情况），直接退出
     if (ctx == null) {
@@ -191,7 +154,9 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
                   Checkbox(
                     checked: rememberChoice,
                     onChanged: (value) {
-                      setDialogState(() => rememberChoice = value ?? false);
+                      setDialogState(
+                        () => rememberChoice = value ?? false,
+                      );
                     },
                     content: const Text('以后都使用此选项'),
                   ),
@@ -231,8 +196,6 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 左键单击托盘图标：显示并聚焦主窗口
   @override
   void onTrayIconMouseDown() {
-    if (!_supportsDesktopShell) return;
-
     windowManager.show();
     windowManager.focus();
   }
@@ -240,16 +203,12 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 右键单击托盘图标：弹出右键菜单
   @override
   void onTrayIconRightMouseDown() {
-    if (!_supportsDesktopShell) return;
-
     trayManager.popUpContextMenu();
   }
 
   /// 托盘右键菜单项点击回调
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
-    if (!_supportsDesktopShell) return;
-
     switch (menuItem.key) {
       case 'show_window':
         windowManager.show();
@@ -290,8 +249,8 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
                 child: const Text('不同意'),
                 onPressed: () {
                   Navigator.pop(dialogContext, false);
-                  // 不同意 EULA 时按平台能力关闭应用入口。
-                  _closeApplication();
+                  // 不同意 EULA 时销毁窗口退出
+                  windowManager.destroy();
                 },
               ),
               FilledButton(
@@ -317,16 +276,6 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
 
   // ==================== 构建 ====================
 
-  /// 按当前平台关闭应用，避免移动端调用未注册的桌面插件通道。
-  Future<void> _closeApplication() async {
-    if (_supportsDesktopShell) {
-      await windowManager.destroy();
-      return;
-    }
-
-    await SystemNavigator.pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     return FluentApp(
@@ -345,7 +294,9 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 根据初始化、EULA 和密码验证状态构建首屏
   Widget _buildHome() {
     if (!_isInitialized) {
-      return const ScaffoldPage(content: Center(child: ProgressRing()));
+      return const ScaffoldPage(
+        content: Center(child: ProgressRing()),
+      );
     }
 
     // 未接受 EULA 时显示空白页并弹出协议对话框
@@ -353,7 +304,9 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
       return Builder(
         builder: (context) {
           _showEulaDialog(context);
-          return const ScaffoldPage(content: Center(child: ProgressRing()));
+          return const ScaffoldPage(
+            content: Center(child: ProgressRing()),
+          );
         },
       );
     }

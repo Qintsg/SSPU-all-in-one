@@ -28,7 +28,7 @@ class WereadApiService {
   final WereadWebViewService _webViewService = WereadWebViewService.instance;
 
   /// 微信读书 Web 端 API 基础 URL
-  /// 使用 weread.qq.com/web 路径（同源）— 书架、公众号文章、书籍信息等接口
+  /// 使用 weread.qq.com/web 路径（同源）而非 i.weread.qq.com（跨域）
   static const String _apiBase = 'https://weread.qq.com/web';
 
   // ==================== 书架相关 ====================
@@ -37,10 +37,11 @@ class WereadApiService {
   /// 书架中 bookId 以 "MP_WXS_" 开头的是公众号
   /// :return: 书架原始 JSON 数据，失败返回 null
   Future<Map<String, dynamic>?> getShelf() async {
-    return _getJson(
-      '$_apiBase/shelf/sync',
-      queryParameters: {'synckey': 0, 'teenmode': 0, 'album': 1},
-    );
+    return _getJson('$_apiBase/shelf/sync', queryParameters: {
+      'synckey': 0,
+      'teenmode': 0,
+      'album': 1,
+    });
   }
 
   /// 从书架数据中提取已关注的公众号列表
@@ -68,18 +69,7 @@ class WereadApiService {
 
   // ==================== 公众号文章 ====================
 
-  /// 获取文章内容详情（含原始微信文章链接等信息）
-  /// [reviewId] 文章的 reviewId
-  /// :return: 文章内容 JSON，失败返回 null
-  Future<Map<String, dynamic>?> getArticleContent(String reviewId) async {
-    return _getJson(
-      '$_apiBase/mp/content',
-      queryParameters: {'reviewId': reviewId},
-    );
-  }
-
   /// 获取指定公众号的文章列表
-  /// 使用 /web/mp/articles 接口（/web/book/articles 已下架）
   /// [bookId] 公众号 bookId（格式：MP_WXS_xxxxxxxxxx）
   /// [offset] 分页偏移量，默认 0
   /// [count] 每页条数，默认 20，最大 40
@@ -89,10 +79,11 @@ class WereadApiService {
     int offset = 0,
     int count = 20,
   }) async {
-    return _getJson(
-      '$_apiBase/mp/articles',
-      queryParameters: {'bookId': bookId, 'offset': offset, 'count': count},
-    );
+    return _getJson('$_apiBase/book/articles', queryParameters: {
+      'bookId': bookId,
+      'offset': offset,
+      'count': count,
+    });
   }
 
   /// 获取公众号的全部文章（自动翻页，限制最大条数）
@@ -135,7 +126,9 @@ class WereadApiService {
   /// [bookId] 书籍/公众号 bookId
   /// :return: 详情 JSON 数据，失败返回 null
   Future<Map<String, dynamic>?> getBookInfo(String bookId) async {
-    return _getJson('$_apiBase/book/info', queryParameters: {'bookId': bookId});
+    return _getJson('$_apiBase/book/info', queryParameters: {
+      'bookId': bookId,
+    });
   }
 
   // ==================== 搜索 ====================
@@ -144,11 +137,14 @@ class WereadApiService {
   /// [keyword] 搜索关键词
   /// [count] 结果数量，默认 20
   /// :return: 搜索结果 JSON 数据，失败返回 null
-  Future<Map<String, dynamic>?> search(String keyword, {int count = 20}) async {
-    return _getJson(
-      '$_apiBase/mp/search',
-      queryParameters: {'keyword': keyword, 'count': count},
-    );
+  Future<Map<String, dynamic>?> search(
+    String keyword, {
+    int count = 20,
+  }) async {
+    return _getJson('$_apiBase/mp/search', queryParameters: {
+      'keyword': keyword,
+      'count': count,
+    });
   }
 
   // ==================== 内部工具方法 ====================
@@ -263,37 +259,28 @@ class WereadApiService {
   /// [data] API 响应 JSON
   /// :return: 文章数据列表
   List<Map<String, dynamic>> _extractArticleList(Map<String, dynamic> data) {
-    // /web/mp/articles 返回格式：reviews[].subReviews[].review
-    // 需要展平 subReviews 层级，提取每篇文章数据
+    // 尝试 reviews 字段（weread v2 接口常用格式）
     final reviews = data['reviews'] as List<dynamic>?;
     if (reviews != null && reviews.isNotEmpty) {
-      final flatArticles = <Map<String, dynamic>>[];
-      for (final reviewGroup in reviews) {
-        if (reviewGroup is! Map<String, dynamic>) continue;
-        // subReviews 内含实际文章条目
-        final subReviews = reviewGroup['subReviews'] as List<dynamic>?;
-        if (subReviews != null) {
-          for (final sub in subReviews) {
-            if (sub is Map<String, dynamic>) {
-              flatArticles.add(sub);
-            }
-          }
-        } else {
-          // 兜底：无 subReviews 时直接作为文章条目
-          flatArticles.add(reviewGroup);
-        }
-      }
-      if (flatArticles.isNotEmpty) return flatArticles;
+      return reviews
+          .whereType<Map<String, dynamic>>()
+          .toList();
     }
 
-    // 兜底：尝试 articles / data 字段
+    // 尝试 articles 字段
     final articles = data['articles'] as List<dynamic>?;
     if (articles != null && articles.isNotEmpty) {
-      return articles.whereType<Map<String, dynamic>>().toList();
+      return articles
+          .whereType<Map<String, dynamic>>()
+          .toList();
     }
+
+    // 尝试 data 嵌套字段
     final nested = data['data'] as List<dynamic>?;
     if (nested != null && nested.isNotEmpty) {
-      return nested.whereType<Map<String, dynamic>>().toList();
+      return nested
+          .whereType<Map<String, dynamic>>()
+          .toList();
     }
 
     return [];
