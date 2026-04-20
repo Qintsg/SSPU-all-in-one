@@ -13,7 +13,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:dio/dio.dart';
 
 import 'weread_auth_service.dart';
 import 'weread_webview_service.dart';
@@ -29,12 +28,8 @@ class WereadApiService {
   final WereadWebViewService _webViewService = WereadWebViewService.instance;
 
   /// 微信读书 Web 端 API 基础 URL
-  /// 使用 weread.qq.com/web 路径（同源）— 书架、书籍信息等接口
+  /// 使用 weread.qq.com/web 路径（同源）— 书架、公众号文章、书籍信息等接口
   static const String _apiBase = 'https://weread.qq.com/web';
-
-  /// 微信读书移动端 API 基础 URL
-  /// 使用 i.weread.qq.com — 文章列表等接口（/web/ 路径已下架）
-  static const String _mobileApiBase = 'https://i.weread.qq.com';
 
   // ==================== 书架相关 ====================
 
@@ -74,7 +69,7 @@ class WereadApiService {
   // ==================== 公众号文章 ====================
 
   /// 获取指定公众号的文章列表
-  /// 使用 i.weread.qq.com 移动端API（/web/book/articles 已下架）
+  /// 使用 /web/mp/articles 接口（/web/book/articles 已下架）
   /// [bookId] 公众号 bookId（格式：MP_WXS_xxxxxxxxxx）
   /// [offset] 分页偏移量，默认 0
   /// [count] 每页条数，默认 20，最大 40
@@ -84,8 +79,8 @@ class WereadApiService {
     int offset = 0,
     int count = 20,
   }) async {
-    return _getJsonViaHttp(
-      '$_mobileApiBase/book/articles',
+    return _getJson(
+      '$_apiBase/mp/articles',
       queryParameters: {'bookId': bookId, 'offset': offset, 'count': count},
     );
   }
@@ -277,77 +272,5 @@ class WereadApiService {
     }
 
     return [];
-  }
-
-  // ==================== HTTP 直连方式（跨域 API） ====================
-
-  /// 通过 HTTP 客户端直接请求 i.weread.qq.com 接口
-  /// WebView fetch 对跨域请求受 CORS 限制，因此改用 dart:http
-  /// Cookie 从本地存储读取并手动注入 header
-  /// [url] 完整请求 URL
-  /// [queryParameters] URL 查询参数
-  /// :return: 响应 JSON 数据，失败返回 null
-  Future<Map<String, dynamic>?> _getJsonViaHttp(
-    String url, {
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    final cookie = await _auth.getCookieString();
-    if (cookie == null || cookie.isEmpty) return null;
-
-    // 拼接查询参数
-    final uri = Uri.parse(url).replace(
-      queryParameters: queryParameters?.map(
-        (key, value) => MapEntry(key, value.toString()),
-      ),
-    );
-
-    try {
-      final dio = Dio();
-      final response = await dio.getUri(
-        uri,
-        options: Options(
-          headers: {
-            'Cookie': cookie,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                'AppleWebKit/537.36 (KHTML, like Gecko) '
-                'Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json, text/plain, */*',
-            'Referer': 'https://weread.qq.com/',
-          },
-          responseType: ResponseType.json,
-          // 不对非200状态码抛异常，由我们自己处理
-          validateStatus: (status) => true,
-        ),
-      );
-
-      debugPrint('[WereadApi] HTTP ${response.statusCode}: $url');
-
-      if (response.statusCode != 200) {
-        debugPrint('[WereadApi] HTTP 失败: status=${response.statusCode}');
-        return null;
-      }
-
-      final dynamic rawData = response.data;
-      Map<String, dynamic>? data;
-      if (rawData is Map<String, dynamic>) {
-        data = rawData;
-      } else if (rawData is String) {
-        final decoded = json.decode(rawData);
-        if (decoded is Map<String, dynamic>) data = decoded;
-      }
-      if (data == null) return null;
-
-      // 检查业务错误码
-      final errCode = data['errCode'] ?? data['errcode'];
-      if (errCode != null && errCode != 0) {
-        debugPrint('[WereadApi] 业务错误: errCode=$errCode');
-        return null;
-      }
-
-      return data;
-    } catch (e) {
-      debugPrint('[WereadApi] HTTP 请求异常: $e');
-      return null;
-    }
   }
 }
