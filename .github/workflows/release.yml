@@ -15,7 +15,7 @@ on:
 
 # 全局环境变量
 env:
-  FLUTTER_VERSION: '3.32.1'
+  FLUTTER_VERSION: '3.41.4'
 
 jobs:
   # ============================================================
@@ -232,7 +232,7 @@ jobs:
             | Web | `sspu-all-in-one-web.tar.gz` | 需部署到 Web 服务器 |
 
             ### 🔧 技术栈
-            - Flutter 3.32.1 / Dart 3.11.1
+            - Flutter 3.41.4 / Dart 3.11.1
             - fluent_ui (Windows Fluent Design)
             - flutter_inappwebview 6.1.5
             - window_manager / tray_manager
