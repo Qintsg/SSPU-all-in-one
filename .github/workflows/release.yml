@@ -1,17 +1,17 @@
 # 全平台构建与 Release 工作流
-# 触发方式：手动触发或推送 tag
+# 触发方式：PR 合并到 main/develop 且带 release 标签，或手动触发
 name: Build & Release
 
 on:
+  pull_request:
+    types: [closed]
+    branches: [main, develop]
   workflow_dispatch:
     inputs:
       version:
         description: '版本号 (如 0.1.0-alpha)'
         required: true
         default: '0.1.0-alpha'
-  push:
-    tags:
-      - 'v*'
 
 # 全局环境变量
 env:
@@ -22,6 +22,9 @@ jobs:
   # Windows 构建
   # ============================================================
   build-windows:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,6 +54,9 @@ jobs:
   # Linux 构建
   # ============================================================
   build-linux:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +92,9 @@ jobs:
   # macOS 构建
   # ============================================================
   build-macos:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -116,6 +125,9 @@ jobs:
   # Android APK 构建
   # ============================================================
   build-android:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -149,6 +161,9 @@ jobs:
   # Web 构建
   # ============================================================
   build-web:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -179,12 +194,25 @@ jobs:
   # 创建 Release
   # ============================================================
   create-release:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     needs: [build-windows, build-linux, build-macos, build-android, build-web]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: 提取版本号
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VER=$(grep '^version:' pubspec.yaml | sed 's/version: //;s/+.*//')
+            echo "version=$VER" >> $GITHUB_OUTPUT
+          fi
 
       - uses: actions/download-artifact@v4
         with:
@@ -193,10 +221,10 @@ jobs:
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
-          name: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
           body: |
-            ## SSPU All-in-One ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+            ## SSPU All-in-One v${{ steps.version.outputs.version }}
 
             上海第二工业大学校园综合服务应用 — 首个 Alpha 预览版
 
