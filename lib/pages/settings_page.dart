@@ -904,6 +904,8 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         if (success) {
           setState(() => _wereadAuthenticated = true);
+          // Cookie 变更后重新初始化 WebView 以注入新 Cookie
+          await WereadWebViewService.instance.reinitialize();
           // 保存成功后自动加载公众号列表
           await _loadFollowedMps();
           if (mounted) {
