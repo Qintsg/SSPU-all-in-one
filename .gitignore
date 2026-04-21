@@ -110,3 +110,5 @@ Desktop.ini
 
 # 本地自动化与平台安装器临时产物
 .omx/
+.codex/
+.playwright-mcp/
