@@ -55,7 +55,9 @@ ci:
       - any-glob-to-any-file:
           - '.github/workflows/**'
 
-release:
+# Release 相关文件变更
+# 注意：`release` 标签保留给人工触发 Release 工作流，不在这里自动添加。
+release-files:
   - changed-files:
       - any-glob-to-any-file:
           - '.github/workflows/release.yml'
