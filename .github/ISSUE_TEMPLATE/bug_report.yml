@@ -102,7 +102,7 @@ body:
     attributes:
       label: 应用版本 / Commit
       description: 填写 Release 版本、commit hash 或分支名称。
-      placeholder: v0.1.0-alpha / main / abc1234
+      placeholder: v0.1.5-alpha / main / abc1234
     validations:
       required: true
   - type: input

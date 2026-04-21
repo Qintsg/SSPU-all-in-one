@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (如 0.1.0-alpha)'
+        description: '版本号 (如 0.1.5-alpha)'
         required: true
-        default: '0.1.0-alpha'
+        default: '0.1.5-alpha'
 
 env:
   FLUTTER_VERSION: '3.41.7'

@@ -1,10 +1,14 @@
 # 变更日志
 
+<!-- markdownlint-disable MD024 -->
+
 本文档遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
 ---
 
 ## [Unreleased]
+
+## [0.1.5-alpha] - 2026-04-21
 
 ### 新增
 
