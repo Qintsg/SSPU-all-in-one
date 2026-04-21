@@ -132,6 +132,7 @@ class SecurityNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.securityDept,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

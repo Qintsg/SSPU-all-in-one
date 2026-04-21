@@ -434,14 +434,9 @@ class CollegeNewsService {
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
 
-      // 提取日期
+      // 提取日期；选择器缺失时仍按当天消息兜底，避免信息中心日期空白。
       final dateEl = item.querySelector(config.dateSelector ?? 'span');
-      String date = dateEl?.text.trim() ?? '';
-
-      // 日期规范化（短日期补年份 / 格式统一）
-      if (date.isNotEmpty) {
-        date = normalizeDate(date);
-      }
+      final date = normalizeDate(dateEl?.text.trim() ?? '');
 
       messages.add(
         MessageItem(
@@ -452,6 +447,7 @@ class CollegeNewsService {
           sourceType: MessageSourceType.schoolWebsite,
           sourceName: config.sourceName,
           category: config.category,
+          timestamp: MessageItem.computeTimestamp(date),
         ),
       );
     }
@@ -508,12 +504,13 @@ class CollegeNewsService {
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
 
-      // 提取日期
+      // 提取日期；部分官网模板当天条目可能只给时间或不给日期。
       String date = '';
       if (config.newsListDateSelector != null) {
         final dateEl = item.querySelector(config.newsListDateSelector!);
         date = dateEl?.text.trim() ?? '';
       }
+      date = normalizeDate(date);
 
       messages.add(
         MessageItem(
@@ -524,6 +521,7 @@ class CollegeNewsService {
           sourceType: MessageSourceType.schoolWebsite,
           sourceName: config.sourceName,
           category: config.category,
+          timestamp: MessageItem.computeTimestamp(date),
         ),
       );
     }
@@ -566,6 +564,7 @@ class CollegeNewsService {
         final yearMonth = yearsEl.text.trim().replaceAll('.', '-');
         date = '$yearMonth-$day';
       }
+      date = normalizeDate(date);
 
       messages.add(
         MessageItem(
@@ -576,6 +575,7 @@ class CollegeNewsService {
           sourceType: MessageSourceType.schoolWebsite,
           sourceName: config.sourceName,
           category: config.category,
+          timestamp: MessageItem.computeTimestamp(date),
         ),
       );
     }
@@ -622,7 +622,7 @@ class CollegeNewsService {
       }
       if (title.isEmpty) continue;
 
-      // 提取日期
+      // 提取日期；解析失败时使用当天日期，保持 MessageItem.date 可展示。
       String date = '';
       if (config.customDateComposite &&
           config.customDateYearMonthSelector != null) {
@@ -637,11 +637,8 @@ class CollegeNewsService {
       } else if (config.customDateSelector != null) {
         final dateEl = item.querySelector(config.customDateSelector!);
         date = dateEl?.text.trim() ?? '';
-        // 日期规范化（斜杠→连字符 / 短日期补年份 / 格式统一）
-        if (date.isNotEmpty) {
-          date = normalizeDate(date);
-        }
       }
+      date = normalizeDate(date);
 
       messages.add(
         MessageItem(
@@ -652,6 +649,7 @@ class CollegeNewsService {
           sourceType: MessageSourceType.schoolWebsite,
           sourceName: config.sourceName,
           category: config.category,
+          timestamp: MessageItem.computeTimestamp(date),
         ),
       );
     }

@@ -142,6 +142,7 @@ class SspuNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.infoDisclosure,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

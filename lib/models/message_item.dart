@@ -267,6 +267,9 @@ class MessageItem {
   /// 微信公众号名称（仅微信渠道有值，用于来源显示）
   final String? mpName;
 
+  /// 精确时间戳（毫秒，可选；用于显示精确到分钟的时间）
+  final int? timestamp;
+
   const MessageItem({
     required this.id,
     required this.title,
@@ -277,6 +280,7 @@ class MessageItem {
     required this.category,
     this.mpBookId,
     this.mpName,
+    this.timestamp,
   });
 
   /// 从 JSON 反序列化（兼容旧数据中无 mpBookId/mpName 的情况）
@@ -297,6 +301,7 @@ class MessageItem {
       ),
       mpBookId: json['mpBookId'] as String?,
       mpName: json['mpName'] as String?,
+      timestamp: json['timestamp'] as int?,
     );
   }
 
@@ -311,5 +316,21 @@ class MessageItem {
     'category': category.name,
     if (mpBookId != null) 'mpBookId': mpBookId,
     if (mpName != null) 'mpName': mpName,
+    if (timestamp != null) 'timestamp': timestamp,
   };
+
+  /// 根据日期字符串计算时间戳
+  /// 当天消息返回当前时间，非当天消息返回该日 00:00
+  static int computeTimestamp(String date) {
+    final now = DateTime.now();
+    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    if (date == today) {
+      return now.millisecondsSinceEpoch;
+    }
+    try {
+      return DateTime.parse(date).millisecondsSinceEpoch;
+    } catch (_) {
+      return now.millisecondsSinceEpoch;
+    }
+  }
 }

@@ -86,6 +86,7 @@ class ConstructionNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.construction,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

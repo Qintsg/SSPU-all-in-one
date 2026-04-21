@@ -131,6 +131,7 @@ class SportsNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.sports,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

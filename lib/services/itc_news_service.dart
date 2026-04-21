@@ -114,6 +114,7 @@ class ItcNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.itc,
             category: MessageCategory.itcNews,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

@@ -144,6 +144,7 @@ class SspuOfficialService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.sspuOfficial,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

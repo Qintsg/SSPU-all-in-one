@@ -84,6 +84,7 @@ class StudentAffairsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.studentAffairs,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

@@ -67,6 +67,7 @@ class CampusNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.newsCenter,
             category: MessageCategory.campusNews,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

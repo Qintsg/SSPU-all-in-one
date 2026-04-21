@@ -137,6 +137,7 @@ class JwcNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.jwc,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }
