@@ -32,7 +32,7 @@ class WxmpLoginPage extends StatefulWidget {
 class _WxmpLoginPageState extends State<WxmpLoginPage> {
   InAppWebViewController? _controller;
   bool _isReady = false;
-  bool _initFailed = false;
+  final bool _initFailed = false;
   String _title = '公众号平台登录';
   bool _extracting = false;
   _LoginResult? _result;

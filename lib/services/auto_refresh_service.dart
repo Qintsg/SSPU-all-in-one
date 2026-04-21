@@ -501,7 +501,7 @@ class AutoRefreshService {
       // 推送系统通知（检查全局开关和勿扰时段）
       final notifEnabled = await _stateService.isNotificationEnabled();
       final inDnd = await _stateService.isInDndPeriod();
-      if (notifEnabled && !inDnd) {
+      if (notifEnabled && !inDnd && _notificationService.isAvailable) {
         // 过滤掉单个公众号通知关闭的消息
         final notifiableMessages = <MessageItem>[];
         for (final msg in newMessages) {
