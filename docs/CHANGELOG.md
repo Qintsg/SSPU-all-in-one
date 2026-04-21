@@ -13,6 +13,9 @@
 
 ### 变更
 
+- Flutter 工具链升级到 `3.41.7`，Dart SDK 基线升级到 `3.11.5`
+- `window_manager` 升级到 `0.5.1`，同步刷新锁文件与桌面插件注册产物
+- GitHub Actions 依赖升级到当前最新稳定标签（`actions/checkout@v6.0.2`、`upload-artifact@v7.0.1`、`download-artifact@v8.0.1` 等）
 - PR CI 精简为 `flutter analyze`，草稿 PR 仅保留自动标签工作流
 - GitHub Actions 官方 action 升级到 Node.js 24 runtime 兼容版本，消除 Node.js 20 deprecation warning
 - 删除 CodeQL PR 安全扫描工作流
@@ -20,6 +23,9 @@
 
 ### 修复
 
+- 修复 Release 工作流中的 macOS DMG 打包路径错误，改为自动发现真实 `.app` 产物
+- 修复 Windows 安装器编译依赖宿主机缺失中文语言文件导致的发布失败
+- 暂时收敛未验证的 Windows arm64 / Linux arm64 桌面发布矩阵，避免 Release 因官方 Flutter SDK 架构解析失败而整体中断
 - 修复 macOS Runner 的 Xcode 配置引用错误，恢复 Flutter 生成配置与 CocoaPods 支持文件的正确加载，解决 `flutter build macos` 编译失败问题
 - 修复 Android 启动阶段调用桌面插件导致黑屏闪退的问题，并同步 Android / iOS / macOS / Linux / Web 的应用名称与图标资源
 
