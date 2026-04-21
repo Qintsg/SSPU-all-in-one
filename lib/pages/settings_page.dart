@@ -11,8 +11,8 @@
 import 'dart:async';
 
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../services/app_exit_service.dart';
 import '../models/channel_config.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
@@ -1471,7 +1471,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirmed == true) {
       await StorageService.clearAll();
-      await windowManager.destroy();
+      await AppExitService.instance.exit();
     }
   }
 
