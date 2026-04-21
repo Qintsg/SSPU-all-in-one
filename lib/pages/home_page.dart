@@ -11,6 +11,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/message_item.dart';
 import '../services/message_state_service.dart';
 import '../theme/fluent_tokens.dart';
+import '../utils/webview_env.dart';
 import '../widgets/responsive_layout.dart';
 import 'webview_page.dart';
 
@@ -220,7 +221,11 @@ class _HomePageState extends State<HomePage> {
         MessageStateService.instance.markAsRead(msg.id);
         Navigator.of(context).push(
           FluentPageRoute(
-            builder: (_) => WebViewPage(url: msg.url, initialTitle: msg.title),
+            builder: (_) => WebViewPage(
+              url: msg.url,
+              initialTitle: msg.title,
+              webViewEnvironment: globalWebViewEnvironment,
+            ),
           ),
         );
       },

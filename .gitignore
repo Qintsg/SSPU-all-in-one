@@ -19,8 +19,8 @@ migrate_working_dir/
 .idea/
 
 # VS Code
-# .vscode/ 目录包含启动配置和任务配置，按需取消注释
-#.vscode/
+# 本地编辑器配置不纳入仓库，避免个人环境覆盖团队设置。
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -107,3 +107,6 @@ Desktop.ini
 .github/dida365-state.md
 .github/session-state.md
 .github/copilot-runtime/
+
+# 本地自动化与平台安装器临时产物
+.omx/

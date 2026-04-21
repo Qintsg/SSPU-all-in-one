@@ -104,7 +104,7 @@ class MessageTile extends StatelessWidget {
                     const SizedBox(
                       height: FluentSpacing.xs + FluentSpacing.xxs,
                     ),
-                    // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类
+                    // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类 + 公众号名称
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -112,6 +112,9 @@ class MessageTile extends StatelessWidget {
                         _buildTag(message.sourceType.label, Colors.blue),
                         _buildTag(message.sourceName.label, Colors.teal),
                         _buildTag(message.category.label, Colors.orange),
+                        if (message.mpName != null &&
+                            message.mpName!.isNotEmpty)
+                          _buildTag(message.mpName!, Colors.magenta),
                       ],
                     ),
                   ],
@@ -125,9 +128,9 @@ class MessageTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 日期
+                  // 日期时间；旧缓存中 date 为空时从 timestamp 兜底恢复日期。
                   Text(
-                    message.date,
+                    _formatDisplayDateTime(message),
                     style: theme.typography.caption?.copyWith(
                       color: theme.resources.textFillColorSecondary,
                     ),
@@ -167,6 +170,35 @@ class MessageTile extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// 格式化消息展示日期时间，保证当天官网消息不会只显示时间。
+  String _formatDisplayDateTime(MessageItem message) {
+    final displayDate = message.date.trim().isNotEmpty
+        ? message.date.trim()
+        : message.timestamp != null
+        ? _formatDate(message.timestamp!)
+        : '';
+
+    if (message.timestamp == null || displayDate.isEmpty) {
+      return displayDate;
+    }
+    return '$displayDate ${_formatTime(message.timestamp!)}';
+  }
+
+  /// 格式化时间戳为 YYYY-MM-DD，用于修复旧缓存中的空日期。
+  String _formatDate(int timestampMs) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(timestampMs);
+    final year = dt.year.toString().padLeft(4, '0');
+    final month = dt.month.toString().padLeft(2, '0');
+    final day = dt.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  /// 格式化时间戳为 HH:mm
+  String _formatTime(int timestampMs) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(timestampMs);
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   /// 构建标签 badge

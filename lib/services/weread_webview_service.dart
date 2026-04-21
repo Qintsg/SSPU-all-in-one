@@ -14,6 +14,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import 'weread_auth_service.dart';
+import '../utils/webview_env.dart';
+
 /// 微信读书 WebView 会话服务（单例）
 /// 维持一个后台 HeadlessInAppWebView 实例，保持微信读书登录态
 /// 用于在设置页等无可见 WebView 的场景下执行 Cookie 校验和刷新
@@ -61,6 +64,7 @@ class WereadWebViewService {
       final completer = Completer<bool>();
 
       _headlessWebView = HeadlessInAppWebView(
+        webViewEnvironment: globalWebViewEnvironment,
         initialUrlRequest: URLRequest(url: WebUri('https://weread.qq.com/')),
         initialSettings: InAppWebViewSettings(
           // 允许 JavaScript 执行
@@ -94,6 +98,12 @@ class WereadWebViewService {
         const Duration(seconds: 30),
         onTimeout: () => false,
       );
+
+      // 页面加载后注入存储的 Cookie 到 WebView CookieManager
+      // 确保手动粘贴的 Cookie 也能在 WebView fetch 中生效
+      if (loaded) {
+        await _injectStoredCookies();
+      }
 
       _isReady = loaded;
       _initCompleter!.complete(loaded);
@@ -129,5 +139,58 @@ class WereadWebViewService {
   Future<bool> reinitialize() async {
     await dispose();
     return ensureInitialized();
+  }
+
+  // ==================== 内部工具方法 ====================
+
+  /// 将 SharedPreferences 中存储的 Cookie 注入到 WebView 的 CookieManager
+  /// 解决手动粘贴 Cookie 时 WebView 内无认证信息的问题
+  Future<void> _injectStoredCookies() async {
+    try {
+      final cookieStr = await WereadAuthService.instance.getCookieString();
+      if (cookieStr == null || cookieStr.isEmpty) return;
+
+      final cookieManager = CookieManager.instance();
+      // 解析 Cookie 键值对并逐个注入到两个域
+      final pairs = cookieStr.split(';');
+      final domains = [
+        WebUri('https://weread.qq.com/'),
+        WebUri('https://i.weread.qq.com/'),
+      ];
+
+      for (final pair in pairs) {
+        final trimmed = pair.trim();
+        final eqIndex = trimmed.indexOf('=');
+        if (eqIndex <= 0) continue;
+
+        final name = trimmed.substring(0, eqIndex).trim();
+        final value = trimmed.substring(eqIndex + 1).trim();
+        if (name.isEmpty) continue;
+
+        for (final url in domains) {
+          await cookieManager.setCookie(
+            url: url,
+            name: name,
+            value: value,
+            domain: '.weread.qq.com',
+            path: '/',
+            isSecure: true,
+          );
+        }
+      }
+
+      debugPrint('[WereadWebViewService] Cookie 注入完成');
+
+      // 注入后重新加载页面以激活 Cookie session
+      if (_controller != null) {
+        await _controller!.loadUrl(
+          urlRequest: URLRequest(url: WebUri('https://weread.qq.com/')),
+        );
+        // 等待重新加载完成
+        await Future.delayed(const Duration(seconds: 3));
+      }
+    } catch (e) {
+      debugPrint('[WereadWebViewService] Cookie 注入异常: $e');
+    }
   }
 }
