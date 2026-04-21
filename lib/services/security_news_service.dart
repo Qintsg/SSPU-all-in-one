@@ -36,21 +36,29 @@ class SecurityNewsService {
 
   /// 获取平安动态
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchNews({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchNews({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
     return _fetchFromColumn(
       columnPath: _newsPath,
       category: MessageCategory.securityNews,
       maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
     );
   }
 
   /// 获取宣教专栏
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchEducation({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchEducation({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
     return _fetchFromColumn(
       columnPath: _educationPath,
       category: MessageCategory.securityEducation,
       maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
     );
   }
 
@@ -65,6 +73,7 @@ class SecurityNewsService {
     required String columnPath,
     required MessageCategory category,
     required int maxCount,
+    Set<String>? knownMessageIds,
     int maxPages = 10,
   }) async {
     final messages = <MessageItem>[];
@@ -74,6 +83,7 @@ class SecurityNewsService {
       final pageMessages = await _fetchSinglePage(
         url: _buildPageUrl(columnPath, currentPage),
         category: category,
+        knownMessageIds: knownMessageIds,
       );
 
       if (pageMessages.isEmpty) break;
@@ -94,6 +104,7 @@ class SecurityNewsService {
   Future<List<MessageItem>> _fetchSinglePage({
     required String url,
     required MessageCategory category,
+    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(url);
@@ -122,6 +133,7 @@ class SecurityNewsService {
         final date = normalizeDate(rawDate);
 
         final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
 
         messages.add(
           MessageItem(
@@ -132,6 +144,7 @@ class SecurityNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.securityDept,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

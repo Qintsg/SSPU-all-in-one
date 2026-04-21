@@ -13,7 +13,6 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../services/weread_auth_service.dart';
-import '../services/weread_webview_service.dart';
 import '../theme/fluent_tokens.dart';
 
 /// 微信读书 Web 版登录 URL
@@ -140,10 +139,9 @@ class _WereadLoginPageState extends State<WereadLoginPage> {
             );
             debugPrint('[WereadLogin] WebView 内验证结果: $valid');
 
-            // 启动后台 HeadlessInAppWebView 保持微信读书登录态
-            // 供设置页校验/刷新等操作使用
-            unawaited(WereadWebViewService.instance.ensureInitialized());
-
+            // HeadlessInAppWebView 改为按需初始化，避免在登录页仍持有可见
+            // WebView 时再并发创建后台实例。需要时由 WereadApiService
+            // 或手动保存 Cookie 后的 reinitialize() 拉起。
             setState(() {
               _extracting = false;
               _result = _CookieResult(

@@ -175,6 +175,30 @@ class MessageStateService {
     );
   }
 
+  // ==================== 单个公众号通知开关 ====================
+
+  /// 生成公众号通知开关的存储键名
+  /// [mpBookId] 公众号的 bookId（如 MP_WXS_xxx）
+  static String _mpNotificationKey(String mpBookId) =>
+      'mp_${mpBookId}_notification_enabled';
+
+  /// 获取指定公众号的通知开关（默认开启）
+  /// [mpBookId] 公众号 bookId
+  /// :return: 是否启用该公众号的通知
+  Future<bool> isMpNotificationEnabled(String mpBookId) async {
+    return await StorageService.getBool(
+      _mpNotificationKey(mpBookId),
+      defaultValue: true,
+    );
+  }
+
+  /// 设置指定公众号的通知开关
+  /// [mpBookId] 公众号 bookId
+  /// [enabled] 是否启用
+  Future<void> setMpNotificationEnabled(String mpBookId, bool enabled) async {
+    await StorageService.setBool(_mpNotificationKey(mpBookId), enabled);
+  }
+
   // ==================== 通用渠道开关与间隔管理 ====================
 
   /// 生成渠道启用状态的存储键名
@@ -429,22 +453,35 @@ class MessageStateService {
     }
   }
 
+  /// 清除所有微信公众号类型的预存文章
+  /// 保留其他渠道的消息不受影响
+  /// :return: 被清除的文章数量
+  Future<int> clearWechatArticles() async {
+    final messages = await loadMessages();
+    final before = messages.length;
+    messages.removeWhere(
+      (msg) => msg.sourceType == MessageSourceType.wechatPublic,
+    );
+    await saveMessages(messages);
+    return before - messages.length;
+  }
+
   /// 将新抓取的消息与已有消息合并（按 ID 去重）
   /// [existingMessages] 已有消息列表
   /// [newMessages] 新抓取的消息列表
-  /// 返回合并后的列表（新消息覆盖同 ID 旧消息）
+  /// 返回合并后的列表（已存消息保持原样，避免刷新覆盖原始时间）
   List<MessageItem> mergeMessages(
     List<MessageItem> existingMessages,
     List<MessageItem> newMessages,
   ) {
     final messageMap = <String, MessageItem>{};
-    // 先放旧消息
+    // 先放旧消息，保留首次获取时记录的时间与字段。
     for (final msg in existingMessages) {
       messageMap[msg.id] = msg;
     }
-    // 新消息覆盖同 ID 的旧消息
+    // 只补充新增消息，已有文章不再被新抓取结果覆盖。
     for (final msg in newMessages) {
-      messageMap[msg.id] = msg;
+      messageMap.putIfAbsent(msg.id, () => msg);
     }
     return messageMap.values.toList();
   }

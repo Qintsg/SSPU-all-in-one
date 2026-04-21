@@ -18,6 +18,7 @@ import '../services/wechat_article_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
+import '../utils/webview_env.dart';
 import 'webview_page.dart';
 
 /// 信息中心页面
@@ -170,8 +171,10 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
+      final persistedMessages = await _stateService.loadMessages();
       final articles = await WechatArticleService.instance.fetchArticles(
         maxCount: 50,
+        knownMessageIds: persistedMessages.map((msg) => msg.id).toSet(),
       );
 
       if (articles.isEmpty) {
@@ -271,11 +274,25 @@ class _InfoPageState extends State<InfoPage> {
     final wechatPublicEnabled = await _stateService.isWechatPublicEnabled();
     final wechatServiceEnabled = await _stateService.isWechatServiceEnabled();
 
+    // 预加载单个公众号通知开关状态（用于 per-mp 过滤）
+    final mpEnabledCache = <String, bool>{};
+    for (final msg in _allMessages) {
+      if (msg.mpBookId != null && !mpEnabledCache.containsKey(msg.mpBookId)) {
+        mpEnabledCache[msg.mpBookId!] = await _stateService
+            .isMpNotificationEnabled(msg.mpBookId!);
+      }
+    }
+
     // 过滤掉已关闭渠道的消息
     _allMessages.removeWhere((msg) {
       // 微信渠道按 sourceType 判断
       if (msg.sourceType == MessageSourceType.wechatPublic) {
-        return !wechatPublicEnabled;
+        if (!wechatPublicEnabled) return true;
+        // 渠道启用时进一步检查单个公众号开关
+        if (msg.mpBookId != null) {
+          return !(mpEnabledCache[msg.mpBookId] ?? true);
+        }
+        return false;
       }
       if (msg.sourceType == MessageSourceType.wechatService) {
         return !wechatServiceEnabled;
@@ -298,8 +315,12 @@ class _InfoPageState extends State<InfoPage> {
       return false;
     });
 
-    // 按日期倒序排列
-    _allMessages.sort((a, b) => b.date.compareTo(a.date));
+    // 按时间倒序排列（将所有消息统一转为毫秒时间戳比较）
+    _allMessages.sort((a, b) {
+      final tsA = a.timestamp ?? _dateToTimestamp(a.date);
+      final tsB = b.timestamp ?? _dateToTimestamp(b.date);
+      return tsB.compareTo(tsA);
+    });
     _applyFilters();
   }
 
@@ -351,6 +372,16 @@ class _InfoPageState extends State<InfoPage> {
     final allIds = _filteredMessages.map((msg) => msg.id).toList();
     await _stateService.markAllAsRead(allIds);
     setState(() {});
+  }
+
+  /// 将 YYYY-MM-DD 日期字符串转为毫秒时间戳（当天 00:00）
+  int _dateToTimestamp(String date) {
+    try {
+      final dt = DateTime.parse(date);
+      return dt.millisecondsSinceEpoch;
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// 应用搜索和筛选条件
@@ -410,8 +441,11 @@ class _InfoPageState extends State<InfoPage> {
     if (mounted) {
       Navigator.of(context).push(
         FluentPageRoute(
-          builder: (_) =>
-              WebViewPage(url: message.url, initialTitle: message.title),
+          builder: (_) => WebViewPage(
+            url: message.url,
+            initialTitle: message.title,
+            webViewEnvironment: globalWebViewEnvironment,
+          ),
         ),
       );
       setState(() {});
