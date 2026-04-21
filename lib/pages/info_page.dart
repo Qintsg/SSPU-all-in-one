@@ -18,6 +18,7 @@ import '../services/wechat_article_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
 import '../services/message_state_service.dart';
+import '../utils/webview_env.dart';
 import 'webview_page.dart';
 
 /// 信息中心页面
@@ -312,8 +313,12 @@ class _InfoPageState extends State<InfoPage> {
       return false;
     });
 
-    // 按日期倒序排列
-    _allMessages.sort((a, b) => b.date.compareTo(a.date));
+    // 按时间倒序排列（将所有消息统一转为毫秒时间戳比较）
+    _allMessages.sort((a, b) {
+      final tsA = a.timestamp ?? _dateToTimestamp(a.date);
+      final tsB = b.timestamp ?? _dateToTimestamp(b.date);
+      return tsB.compareTo(tsA);
+    });
     _applyFilters();
   }
 
@@ -365,6 +370,16 @@ class _InfoPageState extends State<InfoPage> {
     final allIds = _filteredMessages.map((msg) => msg.id).toList();
     await _stateService.markAllAsRead(allIds);
     setState(() {});
+  }
+
+  /// 将 YYYY-MM-DD 日期字符串转为毫秒时间戳（当天 00:00）
+  int _dateToTimestamp(String date) {
+    try {
+      final dt = DateTime.parse(date);
+      return dt.millisecondsSinceEpoch;
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// 应用搜索和筛选条件
@@ -425,7 +440,11 @@ class _InfoPageState extends State<InfoPage> {
       Navigator.of(context).push(
         FluentPageRoute(
           builder: (_) =>
-              WebViewPage(url: message.url, initialTitle: message.title),
+              WebViewPage(
+                url: message.url,
+                initialTitle: message.title,
+                webViewEnvironment: globalWebViewEnvironment,
+              ),
         ),
       );
       setState(() {});

@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import 'weread_auth_service.dart';
+import '../utils/webview_env.dart';
 
 /// 微信读书 WebView 会话服务（单例）
 /// 维持一个后台 HeadlessInAppWebView 实例，保持微信读书登录态
@@ -63,6 +64,7 @@ class WereadWebViewService {
       final completer = Completer<bool>();
 
       _headlessWebView = HeadlessInAppWebView(
+        webViewEnvironment: globalWebViewEnvironment,
         initialUrlRequest: URLRequest(url: WebUri('https://weread.qq.com/')),
         initialSettings: InAppWebViewSettings(
           // 允许 JavaScript 执行
