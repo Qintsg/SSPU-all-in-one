@@ -1,11 +1,11 @@
 {
-    "name": "sspu_all_in_one",
-    "short_name": "sspu_all_in_one",
+    "name": "SSPU All-in-One",
+    "short_name": "SSPU",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "上海第二工业大学校园综合服务应用",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
