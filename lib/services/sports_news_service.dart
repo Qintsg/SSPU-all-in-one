@@ -36,21 +36,29 @@ class SportsNewsService {
 
   /// 获取通知公告
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchNotices({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchNotices({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
     return _fetchFromColumn(
       columnPath: _noticePath,
       category: MessageCategory.sportsNotice,
       maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
     );
   }
 
   /// 获取赛事通知
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchEvents({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchEvents({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
     return _fetchFromColumn(
       columnPath: _eventPath,
       category: MessageCategory.sportsEvent,
       maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
     );
   }
 
@@ -65,6 +73,7 @@ class SportsNewsService {
     required String columnPath,
     required MessageCategory category,
     required int maxCount,
+    Set<String>? knownMessageIds,
     int maxPages = 10,
   }) async {
     final messages = <MessageItem>[];
@@ -74,6 +83,7 @@ class SportsNewsService {
       final pageMessages = await _fetchSinglePage(
         url: _buildPageUrl(columnPath, currentPage),
         category: category,
+        knownMessageIds: knownMessageIds,
       );
 
       if (pageMessages.isEmpty) break;
@@ -94,6 +104,7 @@ class SportsNewsService {
   Future<List<MessageItem>> _fetchSinglePage({
     required String url,
     required MessageCategory category,
+    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(url);
@@ -116,11 +127,12 @@ class SportsNewsService {
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
         // 提取日期并规范化格式
         final dateSpan = item.querySelector('span');
         final date = normalizeDate(dateSpan?.text.trim() ?? '');
-
-        final messageId = _generateId(fullUrl);
 
         messages.add(
           MessageItem(
@@ -131,6 +143,7 @@ class SportsNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.sports,
             category: category,
+            timestamp: MessageItem.computeTimestamp(date),
           ),
         );
       }

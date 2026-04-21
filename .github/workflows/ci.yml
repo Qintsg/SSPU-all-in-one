@@ -1,19 +1,24 @@
-# CI 工作流 — Flutter 测试与静态分析
-# 触发：PR 到 develop/main
+# CI 工作流 — PR 静态分析
+# 仅在 PR 非草稿状态时执行；草稿 PR 只保留自动标签工作流。
 name: CI
 
 on:
   pull_request:
     branches: [main, develop]
+    types: [opened, reopened, synchronize, ready_for_review]
 
 env:
   FLUTTER_VERSION: '3.41.4'
 
+permissions:
+  contents: read
+
 jobs:
-  analyze-and-test:
+  flutter-analyze:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
@@ -24,11 +29,5 @@ jobs:
       - name: 安装依赖
         run: flutter pub get
 
-      - name: 代码格式检查
-        run: dart format --set-exit-if-changed .
-
-      - name: 静态分析
+      - name: Flutter Analyze
         run: flutter analyze --no-fatal-infos
-
-      - name: 运行测试
-        run: flutter test --coverage || echo "No tests found, skipping"

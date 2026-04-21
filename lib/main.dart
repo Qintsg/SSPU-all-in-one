@@ -6,7 +6,10 @@
  * @Date : 2026-04-18
  */
 
+import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'app.dart';
@@ -17,6 +20,7 @@ import 'services/storage_service.dart';
 import 'services/tray_service.dart';
 import 'services/notification_service.dart';
 import 'services/auto_refresh_service.dart';
+import 'utils/webview_env.dart';
 
 /// 全局字体族名称
 import 'theme/fluent_tokens.dart';
@@ -26,6 +30,23 @@ const String kFontFamily = FluentTokenTheme.fontFamily;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Windows 平台：在 runApp() 前初始化 WebView2 环境
+  // 必须在任何 WebView 实例创建前完成，否则会触发 RPC_E_DISCONNECTED (-2147417848)
+  if (!kIsWeb && Platform.isWindows) {
+    final availableVersion = await WebViewEnvironment.getAvailableVersion();
+    if (availableVersion != null) {
+      // 使用 LOCALAPPDATA 下的专属目录，避免安装到只读路径时崩溃
+      final localAppData =
+          Platform.environment['LOCALAPPDATA'] ?? Platform.localeName;
+      globalWebViewEnvironment = await WebViewEnvironment.create(
+        settings: WebViewEnvironmentSettings(
+          userDataFolder: '$localAppData\\sspu_all_in_one\\WebView2',
+        ),
+      );
+    }
+  }
+
   await StorageService.init();
 
   // 初始化窗口管理器，拦截默认关闭行为
