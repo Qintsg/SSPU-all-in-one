@@ -5,7 +5,7 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = sspu_all_in_one
+PRODUCT_NAME = SSPU All-in-One
 
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = cn.qintsg.sspuAllInOne

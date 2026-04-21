@@ -6,6 +6,8 @@
  * @Date : 2026-04-18
  */
 
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 
 import 'package:fluent_ui/fluent_ui.dart';
