@@ -13,7 +13,8 @@ void main() {
   testWidgets('应用启动冒烟测试', (WidgetTester tester) async {
     // 构建应用并渲染首帧
     await tester.pumpWidget(const SSPUApp());
-    await tester.pumpAndSettle();
+    // 首屏包含持续动画的 ProgressRing，固定推进一帧即可验证启动。
+    await tester.pump(const Duration(milliseconds: 100));
 
     // 验证应用能正常渲染（不崩溃即通过）
     expect(find.byType(SSPUApp), findsOneWidget);

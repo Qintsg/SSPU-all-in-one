@@ -8,6 +8,8 @@
  * @Date : 2026-04-19
  */
 
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:local_notifier/local_notifier.dart';
 
 /// 系统通知服务（单例）
@@ -20,10 +22,14 @@ class NotificationService {
 
   bool _initialized = false;
 
+  /// 当前插件只在 Windows 发行目标启用，其他平台保留无通知运行能力。
+  bool get isAvailable => !kIsWeb && Platform.isWindows;
+
   /// 初始化通知插件
   /// 应在 app 启动时调用一次
   Future<void> init() async {
     if (_initialized) return;
+    if (!isAvailable) return;
 
     // 设置应用名称，用于 Windows 通知中心显示
     await localNotifier.setup(
