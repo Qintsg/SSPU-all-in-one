@@ -11,6 +11,7 @@
 ### 修复
 
 - 将自动打标中的 `release` 标签更名为 `release-files`，避免仓库治理 / 安装器 / Release 配置类 PR 在合并时误触发发布工作流
+- 调整 `develop` / `main` 同步策略：移除导致历史持续分叉的线性历史要求，并明确同步 PR 必须使用 merge commit
 
 ## [0.1.5-alpha] - 2026-04-21
 
