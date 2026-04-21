@@ -14,6 +14,7 @@
 ### 变更
 
 - PR CI 精简为 `flutter analyze`，草稿 PR 仅保留自动标签工作流
+- GitHub Actions 官方 action 升级到 Node.js 24 runtime 兼容版本，消除 Node.js 20 deprecation warning
 - 删除 CodeQL PR 安全扫描工作流
 - 移除 PR 阶段跨平台 build check，平台构建集中到 Release 工作流
 
