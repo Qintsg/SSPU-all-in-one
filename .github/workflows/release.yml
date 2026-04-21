@@ -78,7 +78,7 @@ jobs:
           $innoCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           & $innoCompiler '${{ matrix.installer_script }}'
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.output_file }}
@@ -129,7 +129,7 @@ jobs:
           cd "${{ matrix.bundle_path }}"
           tar -czf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" .
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.output_file }}
@@ -163,7 +163,7 @@ jobs:
             -format UDZO \
             "$GITHUB_WORKSPACE/sspu-all-in-one-macos-universal.dmg"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: macos-universal-dmg
           path: sspu-all-in-one-macos-universal.dmg
@@ -192,7 +192,7 @@ jobs:
         run: |
           tar -czf "$GITHUB_WORKSPACE/sspu-all-in-one-ios-arm64-unsigned-app.tar.gz" -C build/ios/iphoneos Runner.app
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ios-arm64-unsigned-app
           path: sspu-all-in-one-ios-arm64-unsigned-app.tar.gz
@@ -229,7 +229,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist/sspu-all-in-one-android-arm64.apk
           cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist/sspu-all-in-one-android-x64.apk
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: android-apk
           path: |
@@ -276,7 +276,7 @@ jobs:
           cd "${{ matrix.output_dir }}"
           tar -czf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" .
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.output_file }}
