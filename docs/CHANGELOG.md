@@ -10,6 +10,7 @@
 
 - Release 新增 Windows x64 / arm64 安装器、Android arm32 / arm64 / x64 APK、iOS arm64 未签名应用包、macOS universal DMG、Linux x64 / arm64 压缩包、Web JavaScript / WebAssembly 压缩包
 - Issue 模板升级为表单式模板，补充平台、环境、复现、日志、验收标准等必填信息
+- 补充分支命名规范与目标分支约定，明确 `main` / `develop` 的回合并要求
 
 ### 变更
 
@@ -20,6 +21,10 @@
 - GitHub Actions 官方 action 升级到 Node.js 24 runtime 兼容版本，消除 Node.js 20 deprecation warning
 - 删除 CodeQL PR 安全扫描工作流
 - 移除 PR 阶段跨平台 build check，平台构建集中到 Release 工作流
+- PR 模板补充风险、回滚、验证记录、发布说明与回合并检查项
+- Labeler 标签拆分为 `ci`、`release`、`governance`、`dependencies` 等更细粒度规则
+- Dependabot 默认向 `develop` 提交分组升级 PR，减少依赖更新噪音并贴合分支流转
+- Issue 配置关闭空白提单入口，并补充文档导向链接
 
 ### 修复
 

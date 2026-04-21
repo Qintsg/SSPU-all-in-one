@@ -1,81 +1,91 @@
 # 自动标签规则 — 根据文件路径匹配
 # 参考：https://github.com/actions/labeler
 
-# 前端 / Flutter UI
 frontend:
   - changed-files:
       - any-glob-to-any-file:
+          - 'lib/app.dart'
+          - 'lib/main.dart'
           - 'lib/pages/**'
           - 'lib/widgets/**'
           - 'lib/theme/**'
 
-# 后端 / 服务层
 services:
   - changed-files:
       - any-glob-to-any-file:
           - 'lib/services/**'
 
-# 数据模型
 models:
   - changed-files:
       - any-glob-to-any-file:
           - 'lib/models/**'
 
-# Android 平台
 android:
   - changed-files:
       - any-glob-to-any-file:
           - 'android/**'
 
-# iOS 平台
 ios:
   - changed-files:
       - any-glob-to-any-file:
           - 'ios/**'
 
-# macOS 平台
 macos:
   - changed-files:
       - any-glob-to-any-file:
           - 'macos/**'
 
-# Linux 平台
 linux:
   - changed-files:
       - any-glob-to-any-file:
           - 'linux/**'
 
-# Windows 平台
 windows:
   - changed-files:
       - any-glob-to-any-file:
           - 'windows/**'
 
-# Web 平台
 web:
   - changed-files:
       - any-glob-to-any-file:
           - 'web/**'
 
-# CI/CD
 ci:
   - changed-files:
       - any-glob-to-any-file:
-          - '.github/**'
+          - '.github/workflows/**'
 
-# 文档
+release:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/release.yml'
+          - '.github/installer/**'
+
+governance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/ISSUE_TEMPLATE/**'
+          - '.github/pull_request_template.md'
+          - '.github/CODEOWNERS'
+          - '.github/dependabot.yml'
+          - '.github/labeler.yml'
+          - '.github/分支命名规范.md'
+
 documentation:
   - changed-files:
       - any-glob-to-any-file:
           - 'docs/**'
-          - '*.md'
+          - 'README.md'
+          - 'AGENTS.md'
 
-# 依赖
 dependencies:
   - changed-files:
       - any-glob-to-any-file:
           - 'pubspec.yaml'
           - 'pubspec.lock'
+          - 'analysis_options.yaml'
+          - 'android/**/*.gradle'
+          - 'android/**/*.gradle.kts'
+          - 'android/gradle/wrapper/**'
           - '**/Podfile'
           - '**/Podfile.lock'
-          - '**/build.gradle.kts'
