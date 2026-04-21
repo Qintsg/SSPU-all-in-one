@@ -2,25 +2,37 @@
 # 参考：https://docs.github.com/en/code-security/dependabot
 version: 2
 updates:
-  # Flutter/Dart 依赖（pub）
   - package-ecosystem: "pub"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
+    rebase-strategy: "auto"
     commit-message:
       prefix: "deps(flutter)"
+    groups:
+      flutter-dependencies:
+        patterns:
+          - "*"
 
-  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
+    open-pull-requests-limit: 5
     labels:
       - "ci"
       - "dependencies"
+    rebase-strategy: "auto"
     commit-message:
       prefix: "deps(actions)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
