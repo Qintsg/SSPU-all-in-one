@@ -143,10 +143,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndEM = await _messageState.getDndEndMinute();
     // 检查微信读书认证状态
     final wereadHasCookie = await _wereadAuth.hasCookies();
-    // 如果已有 Cookie，启动后台 WebView 保持会话（供校验/刷新使用）
-    if (wereadHasCookie) {
-      unawaited(WereadWebViewService.instance.ensureInitialized());
-    }
+    // Windows 上避免在设置页加载阶段抢跑创建 HeadlessInAppWebView。
+    // 该初始化改为真正按需触发：
+    // - 微信读书 API 请求时由 WereadApiService.ensureInitialized() 拉起
+    // - 手动配置 Cookie 后由 reinitialize() 拉起
+    // - 校验/刷新在无控制器时回退到 Dio 验证
+    // 这样可避免与用户主动打开的可见 WebView 并发创建，降低
+    // flutter_inappwebview_windows 在部分机器上的 RPC_E_DISCONNECTED 风险。
     // 加载获取方式偏好和公众号平台认证状态
     final method = await WechatArticleService.getFetchMethod();
     final wxmpHasAuth = await _wxmpAuth.hasAuth();
