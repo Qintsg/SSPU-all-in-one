@@ -18,6 +18,7 @@ import 'message_state_service.dart';
 import 'storage_service.dart';
 import 'weread_api_service.dart';
 import 'weread_auth_service.dart';
+import 'wxmp_article_service.dart';
 
 /// 微信公众号文章采集服务（单例）
 /// 通过微信读书 API 获取关注的公众号推文，转换为 MessageItem 统一格式
@@ -149,11 +150,32 @@ class WechatArticleService {
 
   // ==================== 公开接口 ====================
 
+  /// 当前使用的获取方式存储键
+  static const String _keyFetchMethod = 'wechat_fetch_method';
+
+  /// 获取当前选择的获取方式
+  /// :return: 'weread'（默认） 或 'wxmp'
+  static Future<String> getFetchMethod() async {
+    return (await StorageService.getString(_keyFetchMethod)) ?? 'weread';
+  }
+
+  /// 设置获取方式
+  static Future<void> setFetchMethod(String method) async {
+    await StorageService.setString(_keyFetchMethod, method);
+  }
+
   /// 获取所有已关注公众号的最新文章
-  /// 从本地关注列表读取 bookId，而非微信读书书架
+  /// 根据当前选择的方式委托给对应的服务
   /// [maxCount] 最终返回的最大文章总数
   /// :return: 统一格式的消息列表
   Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
+    // 方式路由：根据用户选择的方式委托
+    final method = await getFetchMethod();
+    if (method == 'wxmp') {
+      return WxmpArticleService.instance.fetchArticles(maxCount: maxCount);
+    }
+
+    // 方式一：微信读书（默认）
     // 检查认证状态
     final hasCookie = await _auth.hasCookies();
     if (!hasCookie) return [];
@@ -255,7 +277,7 @@ class WechatArticleService {
     if (url == null || url.isEmpty) return null;
 
     // 发布日期 — Unix 时间戳转 YYYY-MM-DD
-    final date = _extractArticleDate(article);
+    final dateInfo = _extractArticleDateInfo(article);
 
     // 使用 URL 的 MD5 作为唯一 ID（与其他渠道保持一致）
     final id = md5.convert(utf8.encode(url)).toString();
@@ -263,13 +285,14 @@ class WechatArticleService {
     return MessageItem(
       id: id,
       title: title,
-      date: date,
+      date: dateInfo.date,
       url: url,
       sourceType: MessageSourceType.wechatPublic,
       sourceName: MessageSourceName.wechatPublicPlaceholder,
       category: MessageCategory.wechatArticle,
       mpBookId: bookId,
       mpName: mpName,
+      timestamp: dateInfo.timestampMs,
     );
   }
 
@@ -335,10 +358,10 @@ class WechatArticleService {
     return url;
   }
 
-  /// 从文章数据中提取发布日期并格式化为 YYYY-MM-DD
+  /// 从文章数据中提取发布日期和精确时间戳
   /// [article] 文章 JSON 数据
-  /// :return: 日期字符串，默认当天
-  String _extractArticleDate(Map<String, dynamic> article) {
+  /// :return: ({date: 'YYYY-MM-DD', timestampMs: int?})
+  ({String date, int? timestampMs}) _extractArticleDateInfo(Map<String, dynamic> article) {
     // 尝试多个时间戳字段
     int? timestamp;
 
@@ -363,12 +386,14 @@ class WechatArticleService {
       // 微信时间戳为秒级（10位），需转为毫秒
       final ms = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
       final dt = DateTime.fromMillisecondsSinceEpoch(ms);
-      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      final date = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      return (date: date, timestampMs: ms);
     }
 
-    // 兜底：返回当天日期
+    // 兜底：返回当天日期和当前时间戳
     final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    return (date: date, timestampMs: now.millisecondsSinceEpoch);
   }
 
   /// 安全提取 Map 中的字符串值
