@@ -10,8 +10,8 @@
 
 | 工具 | 最低版本 | 说明 |
 |------|----------|------|
-| Flutter SDK | 3.11.x | 框架主体，包含 Dart SDK |
-| Dart SDK | 3.11.x | 随 Flutter SDK 一同安装 |
+| Flutter SDK | 3.41.7 | 框架主体，包含 Dart SDK |
+| Dart SDK | 3.11.5 | 随 Flutter SDK 一同安装 |
 | Git | 2.x | 版本控制 |
 
 ### 1.2 平台开发工具
@@ -233,7 +233,7 @@ flutter build linux --release
 | 命令 | 用途 |
 |------|------|
 | `flutter pub get` | 安装依赖 |
-| `flutter pub upgrade` | 升级依赖到最新兼容版本 |
+| `flutter pub upgrade --major-versions` | 升级依赖约束到最新主版本 |
 | `flutter pub outdated` | 检查过期依赖 |
 | `flutter analyze` | 静态代码分析 |
 | `flutter test` | 运行测试 |
