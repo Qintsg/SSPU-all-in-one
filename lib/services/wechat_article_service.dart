@@ -74,7 +74,9 @@ class WechatArticleService {
     if (books == null || books.isEmpty) return null;
 
     for (final item in books) {
-      final bookInfo = (item is Map) ? item['bookInfo'] as Map<String, dynamic>? : null;
+      final bookInfo = (item is Map)
+          ? item['bookInfo'] as Map<String, dynamic>?
+          : null;
       if (bookInfo == null) continue;
 
       final bookId = bookInfo['bookId']?.toString();
@@ -166,13 +168,20 @@ class WechatArticleService {
 
   /// 获取所有已关注公众号的最新文章
   /// 根据当前选择的方式委托给对应的服务
-  /// [maxCount] 最终返回的最大文章总数
+  /// [maxCount] 单个公众号最多读取的文章数上限
+  /// [knownMessageIds] 已持久化消息 ID，用于遇到旧文章时停止当前公众号解析
   /// :return: 统一格式的消息列表
-  Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
+  Future<List<MessageItem>> fetchArticles({
+    int maxCount = 50,
+    Set<String>? knownMessageIds,
+  }) async {
     // 方式路由：根据用户选择的方式委托
     final method = await getFetchMethod();
     if (method == 'wxmp') {
-      return WxmpArticleService.instance.fetchArticles(maxCount: maxCount);
+      return WxmpArticleService.instance.fetchArticles(
+        maxCount: maxCount,
+        knownMessageIds: knownMessageIds,
+      );
     }
 
     // 方式一：微信读书（默认）
@@ -184,30 +193,26 @@ class WechatArticleService {
     final followedMps = await getLocalFollowedMps();
     if (followedMps.isEmpty) return [];
 
+    final storedMessageIds =
+        knownMessageIds ??
+        (await _stateService.loadMessages()).map((msg) => msg.id).toSet();
     final allMessages = <MessageItem>[];
+    final perMpLimit = maxCount > 0 && maxCount < _perMpArticleCount
+        ? maxCount
+        : _perMpArticleCount;
 
-    // 逐个公众号获取文章（跳过通知关闭的公众号）
+    // 逐个公众号获取文章；通知开关仅影响提醒，不影响本地数据更新。
     for (final entry in followedMps.entries) {
       final bookId = entry.key;
       final mpName = entry.value;
-      if (allMessages.length >= maxCount) break;
 
-      // 检查该公众号的通知开关，关闭则跳过采集
-      final mpEnabled = await _stateService.isMpNotificationEnabled(bookId);
-      if (!mpEnabled) continue;
-
-      final articles = await _api.getAllArticles(
-        bookId,
-        maxCount: _perMpArticleCount,
-      );
+      final articles = await _api.getAllArticles(bookId, maxCount: perMpLimit);
 
       for (final article in articles) {
-        if (allMessages.length >= maxCount) break;
-
         final msgItem = _articleToMessageItem(article, mpName, bookId);
-        if (msgItem != null) {
-          allMessages.add(msgItem);
-        }
+        if (msgItem == null) continue;
+        if (storedMessageIds.contains(msgItem.id)) break;
+        allMessages.add(msgItem);
       }
     }
 
@@ -343,8 +348,8 @@ class WechatArticleService {
     }
 
     // 格式 2: 用 bookId 编码构造微信读书 MP Reader URL
-    final reviewId = article['reviewId']?.toString() ??
-        review?['reviewId']?.toString();
+    final reviewId =
+        article['reviewId']?.toString() ?? review?['reviewId']?.toString();
     if (reviewId != null && reviewId.isNotEmpty) {
       final bookStrId = calculateBookStrId(bookId);
       return 'https://weread.qq.com/web/mp/reader/$bookStrId?reviewId=${Uri.encodeComponent(reviewId)}';
@@ -361,7 +366,9 @@ class WechatArticleService {
   /// 从文章数据中提取发布日期和精确时间戳
   /// [article] 文章 JSON 数据
   /// :return: ({date: 'YYYY-MM-DD', timestampMs: int?})
-  ({String date, int? timestampMs}) _extractArticleDateInfo(Map<String, dynamic> article) {
+  ({String date, int? timestampMs}) _extractArticleDateInfo(
+    Map<String, dynamic> article,
+  ) {
     // 尝试多个时间戳字段
     int? timestamp;
 
@@ -369,7 +376,9 @@ class WechatArticleService {
     if (review != null) {
       final mpInfo = review['mpInfo'] as Map<String, dynamic>?;
       if (mpInfo != null) {
-        timestamp = _toInt(mpInfo['time'] ?? mpInfo['create_time'] ?? mpInfo['publish_time']);
+        timestamp = _toInt(
+          mpInfo['time'] ?? mpInfo['create_time'] ?? mpInfo['publish_time'],
+        );
       }
       // review 自身的创建时间
       timestamp ??= _toInt(review['createTime'] ?? review['create_time']);
@@ -386,13 +395,15 @@ class WechatArticleService {
       // 微信时间戳为秒级（10位），需转为毫秒
       final ms = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
       final dt = DateTime.fromMillisecondsSinceEpoch(ms);
-      final date = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      final date =
+          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
       return (date: date, timestampMs: ms);
     }
 
     // 兜底：返回当天日期和当前时间戳
     final now = DateTime.now();
-    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final date =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     return (date: date, timestampMs: now.millisecondsSinceEpoch);
   }
 

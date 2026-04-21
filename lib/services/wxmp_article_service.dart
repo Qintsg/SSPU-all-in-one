@@ -170,10 +170,8 @@ class WxmpArticleService {
     final publishPageStr = data['publish_page'] as String?;
     if (publishPageStr == null || publishPageStr.isEmpty) return [];
 
-    final publishPage =
-        jsonDecode(publishPageStr) as Map<String, dynamic>;
-    final publishList =
-        publishPage['publish_list'] as List<dynamic>? ?? [];
+    final publishPage = jsonDecode(publishPageStr) as Map<String, dynamic>;
+    final publishList = publishPage['publish_list'] as List<dynamic>? ?? [];
 
     final articles = <Map<String, dynamic>>[];
     for (final item in publishList) {
@@ -182,10 +180,8 @@ class WxmpArticleService {
       final publishInfoStr = itemMap['publish_info'] as String?;
       if (publishInfoStr == null || publishInfoStr.isEmpty) continue;
 
-      final publishInfo =
-          jsonDecode(publishInfoStr) as Map<String, dynamic>;
-      final appmsgex =
-          publishInfo['appmsgex'] as List<dynamic>? ?? [];
+      final publishInfo = jsonDecode(publishInfoStr) as Map<String, dynamic>;
+      final appmsgex = publishInfo['appmsgex'] as List<dynamic>? ?? [];
 
       for (final article in appmsgex) {
         final artMap = article as Map<String, dynamic>;
@@ -201,46 +197,44 @@ class WxmpArticleService {
   // ==================== 统一获取文章 ====================
 
   /// 获取所有已关注公众号的最新文章，转为 MessageItem
-  /// [maxCount] 最终返回的最大文章总数
-  Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
+  /// [maxCount] 单个公众号最多读取的文章数上限
+  /// [knownMessageIds] 已持久化消息 ID，用于遇到旧文章时停止当前公众号解析
+  Future<List<MessageItem>> fetchArticles({
+    int maxCount = 50,
+    Set<String>? knownMessageIds,
+  }) async {
     final hasAuth = await _auth.hasAuth();
     if (!hasAuth) return [];
 
     final followedMps = await getLocalFollowedMps();
     if (followedMps.isEmpty) return [];
 
+    final storedMessageIds =
+        knownMessageIds ??
+        (await _stateService.loadMessages()).map((msg) => msg.id).toSet();
     final allMessages = <MessageItem>[];
+    final perMpLimit = maxCount > 0 && maxCount < _perMpArticleCount
+        ? maxCount
+        : _perMpArticleCount;
 
     for (final entry in followedMps.entries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
       final mpName = mpInfo['name'] ?? fakeid;
-      if (allMessages.length >= maxCount) break;
-
-      // 检查公众号通知开关
-      final mpEnabled =
-          await _stateService.isMpNotificationEnabled(fakeid);
-      if (!mpEnabled) continue;
 
       try {
-        final articles = await getArticles(
-          fakeid,
-          count: _perMpArticleCount,
-        );
+        final articles = await getArticles(fakeid, count: perMpLimit);
 
         for (final article in articles) {
-          if (allMessages.length >= maxCount) break;
           final msgItem = _articleToMessageItem(article, mpName, fakeid);
-          if (msgItem != null) {
-            allMessages.add(msgItem);
-          }
+          if (msgItem == null) continue;
+          if (storedMessageIds.contains(msgItem.id)) break;
+          allMessages.add(msgItem);
         }
 
         // 请求间隔，避免频率限制
         if (followedMps.length > 1) {
-          await Future.delayed(
-            const Duration(milliseconds: _requestDelayMs),
-          );
+          await Future.delayed(const Duration(milliseconds: _requestDelayMs));
         }
       } on WxmpSessionExpiredException {
         // Session 过期，停止后续请求
@@ -283,11 +277,7 @@ class WxmpArticleService {
     String? avatar,
   }) async {
     final mps = await getLocalFollowedMps();
-    mps[fakeid] = {
-      'name': name,
-      'alias': alias ?? '',
-      'avatar': avatar ?? '',
-    };
+    mps[fakeid] = {'name': name, 'alias': alias ?? '', 'avatar': avatar ?? ''};
     await StorageService.setString(_keyFollowedMps, jsonEncode(mps));
   }
 
@@ -336,7 +326,9 @@ class WxmpArticleService {
     String date;
     int? timestampMs;
     if (rawTimestamp is int && rawTimestamp > 0) {
-      final ms = rawTimestamp < 10000000000 ? rawTimestamp * 1000 : rawTimestamp;
+      final ms = rawTimestamp < 10000000000
+          ? rawTimestamp * 1000
+          : rawTimestamp;
       final dt = DateTime.fromMillisecondsSinceEpoch(ms);
       date =
           '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';

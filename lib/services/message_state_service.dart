@@ -469,19 +469,19 @@ class MessageStateService {
   /// 将新抓取的消息与已有消息合并（按 ID 去重）
   /// [existingMessages] 已有消息列表
   /// [newMessages] 新抓取的消息列表
-  /// 返回合并后的列表（新消息覆盖同 ID 旧消息）
+  /// 返回合并后的列表（已存消息保持原样，避免刷新覆盖原始时间）
   List<MessageItem> mergeMessages(
     List<MessageItem> existingMessages,
     List<MessageItem> newMessages,
   ) {
     final messageMap = <String, MessageItem>{};
-    // 先放旧消息
+    // 先放旧消息，保留首次获取时记录的时间与字段。
     for (final msg in existingMessages) {
       messageMap[msg.id] = msg;
     }
-    // 新消息覆盖同 ID 的旧消息
+    // 只补充新增消息，已有文章不再被新抓取结果覆盖。
     for (final msg in newMessages) {
-      messageMap[msg.id] = msg;
+      messageMap.putIfAbsent(msg.id, () => msg);
     }
     return messageMap.values.toList();
   }

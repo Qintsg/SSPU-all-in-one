@@ -29,19 +29,26 @@ class ConstructionNewsService {
   final HttpService _http = HttpService.instance;
 
   /// 获取建设要闻（首页窗口4/c405区块）
-  Future<List<MessageItem>> fetchNews() async {
-    return _fetchFromHomepage(category: MessageCategory.constructionNews);
+  Future<List<MessageItem>> fetchNews({Set<String>? knownMessageIds}) async {
+    return _fetchFromHomepage(
+      category: MessageCategory.constructionNews,
+      knownMessageIds: knownMessageIds,
+    );
   }
 
   /// 获取建设通知（首页窗口5/c406区块）
-  Future<List<MessageItem>> fetchNotices() async {
-    return _fetchFromHomepage(category: MessageCategory.constructionNotice);
+  Future<List<MessageItem>> fetchNotices({Set<String>? knownMessageIds}) async {
+    return _fetchFromHomepage(
+      category: MessageCategory.constructionNotice,
+      knownMessageIds: knownMessageIds,
+    );
   }
 
   /// 从首页抓取指定分类的消息
   /// 因两个区块 HTML 结构相同（ul.lis），通过内容区域区分
   Future<List<MessageItem>> _fetchFromHomepage({
     required MessageCategory category,
+    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(_baseUrl);
@@ -70,12 +77,13 @@ class ConstructionNewsService {
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
         // 提取日期（仅 MM-DD，通过统一工具补全年份）
         final dateSpan = item.querySelector('span');
         final rawDate = dateSpan?.text.trim() ?? '';
         final date = normalizeDate(rawDate);
-
-        final messageId = _generateId(fullUrl);
 
         messages.add(
           MessageItem(

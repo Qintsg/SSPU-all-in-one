@@ -383,7 +383,10 @@ class CollegeNewsService {
 
   /// 根据 channelId 获取该学院/部门的首页新闻列表
   /// [channelId] 对应 channel_config.dart 中的 id（如 'college_cs'）
-  Future<List<MessageItem>> fetchNews(String channelId) async {
+  Future<List<MessageItem>> fetchNews(
+    String channelId, {
+    Set<String>? knownMessageIds,
+  }) async {
     final config = configs[channelId];
     if (config == null) return [];
 
@@ -394,13 +397,29 @@ class CollegeNewsService {
       // 根据模板类型分派解析
       switch (config.template) {
         case CollegeTemplate.listA:
-          return _parseListA(document, config);
+          return _parseListA(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
         case CollegeTemplate.newsListB:
-          return _parseNewsListB(document, config);
+          return _parseNewsListB(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
         case CollegeTemplate.swiperC:
-          return _parseSwiperC(document, config);
+          return _parseSwiperC(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
         case CollegeTemplate.customD:
-          return _parseCustomD(document, config);
+          return _parseCustomD(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
       }
     } catch (_) {
       // 网络异常或解析失败，静默返回空列表
@@ -411,7 +430,11 @@ class CollegeNewsService {
   // ==================== 模板A: 标准列表解析 ====================
 
   /// 解析模板A: ul/div 列表内 li 项，包含日期 span + 标题 a
-  List<MessageItem> _parseListA(Document document, CollegeConfig config) {
+  List<MessageItem> _parseListA(
+    Document document,
+    CollegeConfig config, {
+    Set<String>? knownMessageIds,
+  }) {
     final container = document.querySelector(
       config.listContainerSelector ?? '',
     );
@@ -433,6 +456,8 @@ class CollegeNewsService {
       if (title.isEmpty || href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      final messageId = _generateId(fullUrl);
+      if (knownMessageIds?.contains(messageId) ?? false) break;
 
       // 提取日期；选择器缺失时仍按当天消息兜底，避免信息中心日期空白。
       final dateEl = item.querySelector(config.dateSelector ?? 'span');
@@ -440,7 +465,7 @@ class CollegeNewsService {
 
       messages.add(
         MessageItem(
-          id: _generateId(fullUrl),
+          id: messageId,
           title: title,
           date: date,
           url: fullUrl,
@@ -458,7 +483,11 @@ class CollegeNewsService {
   // ==================== 模板B: news_list 图文卡片解析 ====================
 
   /// 解析模板B: ul.news_list 内的 li.news 卡片
-  List<MessageItem> _parseNewsListB(Document document, CollegeConfig config) {
+  List<MessageItem> _parseNewsListB(
+    Document document,
+    CollegeConfig config, {
+    Set<String>? knownMessageIds,
+  }) {
     final containerSelector =
         config.newsListContainerSelector ?? 'ul.news_list';
     final container = document.querySelector(containerSelector);
@@ -503,6 +532,8 @@ class CollegeNewsService {
       if (title.isEmpty || href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      final messageId = _generateId(fullUrl);
+      if (knownMessageIds?.contains(messageId) ?? false) break;
 
       // 提取日期；部分官网模板当天条目可能只给时间或不给日期。
       String date = '';
@@ -514,7 +545,7 @@ class CollegeNewsService {
 
       messages.add(
         MessageItem(
-          id: _generateId(fullUrl),
+          id: messageId,
           title: title,
           date: date,
           url: fullUrl,
@@ -533,7 +564,11 @@ class CollegeNewsService {
 
   /// 解析模板C: swiper-wrapper 内的 swiper-slide 卡片
   /// 智控学院特有：news_title(标题) + news_days(日) + news_years(YYYY.MM)
-  List<MessageItem> _parseSwiperC(Document document, CollegeConfig config) {
+  List<MessageItem> _parseSwiperC(
+    Document document,
+    CollegeConfig config, {
+    Set<String>? knownMessageIds,
+  }) {
     final container = document.querySelector(
       config.swiperContainerSelector ?? 'div.swiper-wrapper',
     );
@@ -549,6 +584,8 @@ class CollegeNewsService {
       if (href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      final messageId = _generateId(fullUrl);
+      if (knownMessageIds?.contains(messageId) ?? false) break;
 
       // 提取标题
       final titleEl = slide.querySelector('div.news_title');
@@ -568,7 +605,7 @@ class CollegeNewsService {
 
       messages.add(
         MessageItem(
-          id: _generateId(fullUrl),
+          id: messageId,
           title: title,
           date: date,
           url: fullUrl,
@@ -587,7 +624,11 @@ class CollegeNewsService {
 
   /// 解析模板D: 各种非标准 HTML 结构
   /// 支持: imhe(a.btt-3), stes(a.item拼合日期), education(span.first+last), sie(div.item斜杠日期)
-  List<MessageItem> _parseCustomD(Document document, CollegeConfig config) {
+  List<MessageItem> _parseCustomD(
+    Document document,
+    CollegeConfig config, {
+    Set<String>? knownMessageIds,
+  }) {
     if (config.customItemSelector == null) return [];
 
     final items = document.querySelectorAll(config.customItemSelector!);
@@ -610,6 +651,8 @@ class CollegeNewsService {
       if (href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      final messageId = _generateId(fullUrl);
+      if (knownMessageIds?.contains(messageId) ?? false) break;
 
       // 提取标题
       String title = '';
@@ -642,7 +685,7 @@ class CollegeNewsService {
 
       messages.add(
         MessageItem(
-          id: _generateId(fullUrl),
+          id: messageId,
           title: title,
           date: date,
           url: fullUrl,

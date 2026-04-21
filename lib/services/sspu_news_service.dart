@@ -37,21 +37,29 @@ class SspuNewsService {
   /// 获取最新公开信息（3148 栏目）
   /// [maxCount] 最大获取条数，默认 20 条
   /// 若当前页不足 maxCount，会自动翻页继续获取
-  Future<List<MessageItem>> fetchLatestInfo({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchLatestInfo({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
     return _fetchFromColumn(
       columnPath: _latestInfoPath,
       category: MessageCategory.latestInfo,
       maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
     );
   }
 
   /// 获取通知公示（3149 栏目）
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchNotices({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchNotices({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
     return _fetchFromColumn(
       columnPath: _noticePath,
       category: MessageCategory.notice,
       maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
     );
   }
 
@@ -72,6 +80,7 @@ class SspuNewsService {
     required String columnPath,
     required MessageCategory category,
     required int maxCount,
+    Set<String>? knownMessageIds,
     int maxPages = 20,
   }) async {
     final messages = <MessageItem>[];
@@ -82,6 +91,7 @@ class SspuNewsService {
       final pageMessages = await _fetchSinglePage(
         url: _buildPageUrl(columnPath, currentPage),
         category: category,
+        knownMessageIds: knownMessageIds,
       );
 
       // 当前页无数据，说明已到末尾
@@ -103,6 +113,7 @@ class SspuNewsService {
   Future<List<MessageItem>> _fetchSinglePage({
     required String url,
     required MessageCategory category,
+    Set<String>? knownMessageIds,
   }) async {
     try {
       final htmlText = await _http.fetchText(url);
@@ -126,12 +137,13 @@ class SspuNewsService {
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
+        // 生成唯一 ID（基于 URL 的 MD5 哈希，确保去重）
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
         // 提取日期并规范化格式
         final dateMeta = item.querySelector('span.news_meta');
         final date = normalizeDate(dateMeta?.text.trim() ?? '');
-
-        // 生成唯一 ID（基于 URL 的 MD5 哈希，确保去重）
-        final messageId = _generateId(fullUrl);
 
         messages.add(
           MessageItem(

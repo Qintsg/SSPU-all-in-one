@@ -171,8 +171,10 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
+      final persistedMessages = await _stateService.loadMessages();
       final articles = await WechatArticleService.instance.fetchArticles(
         maxCount: 50,
+        knownMessageIds: persistedMessages.map((msg) => msg.id).toSet(),
       );
 
       if (articles.isEmpty) {
@@ -439,12 +441,11 @@ class _InfoPageState extends State<InfoPage> {
     if (mounted) {
       Navigator.of(context).push(
         FluentPageRoute(
-          builder: (_) =>
-              WebViewPage(
-                url: message.url,
-                initialTitle: message.title,
-                webViewEnvironment: globalWebViewEnvironment,
-              ),
+          builder: (_) => WebViewPage(
+            url: message.url,
+            initialTitle: message.title,
+            webViewEnvironment: globalWebViewEnvironment,
+          ),
         ),
       );
       setState(() {});

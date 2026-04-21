@@ -344,9 +344,9 @@ Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
   // 1. 检查认证状态 (WereadAuthService.hasCookies)
   // 2. 获取本地关注列表 (getLocalFollowedMps)
   // 3. 遍历每个公众号:
-  //    a. 检查通知开关 (MessageStateService.isMpNotificationEnabled)
-  //    b. 调用 WereadApiService.getAllArticles(bookId, maxCount: 10)
-  //    c. 将每篇文章通过 _articleToMessageItem 转换
+  //    a. 调用 WereadApiService.getAllArticles(bookId, maxCount: 10)
+  //    b. 将每篇文章通过 _articleToMessageItem 转换
+  //    c. 遇到已入库文章后停止当前公众号后续解析
   // 4. 返回 allMessages
 }
 ```
@@ -557,7 +557,7 @@ WereadLoginPage
                 ↓                       ↓
         遍历本地关注列表          /web/mp/articles?bookId=xxx
                 ↓                       ↓
-        检查通知开关             解析 reviews[].subReviews[]
+        按公众号解析新文章       解析 reviews[].subReviews[]
                 ↓                       ↓
         _articleToMessageItem    返回 Map<String, dynamic>
                 ↓

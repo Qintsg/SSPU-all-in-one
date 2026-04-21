@@ -33,8 +33,15 @@ class ItcNewsService {
 
   /// 获取最新消息
   /// [maxCount] 最大获取条数，默认 20 条
-  Future<List<MessageItem>> fetchNews({int maxCount = 20}) async {
-    return _fetchFromColumn(columnPath: _newsPath, maxCount: maxCount);
+  Future<List<MessageItem>> fetchNews({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchFromColumn(
+      columnPath: _newsPath,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
 
   /// 根据页码生成列表页 URL
@@ -51,6 +58,7 @@ class ItcNewsService {
   Future<List<MessageItem>> _fetchFromColumn({
     required String columnPath,
     required int maxCount,
+    Set<String>? knownMessageIds,
     int maxPages = 10,
   }) async {
     final messages = <MessageItem>[];
@@ -59,6 +67,7 @@ class ItcNewsService {
     while (messages.length < maxCount && currentPage <= maxPages) {
       final pageMessages = await _fetchSinglePage(
         url: _buildPageUrl(columnPath, currentPage),
+        knownMessageIds: knownMessageIds,
       );
 
       if (pageMessages.isEmpty) break;
@@ -77,7 +86,10 @@ class ItcNewsService {
   /// 抓取单页内所有消息项
   /// ITC 解析模式: li 元素中包含 <span>日期</span> 和 <a href title>标题</a>
   /// 选择器: 匹配 class 以 'n' 开头的 li 元素（n1, n2, n3...）
-  Future<List<MessageItem>> _fetchSinglePage({required String url}) async {
+  Future<List<MessageItem>> _fetchSinglePage({
+    required String url,
+    Set<String>? knownMessageIds,
+  }) async {
     try {
       final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
@@ -98,12 +110,13 @@ class ItcNewsService {
         // 拼接完整 URL
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
 
+        // 基于 URL 的 MD5 生成唯一 ID
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
         // 提取日期（span 元素中的文本）并规范化格式
         final dateSpan = item.querySelector('span');
         final date = normalizeDate(dateSpan?.text.trim() ?? '');
-
-        // 基于 URL 的 MD5 生成唯一 ID
-        final messageId = _generateId(fullUrl);
 
         messages.add(
           MessageItem(
