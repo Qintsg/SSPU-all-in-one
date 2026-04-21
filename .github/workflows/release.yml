@@ -9,12 +9,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (如 0.1.0-alpha)'
+        description: '版本号 (如 0.1.5-alpha)'
         required: true
-        default: '0.1.0-alpha'
+        default: '0.1.5-alpha'
 
 env:
-  FLUTTER_VERSION: '3.41.4'
+  FLUTTER_VERSION: '3.41.7'
 
 jobs:
   build-windows:
@@ -31,17 +31,11 @@ jobs:
             bundle_path: build\windows\x64\runner\Release
             output_file: sspu-all-in-one-windows-x64-setup.exe
             artifact_name: windows-x64-installer
-          - arch: arm64
-            runner: windows-11-arm
-            installer_script: .github\installer\windows-arm64.iss
-            bundle_path: build\windows\arm64\runner\Release
-            output_file: sspu-all-in-one-windows-arm64-setup.exe
-            artifact_name: windows-arm64-installer
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -78,7 +72,7 @@ jobs:
           $innoCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           & $innoCompiler '${{ matrix.installer_script }}'
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.output_file }}
@@ -97,22 +91,16 @@ jobs:
             bundle_path: build/linux/x64/release/bundle
             output_file: sspu-all-in-one-linux-x64.tar.gz
             artifact_name: linux-x64-bundle
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-            target_platform: linux-arm64
-            bundle_path: build/linux/arm64/release/bundle
-            output_file: sspu-all-in-one-linux-arm64.tar.gz
-            artifact_name: linux-arm64-bundle
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
       - name: 安装 Linux 依赖
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ninja-build libgtk-3-dev libnotify-dev libayatana-appindicator3-dev
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -129,7 +117,7 @@ jobs:
           cd "${{ matrix.bundle_path }}"
           tar -czf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" .
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.output_file }}
@@ -140,9 +128,9 @@ jobs:
       (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -156,14 +144,19 @@ jobs:
 
       - name: 生成 macOS DMG
         run: |
+          macos_app_bundle="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          if [ -z "$macos_app_bundle" ]; then
+            echo "未找到 macOS .app 产物" >&2
+            exit 1
+          fi
           hdiutil create \
             -volname "SSPU All-in-One" \
-            -srcfolder "build/macos/Build/Products/Release/sspu_all_in_one.app" \
+            -srcfolder "$macos_app_bundle" \
             -ov \
             -format UDZO \
             "$GITHUB_WORKSPACE/sspu-all-in-one-macos-universal.dmg"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: macos-universal-dmg
           path: sspu-all-in-one-macos-universal.dmg
@@ -174,9 +167,9 @@ jobs:
       (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -192,7 +185,7 @@ jobs:
         run: |
           tar -czf "$GITHUB_WORKSPACE/sspu-all-in-one-ios-arm64-unsigned-app.tar.gz" -C build/ios/iphoneos Runner.app
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: ios-arm64-unsigned-app
           path: sspu-all-in-one-ios-arm64-unsigned-app.tar.gz
@@ -203,14 +196,14 @@ jobs:
       (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.2.0
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -229,7 +222,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist/sspu-all-in-one-android-arm64.apk
           cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist/sspu-all-in-one-android-x64.apk
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: android-apk
           path: |
@@ -257,9 +250,9 @@ jobs:
             artifact_name: web-wasm-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -276,7 +269,7 @@ jobs:
           cd "${{ matrix.output_dir }}"
           tar -czf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" .
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.output_file }}
@@ -290,7 +283,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
 
       - name: 提取版本号
         id: version
@@ -302,12 +295,12 @@ jobs:
             echo "version=$release_version" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8.0.1
         with:
           path: artifacts
 
       - name: 创建 Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v3.0.0
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: v${{ steps.version.outputs.version }}
@@ -320,33 +313,29 @@ jobs:
             | 平台 | 文件 | 说明 |
             |------|------|------|
             | Windows x64 | `sspu-all-in-one-windows-x64-setup.exe` | 安装器 |
-            | Windows arm64 | `sspu-all-in-one-windows-arm64-setup.exe` | 安装器 |
             | Android arm32 | `sspu-all-in-one-android-arm32.apk` | APK 安装包 |
             | Android arm64 | `sspu-all-in-one-android-arm64.apk` | APK 安装包 |
             | Android x64 | `sspu-all-in-one-android-x64.apk` | APK 安装包 |
             | iOS arm64 | `sspu-all-in-one-ios-arm64-unsigned-app.tar.gz` | 未签名应用包，需签名后安装 |
             | macOS universal | `sspu-all-in-one-macos-universal.dmg` | 同时支持 x64 与 arm64，未签名 |
             | Linux x64 | `sspu-all-in-one-linux-x64.tar.gz` | 运行目录压缩包 |
-            | Linux arm64 | `sspu-all-in-one-linux-arm64.tar.gz` | 运行目录压缩包 |
             | Web JavaScript | `sspu-all-in-one-web-js.tar.gz` | 静态站点压缩包 |
             | Web WebAssembly | `sspu-all-in-one-web-wasm.tar.gz` | 静态站点压缩包 |
 
             ### 平台说明
             - Android 产物按 arm32、arm64、x64 拆分，减少单个安装包体积。
-            - Flutter 当前 Windows 发布目标支持 x64 与 arm64，不包含 32 位 x86。
+            - 当前仓库 Release 工作流已验证 Windows x64 与 Linux x64 桌面产物。
             - iOS 没有仓库签名证书，Release 提供未签名应用压缩包。
             - Linux 与 Web 暂无仓库内安装器配置，保留压缩包形式。
           draft: false
           prerelease: true
           files: |
             artifacts/windows-x64-installer/sspu-all-in-one-windows-x64-setup.exe
-            artifacts/windows-arm64-installer/sspu-all-in-one-windows-arm64-setup.exe
             artifacts/android-apk/sspu-all-in-one-android-arm32.apk
             artifacts/android-apk/sspu-all-in-one-android-arm64.apk
             artifacts/android-apk/sspu-all-in-one-android-x64.apk
             artifacts/ios-arm64-unsigned-app/sspu-all-in-one-ios-arm64-unsigned-app.tar.gz
             artifacts/macos-universal-dmg/sspu-all-in-one-macos-universal.dmg
             artifacts/linux-x64-bundle/sspu-all-in-one-linux-x64.tar.gz
-            artifacts/linux-arm64-bundle/sspu-all-in-one-linux-arm64.tar.gz
             artifacts/web-js-bundle/sspu-all-in-one-web-js.tar.gz
             artifacts/web-wasm-bundle/sspu-all-in-one-web-wasm.tar.gz

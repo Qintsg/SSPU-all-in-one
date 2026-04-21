@@ -24,6 +24,16 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: priority
+    attributes:
+      label: 期望优先级
+      options:
+        - 高
+        - 中
+        - 低
+    validations:
+      required: true
+  - type: dropdown
     id: scope
     attributes:
       label: 影响范围
@@ -53,6 +63,11 @@ body:
     validations:
       required: true
   - type: textarea
+    id: non_goals
+    attributes:
+      label: 非目标 / 不包含项
+      description: 写明这次需求明确不打算覆盖的范围，避免范围蔓延。
+  - type: textarea
     id: alternatives
     attributes:
       label: 备选方案
@@ -81,4 +96,6 @@ body:
         - label: 我已确认该需求不是重复 Issue
           required: true
         - label: 我已提供可验证的完成标准
+          required: true
+        - label: 我已说明本次需求的优先级和非目标范围
           required: true

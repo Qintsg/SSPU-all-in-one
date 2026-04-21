@@ -16,6 +16,17 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: severity
+    attributes:
+      label: 严重程度
+      options:
+        - 阻塞（核心流程不可用）
+        - 高（主要功能受影响）
+        - 中（存在可绕过方案）
+        - 低（体验问题 / 轻微异常）
+    validations:
+      required: true
+  - type: dropdown
     id: platform
     attributes:
       label: 受影响平台
@@ -28,6 +39,36 @@ body:
         - Web
         - iOS
         - 不确定
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 受影响功能
+      multiple: true
+      options:
+        - 启动 / 锁定页
+        - 首页
+        - 信息中心
+        - 微信 / 微信读书
+        - 快捷链接
+        - 设置
+        - 通知 / 后台刷新
+        - 构建 / CI / Release
+        - 文档
+        - 不确定
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 触发频率
+      options:
+        - 稳定复现
+        - 高频复现
+        - 偶发复现
+        - 仅出现一次
+        - 未确认
     validations:
       required: true
   - type: textarea
@@ -61,9 +102,15 @@ body:
     attributes:
       label: 应用版本 / Commit
       description: 填写 Release 版本、commit hash 或分支名称。
-      placeholder: v0.1.0-alpha / main / abc1234
+      placeholder: v0.1.5-alpha / main / abc1234
     validations:
       required: true
+  - type: input
+    id: regression_info
+    attributes:
+      label: 回归信息（可选）
+      description: 如果这是回归问题，请填写最后一个正常版本或可能引入问题的提交。
+      placeholder: 例如：v0.1.4-alpha 正常；在 abc1234 之后开始出现
   - type: input
     id: system_version
     attributes:
@@ -86,4 +133,6 @@ body:
         - label: 我已确认该问题不是重复 Issue
           required: true
         - label: 我已移除日志中的敏感信息
+          required: true
+        - label: 我已确认问题描述、平台和复现步骤足够让他人复查
           required: true
