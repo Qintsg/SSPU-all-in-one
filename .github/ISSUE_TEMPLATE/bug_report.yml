@@ -1,0 +1,89 @@
+name: Bug 报告
+description: 报告可复现的缺陷、异常行为或回归问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量提供可复现信息。无法稳定复现时，也请写清触发频率和已观察到的规律。
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题描述
+      description: 简要说明遇到的问题和影响范围。
+      placeholder: 例如：信息中心刷新后，微信公众号文章列表为空。
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 受影响平台
+      multiple: true
+      options:
+        - Windows
+        - Android
+        - macOS
+        - Linux
+        - Web
+        - iOS
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 按顺序列出最小复现路径。
+      placeholder: |
+        1. 打开应用
+        2. 进入信息中心
+        3. 点击刷新
+        4. 观察到列表为空
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 描述正确情况下应该发生什么。
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 描述实际发生了什么，包含错误提示、异常状态或错误截图说明。
+    validations:
+      required: true
+  - type: input
+    id: app_version
+    attributes:
+      label: 应用版本 / Commit
+      description: 填写 Release 版本、commit hash 或分支名称。
+      placeholder: v0.1.0-alpha / main / abc1234
+    validations:
+      required: true
+  - type: input
+    id: system_version
+    attributes:
+      label: 系统环境
+      description: 填写操作系统版本、设备型号或浏览器版本。
+      placeholder: Windows 11 23H2 / Android 14 / Chrome 123
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 截图
+      description: 粘贴关键日志、异常堆栈或截图。请先移除账号、Cookie、Token 等敏感信息。
+      render: shell
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 提交前检查
+      options:
+        - label: 我已确认该问题不是重复 Issue
+          required: true
+        - label: 我已移除日志中的敏感信息
+          required: true

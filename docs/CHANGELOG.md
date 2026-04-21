@@ -6,6 +6,17 @@
 
 ## [Unreleased]
 
+### 新增
+
+- 新增 CodeQL PR 安全扫描工作流，并限制为 ready PR 或 ready PR 更新时执行
+- Release 新增 Windows x64 安装器、Android arm32 / arm64 拆分 APK、macOS DMG 产物
+- Issue 模板升级为表单式模板，补充平台、环境、复现、日志、验收标准等必填信息
+
+### 变更
+
+- PR CI 精简为 `flutter analyze`，草稿 PR 仅保留自动标签工作流
+- 移除 PR 阶段跨平台 build check，平台构建集中到 Release 工作流
+
 ### 修复
 
 - 修复 macOS Runner 的 Xcode 配置引用错误，恢复 Flutter 生成配置与 CocoaPods 支持文件的正确加载，解决 `flutter build macos` 编译失败问题
