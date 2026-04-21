@@ -8,13 +8,13 @@
 
 ### 新增
 
-- 新增 CodeQL PR 安全扫描工作流，并限制为 ready PR 或 ready PR 更新时执行
-- Release 新增 Windows x64 安装器、Android arm32 / arm64 拆分 APK、macOS DMG 产物
+- Release 新增 Windows x64 / arm64 安装器、Android arm32 / arm64 / x64 APK、iOS arm64 未签名应用包、macOS universal DMG、Linux x64 / arm64 压缩包、Web JavaScript / WebAssembly 压缩包
 - Issue 模板升级为表单式模板，补充平台、环境、复现、日志、验收标准等必填信息
 
 ### 变更
 
 - PR CI 精简为 `flutter analyze`，草稿 PR 仅保留自动标签工作流
+- 删除 CodeQL PR 安全扫描工作流
 - 移除 PR 阶段跨平台 build check，平台构建集中到 Release 工作流
 
 ### 修复
