@@ -174,6 +174,14 @@ class CollegeNewsService {
     MessageCategory.collegeEconPartyLeadership: ['/_s33/5204/list.psp'],
   };
 
+  /// 文传学院的四个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeLangCategoryPaths = {
+    MessageCategory.collegeLangNews: ['/527/list.htm'],
+    MessageCategory.collegeLangNotice: ['/528/list.htm'],
+    MessageCategory.collegeLangStudentActivities: ['/529/list.htm'],
+    MessageCategory.collegeLangLecture: ['/jzxx/list.htm'],
+  };
+
   /// 计信学院的三个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
     MessageCategory.collegeCsNews: ['/1216/list.htm'],
@@ -456,6 +464,9 @@ class CollegeNewsService {
     if (channelId == 'college_econ') {
       return _fetchCollegeEconNews(knownMessageIds: knownMessageIds);
     }
+    if (channelId == 'college_lang') {
+      return _fetchCollegeLangNews(knownMessageIds: knownMessageIds);
+    }
 
     final config = configs[channelId];
     if (config == null) return [];
@@ -631,6 +642,37 @@ class CollegeNewsService {
     for (final entry in _collegeEconCategoryPaths.entries) {
       for (final relativePath in entry.value) {
         final pageMessages = await _fetchCollegeEconListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
+  /// 文传学院使用四个列表页聚合成四个分类。
+  Future<List<MessageItem>> _fetchCollegeLangNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _collegeLangCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCollegeLangListPage(
           relativePath: relativePath,
           category: entry.key,
           knownMessageIds: seenIds,
@@ -861,6 +903,66 @@ class CollegeNewsService {
         config,
         knownMessageIds: knownMessageIds,
       );
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 抓取文传学院某个子栏目列表页。
+  Future<List<MessageItem>> _fetchCollegeLangListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://wywh.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final items = document.querySelectorAll('div.right_list ul li');
+      final messages = <MessageItem>[];
+
+      for (final item in items) {
+        final dateElement = item.querySelector('span');
+        if (dateElement == null) continue;
+
+        Element? titleElement;
+        for (final link in item.querySelectorAll('a')) {
+          final href = link.attributes['href'] ?? '';
+          final title = link.attributes['title']?.trim() ?? link.text.trim();
+          if (href.isNotEmpty && title.isNotEmpty) {
+            titleElement = link;
+            break;
+          }
+        }
+        if (titleElement == null) continue;
+
+        final href = titleElement.attributes['href'] ?? '';
+        final title =
+            titleElement.attributes['title']?.trim() ??
+            titleElement.text.trim();
+        if (href.isEmpty || title.isEmpty) continue;
+
+        final fullUrl = _buildFullUrl(href, 'https://wywh.sspu.edu.cn');
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
+        final date = normalizeDate(dateElement.text.trim());
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.collegeLang,
+            category: category,
+            timestamp: MessageItem.computeTimestamp(date),
+          ),
+        );
+      }
+
+      return messages;
     } catch (_) {
       return [];
     }

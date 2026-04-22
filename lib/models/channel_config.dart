@@ -266,7 +266,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'college_lang',
     name: '语言与文化传播学院',
-    description: '学院通知与公告',
+    description: '新闻动态、学院公告、学生活动与讲座信息',
     icon: FluentIcons.read,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -453,6 +453,12 @@ const Map<String, List<SubCategory>> channelSubcategories = {
     SubCategory(MessageCategory.collegeEconNotice, '通知公告'),
     SubCategory(MessageCategory.collegeEconStudentDevelopment, '育人园地'),
     SubCategory(MessageCategory.collegeEconPartyLeadership, '党群引领'),
+  ],
+  'college_lang': [
+    SubCategory(MessageCategory.collegeLangNews, '新闻动态'),
+    SubCategory(MessageCategory.collegeLangNotice, '学院公告'),
+    SubCategory(MessageCategory.collegeLangStudentActivities, '学生活动'),
+    SubCategory(MessageCategory.collegeLangLecture, '讲座信息'),
   ],
   'jwc': [
     SubCategory(MessageCategory.jwcTeaching, '教学动态'),

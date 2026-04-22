@@ -238,8 +238,17 @@ enum MessageCategory {
   /// 经济与管理学院党群引领
   collegeEconPartyLeadership('党群引领'),
 
-  /// 语言与文化传播学院动态
-  collegeLangNews('文传学院动态'),
+  /// 语言与文化传播学院新闻动态
+  collegeLangNews('新闻动态'),
+
+  /// 语言与文化传播学院学院公告
+  collegeLangNotice('学院公告'),
+
+  /// 语言与文化传播学院学生活动
+  collegeLangStudentActivities('学生活动'),
+
+  /// 语言与文化传播学院讲座信息
+  collegeLangLecture('讲座信息'),
 
   /// 数理与统计学院动态
   collegeMathNews('数统学院动态'),
