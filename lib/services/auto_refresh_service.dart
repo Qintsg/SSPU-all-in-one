@@ -402,10 +402,16 @@ class AutoRefreshService {
       channelKey: 'wechatPublic',
       getInterval: () => _stateService.getChannelInterval('wechat_public'),
       isEnabled: () => _stateService.isChannelEnabled('wechat_public'),
-      fetchMessages: (knownMessageIds) => _wechatService.fetchArticles(
-        maxCount: _defaultFetchCount,
-        knownMessageIds: knownMessageIds,
-      ),
+      fetchMessages: (knownMessageIds) async {
+        final maxCount = await _stateService.getChannelAutoFetchCount(
+          'wechat_public',
+          defaultValue: _defaultFetchCount,
+        );
+        return _wechatService.fetchArticles(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        );
+      },
     );
 
     // 微信服务号占位 — 未来接入时取消注释
@@ -962,10 +968,16 @@ class AutoRefreshService {
           channelKey: 'wechatPublic',
           getInterval: () => _stateService.getChannelInterval('wechat_public'),
           isEnabled: () => _stateService.isChannelEnabled('wechat_public'),
-          fetchMessages: (knownMessageIds) => _wechatService.fetchArticles(
-            maxCount: _defaultFetchCount,
-            knownMessageIds: knownMessageIds,
-          ),
+          fetchMessages: (knownMessageIds) async {
+            final maxCount = await _stateService.getChannelAutoFetchCount(
+              'wechat_public',
+              defaultValue: _defaultFetchCount,
+            );
+            return _wechatService.fetchArticles(
+              maxCount: maxCount,
+              knownMessageIds: knownMessageIds,
+            );
+          },
         );
         break;
       // 其他渠道占位
