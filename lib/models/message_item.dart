@@ -250,8 +250,17 @@ enum MessageCategory {
   /// 语言与文化传播学院讲座信息
   collegeLangLecture('讲座信息'),
 
-  /// 数理与统计学院动态
-  collegeMathNews('数统学院动态'),
+  /// 数理与统计学院学院新闻
+  collegeMathNews('学院新闻'),
+
+  /// 数理与统计学院学院公告
+  collegeMathNotice('学院公告'),
+
+  /// 数理与统计学院学术动态
+  collegeMathAcademic('学术动态'),
+
+  /// 数理与统计学院育人园地
+  collegeMathStudentDevelopment('育人园地'),
 
   /// 艺术与设计学院动态
   collegeArtNews('艺设学院动态'),

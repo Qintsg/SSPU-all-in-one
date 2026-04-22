@@ -182,6 +182,14 @@ class CollegeNewsService {
     MessageCategory.collegeLangLecture: ['/jzxx/list.htm'],
   };
 
+  /// 数统学院的四个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeMathCategoryPaths = {
+    MessageCategory.collegeMathNews: ['/2604/list.htm'],
+    MessageCategory.collegeMathNotice: ['/2605/list.htm'],
+    MessageCategory.collegeMathAcademic: ['/xsdt2/list.htm'],
+    MessageCategory.collegeMathStudentDevelopment: ['/2607/list.htm'],
+  };
+
   /// 计信学院的三个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
     MessageCategory.collegeCsNews: ['/1216/list.htm'],
@@ -467,6 +475,9 @@ class CollegeNewsService {
     if (channelId == 'college_lang') {
       return _fetchCollegeLangNews(knownMessageIds: knownMessageIds);
     }
+    if (channelId == 'college_math') {
+      return _fetchCollegeMathNews(knownMessageIds: knownMessageIds);
+    }
 
     final config = configs[channelId];
     if (config == null) return [];
@@ -673,6 +684,37 @@ class CollegeNewsService {
     for (final entry in _collegeLangCategoryPaths.entries) {
       for (final relativePath in entry.value) {
         final pageMessages = await _fetchCollegeLangListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
+  /// 数统学院使用四个列表页聚合成四个分类，并进入文章页读取精确时间。
+  Future<List<MessageItem>> _fetchCollegeMathNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _collegeMathCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCollegeMathListPage(
           relativePath: relativePath,
           category: entry.key,
           knownMessageIds: seenIds,
@@ -968,6 +1010,118 @@ class CollegeNewsService {
     }
   }
 
+  /// 抓取数统学院某个子栏目列表页，并进入文章页补齐精确发布时间。
+  Future<List<MessageItem>> _fetchCollegeMathListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://sltj.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final items = document.querySelectorAll('div.listbody ul li');
+      final messages = <MessageItem>[];
+
+      for (final item in items) {
+        final dateElement = item.querySelector('span');
+        if (dateElement == null) continue;
+
+        Element? titleElement;
+        for (final link in item.querySelectorAll('a')) {
+          final href = link.attributes['href'] ?? '';
+          final rawTitle = link.attributes['title']?.trim() ?? '';
+          final title = rawTitle.isNotEmpty ? rawTitle : link.text.trim();
+          if (href.isEmpty || title.isEmpty) continue;
+          if (rawTitle.contains('<') || rawTitle.contains('href=')) continue;
+          titleElement = link;
+          break;
+        }
+        if (titleElement == null) continue;
+
+        final href = titleElement.attributes['href'] ?? '';
+        final title =
+            titleElement.attributes['title']?.trim() ??
+            titleElement.text.trim();
+        if (href.isEmpty || title.isEmpty) continue;
+
+        final fullUrl = _buildFullUrl(href, 'https://sltj.sspu.edu.cn');
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
+        final fallbackDate = normalizeDate(dateElement.text.trim());
+        final publishTime = await _fetchCollegeMathPublishTime(fullUrl);
+        final date = publishTime?.date ?? fallbackDate;
+
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.collegeMath,
+            category: category,
+            timestamp:
+                publishTime?.timestamp ?? MessageItem.computeTimestamp(date),
+          ),
+        );
+      }
+
+      return messages;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 从数统学院文章页提取精确发布时间。
+  /// 优先解析常规正文时间节点，失败后回退到微信样式页面中的 create_time。
+  Future<_CollegeArticlePublishTime?> _fetchCollegeMathPublishTime(
+    String articleUrl,
+  ) async {
+    try {
+      final htmlText = await _http.fetchText(articleUrl);
+      final document = html_parser.parse(htmlText);
+
+      for (final selector in const ['.arti_update', '.time']) {
+        final timeText = document.querySelector(selector)?.text ?? '';
+        final match = RegExp(
+          r'(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}:\d{2}))?',
+        ).firstMatch(timeText);
+        if (match == null) continue;
+
+        final date = normalizeDate(match.group(1) ?? '');
+        final time = match.group(2);
+        final timestamp = time == null
+            ? MessageItem.computeTimestamp(date)
+            : DateTime.parse('$date $time').millisecondsSinceEpoch;
+        return _CollegeArticlePublishTime(date: date, timestamp: timestamp);
+      }
+
+      final timestampMatch = RegExp(
+        "(?:create_time|oriCreateTime|ct)\\s*[:=]\\s*['\\\"]?(\\d{10,13})",
+      ).firstMatch(htmlText);
+      if (timestampMatch != null) {
+        final rawTimestamp = int.tryParse(timestampMatch.group(1) ?? '');
+        if (rawTimestamp != null && rawTimestamp > 0) {
+          final timestamp = rawTimestamp < 10000000000
+              ? rawTimestamp * 1000
+              : rawTimestamp;
+          final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          final date = normalizeDate(
+            '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}',
+          );
+          return _CollegeArticlePublishTime(date: date, timestamp: timestamp);
+        }
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ==================== 模板A: 标准列表解析 ====================
 
   /// 解析模板A: ul/div 列表内 li 项，包含日期 span + 标题 a
@@ -1255,4 +1409,15 @@ class CollegeNewsService {
     final digest = md5.convert(bytes);
     return digest.toString();
   }
+}
+
+/// 文章页发布时间解析结果。
+class _CollegeArticlePublishTime {
+  final String date;
+  final int timestamp;
+
+  const _CollegeArticlePublishTime({
+    required this.date,
+    required this.timestamp,
+  });
 }
