@@ -274,112 +274,164 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return ScaffoldPage(
       header: const PageHeader(title: Text('设置')),
-      content: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 左侧垂直导航栏
-          SizedBox(
-            width: 180,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, top: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                    child: Text(
-                      '系统设置',
-                      style: FluentTheme.of(context).typography.caption
-                          ?.copyWith(
-                            color: FluentTheme.of(
-                              context,
-                            ).resources.textFillColorSecondary,
-                          ),
-                    ),
-                  ),
-                  buildSettingsNavItem(
-                    context: context,
-                    index: 0,
-                    selectedIndex: _selectedTab,
-                    icon: FluentIcons.settings,
-                    label: '常规设置',
-                    onTap: () => setState(() => _selectedTab = 0),
-                  ),
-                  const SizedBox(height: FluentSpacing.xxs),
-                  buildSettingsNavItem(
-                    context: context,
-                    index: 1,
-                    selectedIndex: _selectedTab,
-                    icon: FluentIcons.lock,
-                    label: '安全设置',
-                    onTap: () => setState(() => _selectedTab = 1),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    child: Divider(),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                    child: Text(
-                      '消息推送设置',
-                      style: FluentTheme.of(context).typography.caption
-                          ?.copyWith(
-                            color: FluentTheme.of(
-                              context,
-                            ).resources.textFillColorSecondary,
-                          ),
-                    ),
-                  ),
-                  buildSettingsNavItem(
-                    context: context,
-                    index: 2,
-                    selectedIndex: _selectedTab,
-                    icon: FluentIcons.education,
-                    label: '职能部门',
-                    onTap: () => setState(() => _selectedTab = 2),
-                  ),
-                  const SizedBox(height: FluentSpacing.xxs),
-                  buildSettingsNavItem(
-                    context: context,
-                    index: 3,
-                    selectedIndex: _selectedTab,
-                    icon: FluentIcons.library,
-                    label: '教学单位',
-                    onTap: () => setState(() => _selectedTab = 3),
-                  ),
-                  const SizedBox(height: FluentSpacing.xxs),
-                  buildSettingsNavItem(
-                    context: context,
-                    index: 4,
-                    selectedIndex: _selectedTab,
-                    icon: FluentIcons.chat,
-                    label: '微信推文',
-                    onTap: () => setState(() => _selectedTab = 4),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // 左侧分隔线
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Divider(direction: Axis.vertical),
-          ),
-          // 右侧内容区
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: _buildContentPanel(context)
-                  .animate(key: ValueKey(_selectedTab))
-                  .fadeIn(
-                    duration: FluentDuration.slow,
-                    curve: FluentEasing.decelerate,
-                  )
-                  .slideY(begin: 0.02, end: 0),
-            ),
-          ),
-        ],
+      content: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 720;
+          return isNarrow
+              ? _buildNarrowSettingsLayout(context)
+              : _buildWideSettingsLayout(context);
+        },
       ),
+    );
+  }
+
+  /// 构建宽屏设置页布局，保留左侧垂直导航。
+  Widget _buildWideSettingsLayout(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 180,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, top: 8),
+            child: _buildSettingsNavigation(context),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Divider(direction: Axis.vertical),
+        ),
+        Expanded(
+          child: _buildScrollableContent(
+            const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建窄屏设置页布局，使用顶部下拉选择分区。
+  Widget _buildNarrowSettingsLayout(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: _buildSettingsTabCombo(context),
+        ),
+        const Divider(),
+        Expanded(
+          child: _buildScrollableContent(
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建设置导航栏。
+  Widget _buildSettingsNavigation(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    final captionStyle = theme.typography.caption?.copyWith(
+      color: theme.resources.textFillColorSecondary,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+          child: Text('系统设置', style: captionStyle),
+        ),
+        buildSettingsNavItem(
+          context: context,
+          index: 0,
+          selectedIndex: _selectedTab,
+          icon: FluentIcons.settings,
+          label: '常规设置',
+          onTap: () => setState(() => _selectedTab = 0),
+        ),
+        const SizedBox(height: FluentSpacing.xxs),
+        buildSettingsNavItem(
+          context: context,
+          index: 1,
+          selectedIndex: _selectedTab,
+          icon: FluentIcons.lock,
+          label: '安全设置',
+          onTap: () => setState(() => _selectedTab = 1),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: Divider(),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: Text('消息推送设置', style: captionStyle),
+        ),
+        buildSettingsNavItem(
+          context: context,
+          index: 2,
+          selectedIndex: _selectedTab,
+          icon: FluentIcons.education,
+          label: '职能部门',
+          onTap: () => setState(() => _selectedTab = 2),
+        ),
+        const SizedBox(height: FluentSpacing.xxs),
+        buildSettingsNavItem(
+          context: context,
+          index: 3,
+          selectedIndex: _selectedTab,
+          icon: FluentIcons.library,
+          label: '教学单位',
+          onTap: () => setState(() => _selectedTab = 3),
+        ),
+        const SizedBox(height: FluentSpacing.xxs),
+        buildSettingsNavItem(
+          context: context,
+          index: 4,
+          selectedIndex: _selectedTab,
+          icon: FluentIcons.chat,
+          label: '微信推文',
+          onTap: () => setState(() => _selectedTab = 4),
+        ),
+      ],
+    );
+  }
+
+  /// 构建窄屏分区下拉框。
+  Widget _buildSettingsTabCombo(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(FluentIcons.global_nav_button, size: 16),
+        const SizedBox(width: FluentSpacing.s),
+        Expanded(
+          child: ComboBox<int>(
+            value: _selectedTab,
+            isExpanded: true,
+            items: const [
+              ComboBoxItem(value: 0, child: Text('常规设置')),
+              ComboBoxItem(value: 1, child: Text('安全设置')),
+              ComboBoxItem(value: 2, child: Text('职能部门')),
+              ComboBoxItem(value: 3, child: Text('教学单位')),
+              ComboBoxItem(value: 4, child: Text('微信推文')),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _selectedTab = value);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建带动画的滚动内容区。
+  Widget _buildScrollableContent(EdgeInsets padding) {
+    return SingleChildScrollView(
+      padding: padding,
+      child: _buildContentPanel(context)
+          .animate(key: ValueKey(_selectedTab))
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.02, end: 0),
     );
   }
 
