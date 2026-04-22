@@ -120,6 +120,7 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeMathStudentDevelopment: 'college_math',
     MessageCategory.collegeArtNews: 'college_art',
     MessageCategory.collegeVteNews: 'college_vte',
+    MessageCategory.collegeVteNotice: 'college_vte',
     MessageCategory.collegeVtNews: 'college_vt',
     MessageCategory.collegeMarxNews: 'college_marx',
     MessageCategory.collegeCeNews: 'college_ce',
@@ -820,7 +821,10 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.collegeArt:
         return [MessageCategory.collegeArtNews];
       case MessageSourceName.collegeVte:
-        return [MessageCategory.collegeVteNews];
+        return [
+          MessageCategory.collegeVteNews,
+          MessageCategory.collegeVteNotice,
+        ];
       case MessageSourceName.collegeVt:
         return [MessageCategory.collegeVtNews];
       case MessageSourceName.collegeMarx:

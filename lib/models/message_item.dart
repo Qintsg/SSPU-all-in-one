@@ -265,8 +265,11 @@ enum MessageCategory {
   /// 艺术与设计学院动态
   collegeArtNews('艺设学院动态'),
 
-  /// 职业技术教师教育学院动态
-  collegeVteNews('职师学院动态'),
+  /// 职业技术教师教育学院新闻动态
+  collegeVteNews('新闻动态'),
+
+  /// 职业技术教师教育学院通知公告
+  collegeVteNotice('通知公告'),
 
   /// 职业技术学院动态
   collegeVtNews('职技学院动态'),
