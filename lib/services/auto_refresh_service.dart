@@ -700,14 +700,9 @@ class AutoRefreshService {
     }
   }
 
-<<<<<<< HEAD
   /// 重新加载某个渠道的定时器配置。
+  /// 设置页修改间隔后调用此方法使新间隔生效。
   /// [channelKey] 可传设置页渠道 ID，也可传内部定时器 key。
-=======
-  /// 重新加载某个渠道的定时器配置
-  /// 设置页修改间隔后调用此方法使新间隔生效
-  /// [channelKey] 可传设置页渠道 ID，也可传内部定时器 key
->>>>>>> b08c2da (feat(info): 接入学校官网三类消息)
   Future<void> reloadChannel(String channelKey) async {
     final timerKeys = _timerKeysForChannel(channelKey);
     if (timerKeys.length != 1 || timerKeys.single != channelKey) {

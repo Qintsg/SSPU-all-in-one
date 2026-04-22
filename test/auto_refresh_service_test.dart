@@ -16,7 +16,7 @@ void main() {
     // 多子栏目渠道共用一个设置项，重载时必须展开到所有内部定时器。
     expect(
       service.debugTimerKeysForChannel('jwc'),
-      equals(['jwcStudent', 'jwcTeacher']),
+      equals(['jwcTeaching', 'jwcStudent', 'jwcTeacher']),
     );
     expect(
       service.debugTimerKeysForChannel('sports'),
@@ -44,6 +44,7 @@ void main() {
       service.debugTimerKeysForChannel('latest_info'),
       equals(['latestInfo']),
     );
+    expect(service.debugTimerKeysForChannel('sspu_news'), equals(['sspuNews']));
     expect(
       service.debugTimerKeysForChannel('sspu_notice'),
       equals(['sspuNotice']),
