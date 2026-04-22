@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sspu_all_in_one/app.dart';
 import 'package:sspu_all_in_one/main.dart';
+import 'package:sspu_all_in_one/pages/webview_page.dart';
 
 void main() {
   testWidgets('应用启动冒烟测试', (WidgetTester tester) async {
@@ -44,5 +45,21 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     }
+  });
+
+  testWidgets('WebView 遇到无效链接时显示错误页', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const FluentApp(
+        home: WebViewPage(
+          url: 'https://wywh.sspu.edu.cnjavascript:void(0);',
+          initialTitle: '无效链接',
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // 历史缓存中的非法 URL 不应继续传给 WebView 构造器。
+    expect(find.text('链接无效，无法打开'), findsOneWidget);
+    expect(find.text('返回'), findsOneWidget);
   });
 }
