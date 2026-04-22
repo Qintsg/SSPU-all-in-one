@@ -136,8 +136,8 @@ enum MessageCategory {
   /// 教务处教师专栏 (898)
   jwcTeacher('教师专栏'),
 
-  /// 信息技术中心资讯 (zxxx)
-  itcNews('信息技术中心'),
+  /// 信息技术中心消息 (zxxx)
+  itcNews('消息'),
 
   /// 教务处教学动态 (895)
   jwcTeaching('教学动态'),
