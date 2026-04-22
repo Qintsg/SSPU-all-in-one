@@ -40,6 +40,21 @@ class _InfoPageState extends State<InfoPage> {
   /// 是否正在加载
   bool _isLoading = false;
 
+  /// 是否正在刷新官网消息。
+  bool _isRefreshingSchoolWebsite = false;
+
+  /// 是否正在刷新微信公众号消息。
+  bool _isRefreshingWechat = false;
+
+  /// 刷新进度提示文本。
+  String _refreshProgressText = '';
+
+  /// 已完成的刷新任务数。
+  int _refreshCompleted = 0;
+
+  /// 总刷新任务数。
+  int _refreshTotal = 0;
+
   /// 微信公众号来源是否已完成公众号平台认证。
   bool _wechatSourceConfigured = false;
 
@@ -212,27 +227,61 @@ class _InfoPageState extends State<InfoPage> {
     final count = maxCount ?? await _showFetchCountDialog();
     if (count == null) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isRefreshingSchoolWebsite = true;
+      _refreshProgressText = '正在准备刷新官网消息...';
+      _refreshCompleted = 0;
+      _refreshTotal = 0;
+    });
 
     try {
       // 仅抓取官网/信息中心渠道，避免将微信公众号刷新串进官网刷新链路。
-      final newMessages = await _autoRefreshService
-          .fetchEnabledSchoolWebsiteMessages(maxCount: count);
+      final allFetched = await _autoRefreshService
+          .fetchEnabledSchoolWebsiteMessages(
+            maxCount: count,
+            onBatchCompleted: (messages, completed, total) async {
+              final merged = _stateService.mergeMessages(
+                _allMessages,
+                messages,
+              );
+              _allMessages
+                ..clear()
+                ..addAll(merged);
+              await _stateService.saveMessages(_allMessages);
+              await _filterByEnabledChannels();
+              if (!mounted) return;
+              setState(() {
+                _refreshCompleted = completed;
+                _refreshTotal = total;
+                _refreshProgressText =
+                    '已完成 $completed / $total 个渠道，新增 ${messages.length} 条';
+              });
+            },
+          );
 
-      // 与已有消息合并（不丢失旧数据）
-      final merged = _stateService.mergeMessages(_allMessages, newMessages);
-      _allMessages
-        ..clear()
-        ..addAll(merged);
-
-      // 持久化合并后的全部消息
-      await _stateService.saveMessages(_allMessages);
-
-      // 根据渠道开关过滤并排序
-      await _filterByEnabledChannels();
+      if (mounted) {
+        displayInfoBar(
+          context,
+          builder: (ctx, close) => InfoBar(
+            title: Text('官网消息刷新完成，获取 ${allFetched.length} 条候选消息'),
+            severity: InfoBarSeverity.success,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isRefreshingSchoolWebsite = false;
+          _refreshProgressText = '';
+          _refreshCompleted = 0;
+          _refreshTotal = 0;
+        });
       }
     }
   }
@@ -264,7 +313,13 @@ class _InfoPageState extends State<InfoPage> {
     }
 
     _wechatSourceConfigured = true;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isRefreshingWechat = true;
+      _refreshProgressText = '正在刷新微信公众号文章...';
+      _refreshCompleted = 0;
+      _refreshTotal = 0;
+    });
 
     try {
       final persistedMessages = await _stateService.loadMessages();
@@ -343,7 +398,13 @@ class _InfoPageState extends State<InfoPage> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isRefreshingWechat = false;
+          _refreshProgressText = '';
+          _refreshCompleted = 0;
+          _refreshTotal = 0;
+        });
       }
     }
   }
@@ -566,6 +627,10 @@ class _InfoPageState extends State<InfoPage> {
           children: [
             // ==================== 操作栏 ====================
             _buildActionBar(theme),
+            if (_isLoading) ...[
+              const SizedBox(height: FluentSpacing.s),
+              _buildRefreshProgress(theme),
+            ],
             const SizedBox(height: FluentSpacing.m),
 
             // ==================== 搜索栏 ====================
@@ -581,7 +646,7 @@ class _InfoPageState extends State<InfoPage> {
 
             // ==================== 消息列表 ====================
             Expanded(
-              child: _isLoading
+              child: _isLoading && _filteredMessages.isEmpty
                   ? const Center(child: ProgressRing())
                   : _filteredMessages.isEmpty
                   ? Center(
@@ -650,12 +715,19 @@ class _InfoPageState extends State<InfoPage> {
         // 刷新官网消息
         Button(
           onPressed: _isLoading ? null : () => _refreshSchoolWebsite(),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(FluentIcons.refresh, size: 14),
-              SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
-              Text('刷新官网消息'),
+              if (_isRefreshingSchoolWebsite)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: ProgressRing(strokeWidth: 2),
+                )
+              else
+                const Icon(FluentIcons.refresh, size: 14),
+              const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
+              const Text('刷新官网消息'),
             ],
           ),
         ),
@@ -664,16 +736,50 @@ class _InfoPageState extends State<InfoPage> {
           onPressed: _isLoading || !_wechatSourceConfigured
               ? null
               : _refreshWechatArticles,
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(FluentIcons.refresh, size: 14),
-              SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
-              Text('刷新微信公众号消息'),
+              if (_isRefreshingWechat)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: ProgressRing(strokeWidth: 2),
+                )
+              else
+                const Icon(FluentIcons.refresh, size: 14),
+              const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
+              const Text('刷新微信公众号消息'),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  /// 构建刷新进度条。
+  Widget _buildRefreshProgress(FluentThemeData theme) {
+    final progressValue = _refreshTotal <= 0
+        ? null
+        : (_refreshCompleted / _refreshTotal * 100).clamp(0.0, 100.0);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(FluentSpacing.s),
+      decoration: BoxDecoration(
+        color: theme.inactiveColor.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ProgressBar(value: progressValue),
+          const SizedBox(height: FluentSpacing.xs),
+          Text(
+            _refreshProgressText.isEmpty ? '正在刷新...' : _refreshProgressText,
+            style: theme.typography.caption,
+          ),
+        ],
+      ),
     );
   }
 
