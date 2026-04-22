@@ -63,6 +63,7 @@ class AutoRefreshService {
     'notice',
     'jwc',
     'itc',
+    'sspu_news',
     'sspu_notice',
     'sspu_activity',
     'sports',
@@ -70,6 +71,18 @@ class AutoRefreshService {
     'construction',
     'news_center',
     'student_affairs',
+    'logistics_center',
+    'foreign_student_office',
+    'intl_exchange_office',
+    'admissions_office',
+    'hr_office',
+    'research_office',
+    'union',
+    'party_org_dept',
+    'united_front_dept',
+    'party_office',
+    'youth_league',
+    'assets_lab_office',
     'college_cs',
     'college_im',
     'college_re',
@@ -87,6 +100,7 @@ class AutoRefreshService {
     'center_art_edu',
     'center_intl',
     'center_innov',
+    'center_training',
     'graduate',
     'lib_center',
     'wechat_public',
@@ -99,7 +113,9 @@ class AutoRefreshService {
       case 'latest_info':
         return ['latestInfo'];
       case 'jwc':
-        return ['jwcStudent', 'jwcTeacher'];
+        return ['jwcTeaching', 'jwcStudent', 'jwcTeacher'];
+      case 'sspu_news':
+        return ['sspuNews'];
       case 'sspu_notice':
         return ['sspuNotice'];
       case 'sspu_activity':
@@ -157,6 +173,17 @@ class AutoRefreshService {
       ),
     );
 
+    // 教务处教学动态
+    await _setupTimer(
+      channelKey: 'jwcTeaching',
+      getInterval: () => _stateService.getChannelInterval('jwc'),
+      isEnabled: () => _stateService.isChannelEnabled('jwc'),
+      fetchMessages: (knownMessageIds) => _jwcService.fetchTeachingNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
+    );
+
     // 教务处学生专栏
     await _setupTimer(
       channelKey: 'jwcStudent',
@@ -190,6 +217,17 @@ class AutoRefreshService {
       ),
     );
 
+    // 学校官网学校新闻
+    await _setupTimer(
+      channelKey: 'sspuNews',
+      getInterval: () => _stateService.getChannelInterval('sspu_news'),
+      isEnabled: () => _stateService.isChannelEnabled('sspu_news'),
+      fetchMessages: (knownMessageIds) => _officialService.fetchNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
+    );
+
     // 学校官网通知公告
     await _setupTimer(
       channelKey: 'sspuNotice',
@@ -201,7 +239,7 @@ class AutoRefreshService {
       ),
     );
 
-    // 学校官网学术活动讲座
+    // 学校官网校内活动
     await _setupTimer(
       channelKey: 'sspuActivity',
       getInterval: () => _stateService.getChannelInterval('sspu_activity'),
@@ -256,22 +294,26 @@ class AutoRefreshService {
       ),
     );
 
-    // 校区建设办要闻
+    // 基建处建设要闻
     await _setupTimer(
       channelKey: 'constructionNews',
       getInterval: () => _stateService.getChannelInterval('construction'),
       isEnabled: () => _stateService.isChannelEnabled('construction'),
-      fetchMessages: (knownMessageIds) =>
-          _constructionService.fetchNews(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _constructionService.fetchNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
-    // 校区建设办通知
+    // 基建处通知公告
     await _setupTimer(
       channelKey: 'constructionNotice',
       getInterval: () => _stateService.getChannelInterval('construction'),
       isEnabled: () => _stateService.isChannelEnabled('construction'),
-      fetchMessages: (knownMessageIds) =>
-          _constructionService.fetchNotices(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _constructionService.fetchNotices(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 新闻网综合新闻
@@ -279,8 +321,10 @@ class AutoRefreshService {
       channelKey: 'campusNews',
       getInterval: () => _stateService.getChannelInterval('news_center'),
       isEnabled: () => _stateService.isChannelEnabled('news_center'),
-      fetchMessages: (knownMessageIds) =>
-          _campusService.fetchCampusNews(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _campusService.fetchCampusNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 学生处学工要闻
@@ -288,8 +332,10 @@ class AutoRefreshService {
       channelKey: 'studentNews',
       getInterval: () => _stateService.getChannelInterval('student_affairs'),
       isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-      fetchMessages: (knownMessageIds) =>
-          _studentService.fetchNews(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _studentService.fetchNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 学生处通知公告
@@ -297,13 +343,27 @@ class AutoRefreshService {
       channelKey: 'studentNotice',
       getInterval: () => _stateService.getChannelInterval('student_affairs'),
       isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-      fetchMessages: (knownMessageIds) =>
-          _studentService.fetchNotices(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _studentService.fetchNotices(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
-    // ==================== 教学单位渠道（19个学院/部门） ====================
-    // 所有学院共用 CollegeNewsService，通过 channelId 区分解析配置
-    final collegeChannelIds = [
+    // ==================== 配置驱动站点渠道 ====================
+    // 学院、中心及职能部门共用 CollegeNewsService，通过 channelId 区分解析配置。
+    final siteChannelIds = [
+      'logistics_center',
+      'foreign_student_office',
+      'intl_exchange_office',
+      'admissions_office',
+      'hr_office',
+      'research_office',
+      'union',
+      'party_org_dept',
+      'united_front_dept',
+      'party_office',
+      'youth_league',
+      'assets_lab_office',
       'college_cs',
       'college_im',
       'college_re',
@@ -321,10 +381,11 @@ class AutoRefreshService {
       'center_art_edu',
       'center_intl',
       'center_innov',
+      'center_training',
       'graduate',
       'lib_center',
     ];
-    for (final channelId in collegeChannelIds) {
+    for (final channelId in siteChannelIds) {
       await _setupTimer(
         channelKey: channelId,
         getInterval: () => _stateService.getChannelInterval(channelId),
@@ -383,6 +444,12 @@ class AutoRefreshService {
     // 职能部门
     if (await _stateService.isChannelEnabled('jwc')) {
       futures.add(
+        _jwcService.fetchTeachingNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
+      );
+      futures.add(
         _jwcService.fetchStudentNews(
           maxCount: maxCount,
           knownMessageIds: knownMessageIds,
@@ -406,6 +473,14 @@ class AutoRefreshService {
     if (await _stateService.isChannelEnabled('sspu_notice')) {
       futures.add(
         _officialService.fetchNotices(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
+      );
+    }
+    if (await _stateService.isChannelEnabled('sspu_news')) {
+      futures.add(
+        _officialService.fetchNews(
           maxCount: maxCount,
           knownMessageIds: knownMessageIds,
         ),
@@ -449,26 +524,55 @@ class AutoRefreshService {
     }
     if (await _stateService.isChannelEnabled('construction')) {
       futures.add(
-        _constructionService.fetchNews(knownMessageIds: knownMessageIds),
+        _constructionService.fetchNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
       futures.add(
-        _constructionService.fetchNotices(knownMessageIds: knownMessageIds),
+        _constructionService.fetchNotices(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
     if (await _stateService.isChannelEnabled('news_center')) {
       futures.add(
-        _campusService.fetchCampusNews(knownMessageIds: knownMessageIds),
+        _campusService.fetchCampusNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
     if (await _stateService.isChannelEnabled('student_affairs')) {
-      futures.add(_studentService.fetchNews(knownMessageIds: knownMessageIds));
       futures.add(
-        _studentService.fetchNotices(knownMessageIds: knownMessageIds),
+        _studentService.fetchNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
+      );
+      futures.add(
+        _studentService.fetchNotices(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
 
-    // 教学单位（19个学院/部门）
-    const collegeIds = [
+    // 配置驱动站点（教学单位 + 职能部门）
+    const siteChannelIds = [
+      'logistics_center',
+      'foreign_student_office',
+      'intl_exchange_office',
+      'admissions_office',
+      'hr_office',
+      'research_office',
+      'union',
+      'party_org_dept',
+      'united_front_dept',
+      'party_office',
+      'youth_league',
+      'assets_lab_office',
       'college_cs',
       'college_im',
       'college_re',
@@ -486,10 +590,11 @@ class AutoRefreshService {
       'center_art_edu',
       'center_intl',
       'center_innov',
+      'center_training',
       'graduate',
       'lib_center',
     ];
-    for (final id in collegeIds) {
+    for (final id in siteChannelIds) {
       if (await _stateService.isChannelEnabled(id)) {
         futures.add(
           _collegeService.fetchNews(id, knownMessageIds: knownMessageIds),
@@ -596,6 +701,7 @@ class AutoRefreshService {
   }
 
   /// 重新加载某个渠道的定时器配置。
+  /// 设置页修改间隔后调用此方法使新间隔生效。
   /// [channelKey] 可传设置页渠道 ID，也可传内部定时器 key。
   Future<void> reloadChannel(String channelKey) async {
     final timerKeys = _timerKeysForChannel(channelKey);
@@ -624,6 +730,17 @@ class AutoRefreshService {
           getInterval: _stateService.getNoticeInterval,
           isEnabled: _stateService.isNoticeEnabled,
           fetchMessages: (knownMessageIds) => _newsService.fetchNotices(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
+        );
+        break;
+      case 'jwcTeaching':
+        await _setupTimer(
+          channelKey: 'jwcTeaching',
+          getInterval: () => _stateService.getChannelInterval('jwc'),
+          isEnabled: () => _stateService.isChannelEnabled('jwc'),
+          fetchMessages: (knownMessageIds) => _jwcService.fetchTeachingNews(
             maxCount: _defaultFetchCount,
             knownMessageIds: knownMessageIds,
           ),
@@ -668,6 +785,17 @@ class AutoRefreshService {
           getInterval: () => _stateService.getChannelInterval('sspu_notice'),
           isEnabled: () => _stateService.isChannelEnabled('sspu_notice'),
           fetchMessages: (knownMessageIds) => _officialService.fetchNotices(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
+        );
+        break;
+      case 'sspuNews':
+        await _setupTimer(
+          channelKey: 'sspuNews',
+          getInterval: () => _stateService.getChannelInterval('sspu_news'),
+          isEnabled: () => _stateService.isChannelEnabled('sspu_news'),
+          fetchMessages: (knownMessageIds) => _officialService.fetchNews(
             maxCount: _defaultFetchCount,
             knownMessageIds: knownMessageIds,
           ),
@@ -733,8 +861,10 @@ class AutoRefreshService {
           channelKey: 'constructionNews',
           getInterval: () => _stateService.getChannelInterval('construction'),
           isEnabled: () => _stateService.isChannelEnabled('construction'),
-          fetchMessages: (knownMessageIds) =>
-              _constructionService.fetchNews(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _constructionService.fetchNews(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       case 'constructionNotice':
@@ -743,6 +873,7 @@ class AutoRefreshService {
           getInterval: () => _stateService.getChannelInterval('construction'),
           isEnabled: () => _stateService.isChannelEnabled('construction'),
           fetchMessages: (knownMessageIds) => _constructionService.fetchNotices(
+            maxCount: _defaultFetchCount,
             knownMessageIds: knownMessageIds,
           ),
         );
@@ -752,8 +883,10 @@ class AutoRefreshService {
           channelKey: 'campusNews',
           getInterval: () => _stateService.getChannelInterval('news_center'),
           isEnabled: () => _stateService.isChannelEnabled('news_center'),
-          fetchMessages: (knownMessageIds) =>
-              _campusService.fetchCampusNews(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _campusService.fetchCampusNews(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       case 'studentNews':
@@ -762,8 +895,10 @@ class AutoRefreshService {
           getInterval: () =>
               _stateService.getChannelInterval('student_affairs'),
           isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-          fetchMessages: (knownMessageIds) =>
-              _studentService.fetchNews(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _studentService.fetchNews(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       case 'studentNotice':
@@ -772,11 +907,25 @@ class AutoRefreshService {
           getInterval: () =>
               _stateService.getChannelInterval('student_affairs'),
           isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-          fetchMessages: (knownMessageIds) =>
-              _studentService.fetchNotices(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _studentService.fetchNotices(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
-      // 教学单位渠道（19个学院/部门，统一处理）
+      // 配置驱动站点渠道（教学单位 / 中心 / 职能部门统一处理）
+      case 'logistics_center':
+      case 'foreign_student_office':
+      case 'intl_exchange_office':
+      case 'admissions_office':
+      case 'hr_office':
+      case 'research_office':
+      case 'union':
+      case 'party_org_dept':
+      case 'united_front_dept':
+      case 'party_office':
+      case 'youth_league':
+      case 'assets_lab_office':
       case 'college_cs':
       case 'college_im':
       case 'college_re':
@@ -794,6 +943,7 @@ class AutoRefreshService {
       case 'center_art_edu':
       case 'center_intl':
       case 'center_innov':
+      case 'center_training':
       case 'graduate':
       case 'lib_center':
         await _setupTimer(
