@@ -132,7 +132,11 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeEmStudentDevelopment: 'college_em',
     MessageCategory.collegeEmResearch: 'college_em',
     MessageCategory.collegeIcNews: 'college_ic',
+    MessageCategory.collegeIcNotice: 'college_ic',
+    MessageCategory.collegeIcAcademic: 'college_ic',
+    MessageCategory.collegeIcResearch: 'college_ic',
     MessageCategory.collegeImheNews: 'college_imhe',
+    MessageCategory.collegeImheNotice: 'college_imhe',
     MessageCategory.collegeEconNews: 'college_econ',
     MessageCategory.collegeEconNotice: 'college_econ',
     MessageCategory.collegeEconStudentDevelopment: 'college_econ',
@@ -157,13 +161,19 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeCeNews: 'college_ce',
     MessageCategory.collegeCeNotice: 'college_ce',
     MessageCategory.centerArtEduNews: 'center_art_edu',
+    MessageCategory.centerArtEduLecture: 'center_art_edu',
     MessageCategory.centerIntlNews: 'center_intl',
     MessageCategory.centerIntlNotice: 'center_intl',
     MessageCategory.centerInnovNews: 'center_innov',
+    MessageCategory.centerInnovNotice: 'center_innov',
+    MessageCategory.centerInnovCompetition: 'center_innov',
+    MessageCategory.centerInnovPractice: 'center_innov',
     MessageCategory.centerTrainingNews: 'center_training',
     MessageCategory.centerTrainingNotice: 'center_training',
     MessageCategory.graduateNews: 'graduate',
     MessageCategory.libCenterNews: 'lib_center',
+    MessageCategory.libCenterNotice: 'lib_center',
+    MessageCategory.libCenterLecture: 'lib_center',
   };
 
   @override
@@ -892,9 +902,17 @@ class _InfoPageState extends State<InfoPage> {
           MessageCategory.collegeEmResearch,
         ];
       case MessageSourceName.collegeIc:
-        return [MessageCategory.collegeIcNews];
+        return [
+          MessageCategory.collegeIcNews,
+          MessageCategory.collegeIcNotice,
+          MessageCategory.collegeIcAcademic,
+          MessageCategory.collegeIcResearch,
+        ];
       case MessageSourceName.collegeImhe:
-        return [MessageCategory.collegeImheNews];
+        return [
+          MessageCategory.collegeImheNews,
+          MessageCategory.collegeImheNotice,
+        ];
       case MessageSourceName.collegeEcon:
         return [
           MessageCategory.collegeEconNews,
@@ -935,14 +953,22 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.collegeCe:
         return [MessageCategory.collegeCeNews, MessageCategory.collegeCeNotice];
       case MessageSourceName.centerArtEdu:
-        return [MessageCategory.centerArtEduNews];
+        return [
+          MessageCategory.centerArtEduNews,
+          MessageCategory.centerArtEduLecture,
+        ];
       case MessageSourceName.centerIntl:
         return [
           MessageCategory.centerIntlNews,
           MessageCategory.centerIntlNotice,
         ];
       case MessageSourceName.centerInnov:
-        return [MessageCategory.centerInnovNews];
+        return [
+          MessageCategory.centerInnovNews,
+          MessageCategory.centerInnovNotice,
+          MessageCategory.centerInnovCompetition,
+          MessageCategory.centerInnovPractice,
+        ];
       case MessageSourceName.centerTraining:
         return [
           MessageCategory.centerTrainingNews,
@@ -951,7 +977,11 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.graduate:
         return [MessageCategory.graduateNews];
       case MessageSourceName.libCenter:
-        return [MessageCategory.libCenterNews];
+        return [
+          MessageCategory.libCenterNews,
+          MessageCategory.libCenterNotice,
+          MessageCategory.libCenterLecture,
+        ];
     }
   }
 

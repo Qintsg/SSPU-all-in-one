@@ -356,7 +356,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'college_ic',
     name: '集成电路学院',
-    description: '学院通知与公告',
+    description: '学院动态、通知公告、学术活动与科研动态',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -366,7 +366,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'college_imhe',
     name: '智能医学与健康工程学院',
-    description: '学院通知与公告',
+    description: '学院新闻与通知公告',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -406,7 +406,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'college_art',
     name: '艺术与设计学院',
-    description: '学院通知与公告',
+    description: '学院动态',
     icon: FluentIcons.video,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -456,7 +456,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'center_art_edu',
     name: '艺术教育中心',
-    description: '中心通知与公告',
+    description: '新闻动态与讲座演出',
     icon: FluentIcons.video,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -476,7 +476,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'center_innov',
     name: '创新创业教育中心',
-    description: '中心通知与公告',
+    description: '双创教育、通知公告、实践竞赛与创业实践',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -506,7 +506,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'lib_center',
     name: '图书馆',
-    description: '图书馆通知与服务公告',
+    description: '新闻动态、通知公告与讲座培训',
     icon: FluentIcons.library,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -578,6 +578,16 @@ const Map<String, List<SubCategory>> channelSubcategories = {
     SubCategory(MessageCategory.collegeEmStudentDevelopment, '育人园地'),
     SubCategory(MessageCategory.collegeEmResearch, '科学研究'),
   ],
+  'college_ic': [
+    SubCategory(MessageCategory.collegeIcNews, '学院动态'),
+    SubCategory(MessageCategory.collegeIcNotice, '通知公告'),
+    SubCategory(MessageCategory.collegeIcAcademic, '学术活动'),
+    SubCategory(MessageCategory.collegeIcResearch, '科研动态'),
+  ],
+  'college_imhe': [
+    SubCategory(MessageCategory.collegeImheNews, '学院新闻'),
+    SubCategory(MessageCategory.collegeImheNotice, '通知公告'),
+  ],
   'college_econ': [
     SubCategory(MessageCategory.collegeEconNews, '学院动态'),
     SubCategory(MessageCategory.collegeEconNotice, '通知公告'),
@@ -614,13 +624,28 @@ const Map<String, List<SubCategory>> channelSubcategories = {
     SubCategory(MessageCategory.collegeCeNews, '学院新闻'),
     SubCategory(MessageCategory.collegeCeNotice, '学院公告'),
   ],
+  'center_art_edu': [
+    SubCategory(MessageCategory.centerArtEduNews, '新闻动态'),
+    SubCategory(MessageCategory.centerArtEduLecture, '讲座演出'),
+  ],
   'center_intl': [
     SubCategory(MessageCategory.centerIntlNews, '新闻'),
     SubCategory(MessageCategory.centerIntlNotice, '公告'),
   ],
+  'center_innov': [
+    SubCategory(MessageCategory.centerInnovNews, '双创教育'),
+    SubCategory(MessageCategory.centerInnovNotice, '通知公告'),
+    SubCategory(MessageCategory.centerInnovCompetition, '实践竞赛'),
+    SubCategory(MessageCategory.centerInnovPractice, '创业实践'),
+  ],
   'center_training': [
     SubCategory(MessageCategory.centerTrainingNews, '中心动态'),
     SubCategory(MessageCategory.centerTrainingNotice, '通知公告'),
+  ],
+  'lib_center': [
+    SubCategory(MessageCategory.libCenterNews, '新闻动态'),
+    SubCategory(MessageCategory.libCenterNotice, '通知公告'),
+    SubCategory(MessageCategory.libCenterLecture, '讲座培训'),
   ],
   'logistics_center': [
     SubCategory(MessageCategory.logisticsNotice, '通知'),

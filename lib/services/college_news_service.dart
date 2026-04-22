@@ -166,6 +166,20 @@ class CollegeNewsService {
     MessageCategory.collegeEmResearch: ['/5805/list.htm'],
   };
 
+  /// 集成电路学院的四个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeIcCategoryPaths = {
+    MessageCategory.collegeIcNews: ['/_s155/5962/list.psp'],
+    MessageCategory.collegeIcNotice: ['/_s155/5963/list.psp'],
+    MessageCategory.collegeIcAcademic: ['/_s155/xshd/list.psp'],
+    MessageCategory.collegeIcResearch: ['/_s155/5982/list.psp'],
+  };
+
+  /// 智能医学与健康工程学院的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeImheCategoryPaths = {
+    MessageCategory.collegeImheNews: ['/6006/list.htm'],
+    MessageCategory.collegeImheNotice: ['/6007/list.htm'],
+  };
+
   /// 经管学院的四个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeEconCategoryPaths = {
     MessageCategory.collegeEconNews: ['/_s33/1083/list.psp'],
@@ -188,6 +202,11 @@ class CollegeNewsService {
     MessageCategory.collegeMathNotice: ['/2605/list.htm'],
     MessageCategory.collegeMathAcademic: ['/xsdt2/list.htm'],
     MessageCategory.collegeMathStudentDevelopment: ['/2607/list.htm'],
+  };
+
+  /// 艺术与设计学院的聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeArtCategoryPaths = {
+    MessageCategory.collegeArtNews: ['/2738/list.htm'],
   };
 
   /// 职师学院的两个聚合分类配置。
@@ -216,10 +235,24 @@ class CollegeNewsService {
     MessageCategory.collegeCeNotice: ['/xygg/list.htm'],
   };
 
+  /// 艺术教育中心的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _centerArtEduCategoryPaths = {
+    MessageCategory.centerArtEduNews: ['/351/list.htm'],
+    MessageCategory.centerArtEduLecture: ['/354/list.htm'],
+  };
+
   /// 国教中心的两个聚合分类配置。
   static const Map<MessageCategory, List<String>> _centerIntlCategoryPaths = {
     MessageCategory.centerIntlNews: ['/5894/list.htm'],
     MessageCategory.centerIntlNotice: ['/649/list.htm'],
+  };
+
+  /// 创新创业教育中心的四个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _centerInnovCategoryPaths = {
+    MessageCategory.centerInnovNews: ['/5744/list.htm'],
+    MessageCategory.centerInnovNotice: ['/5749/list.htm'],
+    MessageCategory.centerInnovCompetition: ['/5745/list.htm'],
+    MessageCategory.centerInnovPractice: ['/5746/list.htm'],
   };
 
   /// 工程训练与创新教育中心的两个聚合分类配置。
@@ -228,6 +261,13 @@ class CollegeNewsService {
         MessageCategory.centerTrainingNews: ['/3840/list.htm'],
         MessageCategory.centerTrainingNotice: ['/3841/list.htm'],
       };
+
+  /// 图书馆的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _libCenterCategoryPaths = {
+    MessageCategory.libCenterNews: ['/2631/list.htm'],
+    MessageCategory.libCenterNotice: ['/2632/list.htm'],
+    MessageCategory.libCenterLecture: ['/2633/list.htm'],
+  };
 
   /// 后勤服务中心的两个聚合分类配置。
   static const Map<MessageCategory, List<String>>
@@ -607,6 +647,12 @@ class CollegeNewsService {
     if (channelId == 'college_em') {
       return _fetchCollegeEmNews(knownMessageIds: knownMessageIds);
     }
+    if (channelId == 'college_ic') {
+      return _fetchCollegeIcNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'college_imhe') {
+      return _fetchCollegeImheNews(knownMessageIds: knownMessageIds);
+    }
     if (channelId == 'college_econ') {
       return _fetchCollegeEconNews(knownMessageIds: knownMessageIds);
     }
@@ -615,6 +661,9 @@ class CollegeNewsService {
     }
     if (channelId == 'college_math') {
       return _fetchCollegeMathNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'college_art') {
+      return _fetchCollegeArtNews(knownMessageIds: knownMessageIds);
     }
     if (channelId == 'college_vte') {
       return _fetchCollegeVteNews(knownMessageIds: knownMessageIds);
@@ -628,8 +677,14 @@ class CollegeNewsService {
     if (channelId == 'college_ce') {
       return _fetchCollegeCeNews(knownMessageIds: knownMessageIds);
     }
+    if (channelId == 'center_art_edu') {
+      return _fetchCenterArtEduNews(knownMessageIds: knownMessageIds);
+    }
     if (channelId == 'center_intl') {
       return _fetchCenterIntlNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'center_innov') {
+      return _fetchCenterInnovNews(knownMessageIds: knownMessageIds);
     }
     if (channelId == 'center_training') {
       return _fetchCenterTrainingNews(knownMessageIds: knownMessageIds);
@@ -645,6 +700,9 @@ class CollegeNewsService {
     }
     if (channelId == 'graduate') {
       return _fetchGraduateNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'lib_center') {
+      return _fetchLibCenterNews(knownMessageIds: knownMessageIds);
     }
     if (channelId == 'admissions_office') {
       return _fetchAdmissionsOfficeNews(knownMessageIds: knownMessageIds);
@@ -1115,6 +1173,150 @@ class CollegeNewsService {
     });
 
     return messages;
+  }
+
+  /// 集成电路学院使用四个列表页聚合成四个分类。
+  Future<List<MessageItem>> _fetchCollegeIcNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _collegeIcCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://sic.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.collegeIc,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 智能医学与健康工程学院使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchCollegeImheNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _collegeImheCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://imhe.sspu.edu.cn',
+          template: CollegeTemplate.customD,
+          sourceName: MessageSourceName.collegeImhe,
+          category: category,
+          customItemSelector: 'a.btt-3',
+          customTitleSelector: 'div.btt-4',
+          customDateSelector: 'div.time-1',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 艺术与设计学院使用指定列表页聚合成学院动态分类。
+  Future<List<MessageItem>> _fetchCollegeArtNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _collegeArtCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://design.sspu.edu.cn',
+          template: CollegeTemplate.customD,
+          sourceName: MessageSourceName.collegeArt,
+          category: category,
+          customItemSelector: 'div.xydt_list2_box',
+          customTitleSelector: 'div.xydt_list2_title',
+          customDateSelector: 'div.xydt_list2_bottom span',
+          customLinkSelector: 'div.xydt_list2_con > a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 艺术教育中心使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchCenterArtEduNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _centerArtEduCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://education.sspu.edu.cn',
+          template: CollegeTemplate.customD,
+          sourceName: MessageSourceName.centerArtEdu,
+          category: category,
+          customItemSelector: 'div.ListContent ul li',
+          customTitleSelector: 'span.first',
+          customDateSelector: 'span.last',
+          customLinkSelector: 'a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 创新创业教育中心使用四个列表页聚合成四个分类。
+  Future<List<MessageItem>> _fetchCenterInnovNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _centerInnovCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://cxcy.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.centerInnov,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 图书馆使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchLibCenterNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _libCenterCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://library.sspu.edu.cn',
+          template: CollegeTemplate.listA,
+          sourceName: MessageSourceName.libCenter,
+          category: category,
+          listContainerSelector: 'div.newslists ul',
+          listItemSelector: 'li.news.clearfix',
+          dateSelector: 'span.nowdate',
+          titleSelector: 'a[title]',
+          titleFromAttribute: true,
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
   }
 
   /// 后勤服务中心使用两个列表页聚合成两个分类。

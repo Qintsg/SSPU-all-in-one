@@ -340,11 +340,23 @@ enum MessageCategory {
   /// 能源与材料学院科学研究
   collegeEmResearch('科学研究'),
 
-  /// 集成电路学院动态
-  collegeIcNews('集成电路学院动态'),
+  /// 集成电路学院学院动态
+  collegeIcNews('学院动态'),
 
-  /// 智能医学与健康工程学院动态
-  collegeImheNews('智医学院动态'),
+  /// 集成电路学院通知公告
+  collegeIcNotice('通知公告'),
+
+  /// 集成电路学院学术活动
+  collegeIcAcademic('学术活动'),
+
+  /// 集成电路学院科研动态
+  collegeIcResearch('科研动态'),
+
+  /// 智能医学与健康工程学院学院新闻
+  collegeImheNews('学院新闻'),
+
+  /// 智能医学与健康工程学院通知公告
+  collegeImheNotice('通知公告'),
 
   /// 经济与管理学院学院动态
   collegeEconNews('学院动态'),
@@ -382,8 +394,8 @@ enum MessageCategory {
   /// 数理与统计学院育人园地
   collegeMathStudentDevelopment('育人园地'),
 
-  /// 艺术与设计学院动态
-  collegeArtNews('艺设学院动态'),
+  /// 艺术与设计学院学院动态
+  collegeArtNews('学院动态'),
 
   /// 职业技术教师教育学院新闻动态
   collegeVteNews('新闻动态'),
@@ -415,8 +427,11 @@ enum MessageCategory {
   /// 继续教育学院学院公告
   collegeCeNotice('学院公告'),
 
-  /// 艺术教育中心动态
-  centerArtEduNews('艺教中心动态'),
+  /// 艺术教育中心新闻动态
+  centerArtEduNews('新闻动态'),
+
+  /// 艺术教育中心讲座演出
+  centerArtEduLecture('讲座演出'),
 
   /// 国际教育中心新闻
   centerIntlNews('新闻'),
@@ -424,8 +439,17 @@ enum MessageCategory {
   /// 国际教育中心公告
   centerIntlNotice('公告'),
 
-  /// 创新创业教育中心动态
-  centerInnovNews('双创中心动态'),
+  /// 创新创业教育中心双创教育
+  centerInnovNews('双创教育'),
+
+  /// 创新创业教育中心通知公告
+  centerInnovNotice('通知公告'),
+
+  /// 创新创业教育中心实践竞赛
+  centerInnovCompetition('实践竞赛'),
+
+  /// 创新创业教育中心创业实践
+  centerInnovPractice('创业实践'),
 
   /// 工程训练与创新教育中心中心动态
   centerTrainingNews('中心动态'),
@@ -436,8 +460,14 @@ enum MessageCategory {
   /// 研究生处动态
   graduateNews('动态'),
 
-  /// 图书馆通知
-  libCenterNews('图书馆通知'),
+  /// 图书馆新闻动态
+  libCenterNews('新闻动态'),
+
+  /// 图书馆通知公告
+  libCenterNotice('通知公告'),
+
+  /// 图书馆讲座培训
+  libCenterLecture('讲座培训'),
 
   /// 微信推文占位
   wechatArticle('微信推文');
