@@ -77,6 +77,7 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.jwcStudent: 'jwc',
     MessageCategory.jwcTeacher: 'jwc',
     MessageCategory.itcNews: 'itc',
+    MessageCategory.sspuNews: 'sspu_news',
     MessageCategory.sspuNotice: 'sspu_notice',
     MessageCategory.sspuActivity: 'sspu_activity',
     MessageCategory.sportsNotice: 'sports',
@@ -715,7 +716,11 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.itc:
         return [MessageCategory.itcNews];
       case MessageSourceName.sspuOfficial:
-        return [MessageCategory.sspuNotice, MessageCategory.sspuActivity];
+        return [
+          MessageCategory.sspuNews,
+          MessageCategory.sspuNotice,
+          MessageCategory.sspuActivity,
+        ];
       case MessageSourceName.sports:
         return [MessageCategory.sportsNotice, MessageCategory.sportsEvent];
       case MessageSourceName.securityDept:

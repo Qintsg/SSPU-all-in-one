@@ -72,7 +72,7 @@ class MessageStateService {
 
   static final MessageStateService instance = MessageStateService._();
 
-  /// 渠道默认配置索引，确保服务层与设置页展示使用同一份默认值。
+  /// 渠道默认配置索引，确保服务层读取默认值时与设置页展示保持一致。
   static final Map<String, ChannelConfig> _channelDefaults = {
     for (final channel in [
       ...departmentChannels,

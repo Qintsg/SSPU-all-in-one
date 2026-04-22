@@ -63,6 +63,7 @@ class AutoRefreshService {
     'notice',
     'jwc',
     'itc',
+    'sspu_news',
     'sspu_notice',
     'sspu_activity',
     'sports',
@@ -100,6 +101,8 @@ class AutoRefreshService {
         return ['latestInfo'];
       case 'jwc':
         return ['jwcStudent', 'jwcTeacher'];
+      case 'sspu_news':
+        return ['sspuNews'];
       case 'sspu_notice':
         return ['sspuNotice'];
       case 'sspu_activity':
@@ -190,6 +193,17 @@ class AutoRefreshService {
       ),
     );
 
+    // 学校官网学校新闻
+    await _setupTimer(
+      channelKey: 'sspuNews',
+      getInterval: () => _stateService.getChannelInterval('sspu_news'),
+      isEnabled: () => _stateService.isChannelEnabled('sspu_news'),
+      fetchMessages: (knownMessageIds) => _officialService.fetchNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
+    );
+
     // 学校官网通知公告
     await _setupTimer(
       channelKey: 'sspuNotice',
@@ -201,7 +215,7 @@ class AutoRefreshService {
       ),
     );
 
-    // 学校官网学术活动讲座
+    // 学校官网校内活动
     await _setupTimer(
       channelKey: 'sspuActivity',
       getInterval: () => _stateService.getChannelInterval('sspu_activity'),
@@ -411,6 +425,14 @@ class AutoRefreshService {
         ),
       );
     }
+    if (await _stateService.isChannelEnabled('sspu_news')) {
+      futures.add(
+        _officialService.fetchNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
+      );
+    }
     if (await _stateService.isChannelEnabled('sspu_activity')) {
       futures.add(
         _officialService.fetchActivities(
@@ -595,8 +617,14 @@ class AutoRefreshService {
     }
   }
 
+<<<<<<< HEAD
   /// 重新加载某个渠道的定时器配置。
   /// [channelKey] 可传设置页渠道 ID，也可传内部定时器 key。
+=======
+  /// 重新加载某个渠道的定时器配置
+  /// 设置页修改间隔后调用此方法使新间隔生效
+  /// [channelKey] 可传设置页渠道 ID，也可传内部定时器 key
+>>>>>>> b08c2da (feat(info): 接入学校官网三类消息)
   Future<void> reloadChannel(String channelKey) async {
     final timerKeys = _timerKeysForChannel(channelKey);
     if (timerKeys.length != 1 || timerKeys.single != channelKey) {
@@ -668,6 +696,17 @@ class AutoRefreshService {
           getInterval: () => _stateService.getChannelInterval('sspu_notice'),
           isEnabled: () => _stateService.isChannelEnabled('sspu_notice'),
           fetchMessages: (knownMessageIds) => _officialService.fetchNotices(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
+        );
+        break;
+      case 'sspuNews':
+        await _setupTimer(
+          channelKey: 'sspuNews',
+          getInterval: () => _stateService.getChannelInterval('sspu_news'),
+          isEnabled: () => _stateService.isChannelEnabled('sspu_news'),
+          fetchMessages: (knownMessageIds) => _officialService.fetchNews(
             maxCount: _defaultFetchCount,
             knownMessageIds: knownMessageIds,
           ),

@@ -158,6 +158,16 @@ const List<ChannelConfig> departmentChannels = [
     defaultEnabled: true,
   ),
   ChannelConfig(
+    id: 'sspu_news',
+    name: '学校新闻',
+    description: '学校官网 — 学校新闻',
+    icon: FluentIcons.news,
+    group: ChannelGroup.department,
+    implemented: true,
+    defaultInterval: 60,
+    defaultEnabled: true,
+  ),
+  ChannelConfig(
     id: 'sspu_notice',
     name: '学校通知公告',
     description: '学校官网 — 通知公告',
@@ -169,8 +179,8 @@ const List<ChannelConfig> departmentChannels = [
   ),
   ChannelConfig(
     id: 'sspu_activity',
-    name: '学术活动讲座',
-    description: '学校官网 — 学术活动与讲座预告',
+    name: '校内活动',
+    description: '学校官网 — 校内活动',
     icon: FluentIcons.event,
     group: ChannelGroup.department,
     implemented: true,

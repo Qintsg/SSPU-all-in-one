@@ -124,8 +124,8 @@ enum MessageSourceName {
 
 /// 消息内容分类（tag3）
 enum MessageCategory {
-  /// 最新公开信息 (3148)
-  latestInfo('最新公开信息'),
+  /// 公开信息 (3148，对应网站“最新公开信息”)
+  latestInfo('公开信息'),
 
   /// 通知公示 (3149)
   notice('通知公示'),
@@ -139,11 +139,14 @@ enum MessageCategory {
   /// 信息技术中心资讯 (zxxx)
   itcNews('信息技术中心'),
 
+  /// 学校官网学校新闻 (2964)
+  sspuNews('学校新闻'),
+
   /// 学校官网通知公告 (2965)
   sspuNotice('学校通知公告'),
 
-  /// 学校官网学术活动讲座 (xsjz)
-  sspuActivity('学术活动讲座'),
+  /// 学校官网校内活动 (xsjz)
+  sspuActivity('校内活动'),
 
   /// 体育部通知公告 (342)
   sportsNotice('体育部通知'),
@@ -323,7 +326,8 @@ class MessageItem {
   /// 当天消息返回当前时间，非当天消息返回该日 00:00
   static int computeTimestamp(String date) {
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     if (date == today) {
       return now.millisecondsSinceEpoch;
     }
