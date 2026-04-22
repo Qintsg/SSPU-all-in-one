@@ -397,7 +397,7 @@ class AutoRefreshService {
       );
     }
 
-    // 微信公众号渠道（通过微信读书 API）
+    // 微信公众号渠道（通过公众号平台获取）
     await _setupTimer(
       channelKey: 'wechatPublic',
       getInterval: () => _stateService.getChannelInterval('wechat_public'),

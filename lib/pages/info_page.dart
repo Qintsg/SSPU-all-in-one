@@ -40,6 +40,9 @@ class _InfoPageState extends State<InfoPage> {
   /// 是否正在加载
   bool _isLoading = false;
 
+  /// 微信公众号来源是否已完成公众号平台认证。
+  bool _wechatSourceConfigured = false;
+
   /// 搜索关键词
   String _searchQuery = '';
 
@@ -191,6 +194,8 @@ class _InfoPageState extends State<InfoPage> {
   /// 初始化状态服务，从本地存储加载消息并根据渠道开关过滤显示
   Future<void> _initAndLoad() async {
     await _stateService.init();
+    _wechatSourceConfigured = await WechatArticleService.instance
+        .hasConfiguredSource();
     // 从本地存储加载已有消息，不弹刷新对话框
     final persisted = await _stateService.loadMessages();
     _allMessages
@@ -234,6 +239,31 @@ class _InfoPageState extends State<InfoPage> {
 
   /// 刷新微信公众号文章：通过 WechatArticleService 获取已关注公众号的推文
   Future<void> _refreshWechatArticles() async {
+    final isConfigured = await WechatArticleService.instance
+        .hasConfiguredSource();
+    if (!isConfigured) {
+      _wechatSourceConfigured = false;
+      if (mounted) {
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: const Text('未获取到微信公众号文章'),
+              content: const Text('请先在设置中完成公众号平台认证并关注目标公众号'),
+              severity: InfoBarSeverity.warning,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
+        setState(() {});
+      }
+      return;
+    }
+
+    _wechatSourceConfigured = true;
     setState(() => _isLoading = true);
 
     try {
@@ -250,7 +280,7 @@ class _InfoPageState extends State<InfoPage> {
             builder: (ctx, close) {
               return InfoBar(
                 title: const Text('未获取到微信公众号文章'),
-                content: const Text('请确认已在设置中配置微信读书 Cookie 并关注公众号'),
+                content: const Text('请确认已在设置中完成公众号平台认证并关注公众号'),
                 severity: InfoBarSeverity.warning,
                 action: IconButton(
                   icon: const Icon(FluentIcons.clear),
@@ -625,15 +655,17 @@ class _InfoPageState extends State<InfoPage> {
             ],
           ),
         ),
-        // 刷新微信公众号/服务号消息
+        // 刷新微信公众号消息
         Button(
-          onPressed: _isLoading ? null : _refreshWechatArticles,
+          onPressed: _isLoading || !_wechatSourceConfigured
+              ? null
+              : _refreshWechatArticles,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(FluentIcons.refresh, size: 14),
               SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
-              Text('刷新微信公众号/服务号消息'),
+              Text('刷新微信公众号消息'),
             ],
           ),
         ),

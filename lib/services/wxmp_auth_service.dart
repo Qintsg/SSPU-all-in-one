@@ -1,6 +1,6 @@
 /*
  * 微信公众号平台认证服务 — 管理 mp.weixin.qq.com 的 Cookie/Token
- * 作为"方式二：公众号平台"的认证基础
+ * 作为公众号平台链路的认证基础
  * @Project : SSPU-all-in-one
  * @File : wxmp_auth_service.dart
  * @Author : Qintsg
