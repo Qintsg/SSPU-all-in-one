@@ -44,8 +44,8 @@ enum MessageSourceName {
   /// 保卫处
   securityDept('保卫处'),
 
-  /// 校区建设办
-  construction('校区建设办'),
+  /// 基建处
+  construction('基建处'),
 
   /// 新闻网
   newsCenter('新闻网'),
@@ -163,11 +163,11 @@ enum MessageCategory {
   /// 保卫处宣教专栏 (1023)
   securityEducation('宣教专栏'),
 
-  /// 校区建设办要闻 (405)
+  /// 基建处建设要闻 (405)
   constructionNews('建设要闻'),
 
-  /// 校区建设办通知 (406)
-  constructionNotice('建设通知'),
+  /// 基建处通知公告 (406)
+  constructionNotice('通知公告'),
 
   /// 新闻网综合新闻 (1432)
   campusNews('综合新闻'),

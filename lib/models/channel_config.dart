@@ -129,8 +129,8 @@ const List<ChannelConfig> departmentChannels = [
   ),
   ChannelConfig(
     id: 'construction',
-    name: '校区建设办',
-    description: '校区建设动态与公告',
+    name: '基建处',
+    description: '基建处建设要闻与通知公告',
     icon: FluentIcons.home,
     group: ChannelGroup.department,
     implemented: true,
@@ -440,7 +440,7 @@ const Map<String, List<SubCategory>> channelSubcategories = {
     SubCategory(MessageCategory.securityEducation, '宣教专栏'),
   ],
   'construction': [
-    SubCategory(MessageCategory.constructionNews, '建设动态'),
+    SubCategory(MessageCategory.constructionNews, '建设要闻'),
     SubCategory(MessageCategory.constructionNotice, '通知公告'),
   ],
   'student_affairs': [
