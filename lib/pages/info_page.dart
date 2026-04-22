@@ -101,6 +101,9 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeReResearchService: 'college_re',
     MessageCategory.collegeRePartyIdeology: 'college_re',
     MessageCategory.collegeEmNews: 'college_em',
+    MessageCategory.collegeEmNotice: 'college_em',
+    MessageCategory.collegeEmStudentDevelopment: 'college_em',
+    MessageCategory.collegeEmResearch: 'college_em',
     MessageCategory.collegeIcNews: 'college_ic',
     MessageCategory.collegeImheNews: 'college_imhe',
     MessageCategory.collegeEconNews: 'college_econ',
@@ -774,7 +777,12 @@ class _InfoPageState extends State<InfoPage> {
           MessageCategory.collegeRePartyIdeology,
         ];
       case MessageSourceName.collegeEm:
-        return [MessageCategory.collegeEmNews];
+        return [
+          MessageCategory.collegeEmNews,
+          MessageCategory.collegeEmNotice,
+          MessageCategory.collegeEmStudentDevelopment,
+          MessageCategory.collegeEmResearch,
+        ];
       case MessageSourceName.collegeIc:
         return [MessageCategory.collegeIcNews];
       case MessageSourceName.collegeImhe:

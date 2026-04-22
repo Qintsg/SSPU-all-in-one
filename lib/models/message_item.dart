@@ -208,8 +208,17 @@ enum MessageCategory {
   /// 资源与环境工程学院党建思政
   collegeRePartyIdeology('党建思政'),
 
-  /// 能源与材料学院动态
-  collegeEmNews('能材学院动态'),
+  /// 能源与材料学院新闻资讯
+  collegeEmNews('新闻资讯'),
+
+  /// 能源与材料学院通知与公告
+  collegeEmNotice('通知与公告'),
+
+  /// 能源与材料学院育人园地
+  collegeEmStudentDevelopment('育人园地'),
+
+  /// 能源与材料学院科学研究
+  collegeEmResearch('科学研究'),
 
   /// 集成电路学院动态
   collegeIcNews('集成电路学院动态'),

@@ -158,6 +158,14 @@ class CollegeNewsService {
     MessageCategory.collegeRePartyIdeology: ['/2221/list.htm'],
   };
 
+  /// 能材学院的四个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeEmCategoryPaths = {
+    MessageCategory.collegeEmNews: ['/155/list.htm'],
+    MessageCategory.collegeEmNotice: ['/141/list.htm'],
+    MessageCategory.collegeEmStudentDevelopment: ['/156/list.htm'],
+    MessageCategory.collegeEmResearch: ['/5805/list.htm'],
+  };
+
   /// 计信学院的三个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
     MessageCategory.collegeCsNews: ['/1216/list.htm'],
@@ -434,6 +442,9 @@ class CollegeNewsService {
     if (channelId == 'college_re') {
       return _fetchCollegeReNews(knownMessageIds: knownMessageIds);
     }
+    if (channelId == 'college_em') {
+      return _fetchCollegeEmNews(knownMessageIds: knownMessageIds);
+    }
 
     final config = configs[channelId];
     if (config == null) return [];
@@ -547,6 +558,37 @@ class CollegeNewsService {
     for (final entry in _collegeReCategoryPaths.entries) {
       for (final relativePath in entry.value) {
         final pageMessages = await _fetchCollegeReListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
+  /// 能材学院使用四个列表页聚合成四个分类。
+  Future<List<MessageItem>> _fetchCollegeEmNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _collegeEmCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCollegeEmListPage(
           relativePath: relativePath,
           category: entry.key,
           knownMessageIds: seenIds,
@@ -713,6 +755,38 @@ class CollegeNewsService {
       }
 
       return messages;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 抓取能材学院某个子栏目列表页。
+  Future<List<MessageItem>> _fetchCollegeEmListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://sem.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final config = CollegeConfig(
+        baseUrl: 'https://sem.sspu.edu.cn',
+        template: CollegeTemplate.newsListB,
+        sourceName: MessageSourceName.collegeEm,
+        category: category,
+        newsListContainerSelector: 'ul.news_list.list2',
+        newsListTitleSelector: 'span.news_title a',
+        newsListDateSelector: 'span.news_meta',
+        newsListLinkSelector: 'span.news_title a',
+      );
+
+      return _parseNewsListB(
+        document,
+        config,
+        knownMessageIds: knownMessageIds,
+      );
     } catch (_) {
       return [];
     }
