@@ -424,6 +424,8 @@ class AutoRefreshService {
   /// :return: 所有已启用官网/信息中心渠道的消息列表
   Future<List<MessageItem>> fetchEnabledSchoolWebsiteMessages({
     int maxCount = 20,
+    Future<void> Function(List<MessageItem> messages, int completed, int total)?
+    onBatchCompleted,
   }) async {
     final futures = <Future<List<MessageItem>>>[];
     final existingMessages = await _stateService.loadMessages();
@@ -611,8 +613,14 @@ class AutoRefreshService {
     if (futures.isEmpty) return [];
 
     // 并行执行，单个渠道异常不影响其他渠道
+    var completed = 0;
     final results = await Future.wait(
-      futures.map((f) => f.catchError((_) => <MessageItem>[])),
+      futures.map((future) async {
+        final messages = await future.catchError((_) => <MessageItem>[]);
+        completed++;
+        await onBatchCompleted?.call(messages, completed, futures.length);
+        return messages;
+      }),
     );
     return results.expand((msgs) => msgs).toList();
   }
