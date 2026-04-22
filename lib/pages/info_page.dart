@@ -143,10 +143,9 @@ class _InfoPageState extends State<InfoPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 通过 AutoRefreshService 抓取所有已启用渠道的消息
-      final newMessages = await _autoRefreshService.fetchAllEnabledNow(
-        maxCount: count,
-      );
+      // 仅抓取官网/信息中心渠道，避免将微信公众号刷新串进官网刷新链路。
+      final newMessages = await _autoRefreshService
+          .fetchEnabledSchoolWebsiteMessages(maxCount: count);
 
       // 与已有消息合并（不丢失旧数据）
       final merged = _stateService.mergeMessages(_allMessages, newMessages);
