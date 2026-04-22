@@ -71,6 +71,18 @@ class AutoRefreshService {
     'construction',
     'news_center',
     'student_affairs',
+    'logistics_center',
+    'foreign_student_office',
+    'intl_exchange_office',
+    'admissions_office',
+    'hr_office',
+    'research_office',
+    'union',
+    'party_org_dept',
+    'united_front_dept',
+    'party_office',
+    'youth_league',
+    'assets_lab_office',
     'college_cs',
     'college_im',
     'college_re',
@@ -337,9 +349,21 @@ class AutoRefreshService {
       ),
     );
 
-    // ==================== 教学单位渠道（20个学院/部门） ====================
-    // 所有学院共用 CollegeNewsService，通过 channelId 区分解析配置
-    final collegeChannelIds = [
+    // ==================== 配置驱动站点渠道 ====================
+    // 学院、中心及职能部门共用 CollegeNewsService，通过 channelId 区分解析配置。
+    final siteChannelIds = [
+      'logistics_center',
+      'foreign_student_office',
+      'intl_exchange_office',
+      'admissions_office',
+      'hr_office',
+      'research_office',
+      'union',
+      'party_org_dept',
+      'united_front_dept',
+      'party_office',
+      'youth_league',
+      'assets_lab_office',
       'college_cs',
       'college_im',
       'college_re',
@@ -361,7 +385,7 @@ class AutoRefreshService {
       'graduate',
       'lib_center',
     ];
-    for (final channelId in collegeChannelIds) {
+    for (final channelId in siteChannelIds) {
       await _setupTimer(
         channelKey: channelId,
         getInterval: () => _stateService.getChannelInterval(channelId),
@@ -535,8 +559,20 @@ class AutoRefreshService {
       );
     }
 
-    // 教学单位（20个学院/部门）
-    const collegeIds = [
+    // 配置驱动站点（教学单位 + 职能部门）
+    const siteChannelIds = [
+      'logistics_center',
+      'foreign_student_office',
+      'intl_exchange_office',
+      'admissions_office',
+      'hr_office',
+      'research_office',
+      'union',
+      'party_org_dept',
+      'united_front_dept',
+      'party_office',
+      'youth_league',
+      'assets_lab_office',
       'college_cs',
       'college_im',
       'college_re',
@@ -558,7 +594,7 @@ class AutoRefreshService {
       'graduate',
       'lib_center',
     ];
-    for (final id in collegeIds) {
+    for (final id in siteChannelIds) {
       if (await _stateService.isChannelEnabled(id)) {
         futures.add(
           _collegeService.fetchNews(id, knownMessageIds: knownMessageIds),
@@ -882,7 +918,19 @@ class AutoRefreshService {
           ),
         );
         break;
-      // 教学单位渠道（20个学院/部门，统一处理）
+      // 配置驱动站点渠道（教学单位 / 中心 / 职能部门统一处理）
+      case 'logistics_center':
+      case 'foreign_student_office':
+      case 'intl_exchange_office':
+      case 'admissions_office':
+      case 'hr_office':
+      case 'research_office':
+      case 'union':
+      case 'party_org_dept':
+      case 'united_front_dept':
+      case 'party_office':
+      case 'youth_league':
+      case 'assets_lab_office':
       case 'college_cs':
       case 'college_im':
       case 'college_re':

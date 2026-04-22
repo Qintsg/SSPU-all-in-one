@@ -53,6 +53,42 @@ enum MessageSourceName {
   /// 学生处
   studentAffairs('学生处'),
 
+  /// 后勤服务中心
+  logisticsCenter('后勤服务中心'),
+
+  /// 外国留学生事务办公室
+  foreignStudentOffice('外国留学生事务办公室'),
+
+  /// 国际交流处
+  intlExchangeOffice('国际交流处'),
+
+  /// 招生办
+  admissionsOffice('招生办'),
+
+  /// 人事处
+  hrOffice('人事处'),
+
+  /// 科研处
+  researchOffice('科研处'),
+
+  /// 校工会
+  union('校工会'),
+
+  /// 党委组织部
+  partyOrgDept('党委组织部'),
+
+  /// 党委统战部
+  unitedFrontDept('党委统战部'),
+
+  /// 党委办公室
+  partyOffice('党委办公室'),
+
+  /// 校团委
+  youthLeague('校团委'),
+
+  /// 资产与实验管理处
+  assetsLabOffice('资产与实验管理处'),
+
   /// 计算机与信息工程学院
   collegeCs('计算机与信息工程学院'),
 
@@ -180,6 +216,87 @@ enum MessageCategory {
 
   /// 学生处通知公告 (490)
   studentNotice('通知公告'),
+
+  /// 后勤服务中心通知
+  logisticsNotice('通知'),
+
+  /// 后勤服务中心新闻动态
+  logisticsNews('新闻动态'),
+
+  /// 外国留学生事务办公室公告
+  foreignStudentNotice('公告'),
+
+  /// 外国留学生事务办公室新闻
+  foreignStudentNews('新闻'),
+
+  /// 国际交流处各项新闻
+  intlExchangeNews('各项新闻'),
+
+  /// 国际交流处通知公告
+  intlExchangeNotice('通知公告'),
+
+  /// 招生办招生动态
+  admissionsNews('招生动态'),
+
+  /// 人事处新闻动态
+  hrNews('新闻动态'),
+
+  /// 人事处人才招聘
+  hrRecruitment('人才招聘'),
+
+  /// 人事处通知公告
+  hrNotice('通知公告'),
+
+  /// 科研处科研信息
+  researchInfo('科研信息'),
+
+  /// 科研处科研公告
+  researchNotice('科研公告'),
+
+  /// 科研处科研成果喜讯
+  researchAchievement('科研成果喜讯'),
+
+  /// 校工会工会动态
+  unionNews('工会动态'),
+
+  /// 校工会党建引领
+  unionPartyLeadership('党建引领'),
+
+  /// 校工会公告通知
+  unionNotice('公告通知'),
+
+  /// 党委组织部党建动态
+  partyOrgNews('党建动态'),
+
+  /// 党委组织部通知公告
+  partyOrgNotice('通知公告'),
+
+  /// 党委统战部工作动态
+  unitedFrontNews('工作动态'),
+
+  /// 党委统战部党派之声
+  unitedFrontVoice('党派之声'),
+
+  /// 党委统战部团体风采
+  unitedFrontStyle('团体风采'),
+
+  /// 党委办公室工作动态
+  partyOfficeNews('工作动态'),
+
+  /// 校团委工作要讯
+  youthLeagueHighlights('工作要讯'),
+
+  /// 校团委通知公告
+  youthLeagueNotice('通知公告'),
+
+  /// 校团委基层动态
+  youthLeagueGrassroots('基层动态'),
+
+  /// 资产与实验管理处部门新闻
+  assetsLabNews('部门新闻'),
+
+  /// 资产与实验管理处通知公告
+  assetsLabNotice('通知公告'),
 
   /// 计算机与信息工程学院工作动态
   collegeCsNews('工作动态'),
@@ -317,7 +434,7 @@ enum MessageCategory {
   centerTrainingNotice('通知公告'),
 
   /// 研究生处动态
-  graduateNews('研究生处动态'),
+  graduateNews('动态'),
 
   /// 图书馆通知
   libCenterNews('图书馆通知'),

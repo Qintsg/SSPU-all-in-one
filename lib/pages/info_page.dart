@@ -90,6 +90,33 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.campusNews: 'news_center',
     MessageCategory.studentNews: 'student_affairs',
     MessageCategory.studentNotice: 'student_affairs',
+    MessageCategory.logisticsNotice: 'logistics_center',
+    MessageCategory.logisticsNews: 'logistics_center',
+    MessageCategory.foreignStudentNotice: 'foreign_student_office',
+    MessageCategory.foreignStudentNews: 'foreign_student_office',
+    MessageCategory.intlExchangeNews: 'intl_exchange_office',
+    MessageCategory.intlExchangeNotice: 'intl_exchange_office',
+    MessageCategory.admissionsNews: 'admissions_office',
+    MessageCategory.hrNews: 'hr_office',
+    MessageCategory.hrRecruitment: 'hr_office',
+    MessageCategory.hrNotice: 'hr_office',
+    MessageCategory.researchInfo: 'research_office',
+    MessageCategory.researchNotice: 'research_office',
+    MessageCategory.researchAchievement: 'research_office',
+    MessageCategory.unionNews: 'union',
+    MessageCategory.unionPartyLeadership: 'union',
+    MessageCategory.unionNotice: 'union',
+    MessageCategory.partyOrgNews: 'party_org_dept',
+    MessageCategory.partyOrgNotice: 'party_org_dept',
+    MessageCategory.unitedFrontNews: 'united_front_dept',
+    MessageCategory.unitedFrontVoice: 'united_front_dept',
+    MessageCategory.unitedFrontStyle: 'united_front_dept',
+    MessageCategory.partyOfficeNews: 'party_office',
+    MessageCategory.youthLeagueHighlights: 'youth_league',
+    MessageCategory.youthLeagueNotice: 'youth_league',
+    MessageCategory.youthLeagueGrassroots: 'youth_league',
+    MessageCategory.assetsLabNews: 'assets_lab_office',
+    MessageCategory.assetsLabNotice: 'assets_lab_office',
     MessageCategory.collegeCsNews: 'college_cs',
     MessageCategory.collegeCsTeacherWork: 'college_cs',
     MessageCategory.collegeCsStudentWork: 'college_cs',
@@ -707,6 +734,18 @@ class _InfoPageState extends State<InfoPage> {
           MessageSourceName.construction,
           MessageSourceName.newsCenter,
           MessageSourceName.studentAffairs,
+          MessageSourceName.logisticsCenter,
+          MessageSourceName.foreignStudentOffice,
+          MessageSourceName.intlExchangeOffice,
+          MessageSourceName.admissionsOffice,
+          MessageSourceName.hrOffice,
+          MessageSourceName.researchOffice,
+          MessageSourceName.union,
+          MessageSourceName.partyOrgDept,
+          MessageSourceName.unitedFrontDept,
+          MessageSourceName.partyOffice,
+          MessageSourceName.youthLeague,
+          MessageSourceName.assetsLabOffice,
           MessageSourceName.collegeCs,
           MessageSourceName.collegeIm,
           MessageSourceName.collegeRe,
@@ -771,6 +810,56 @@ class _InfoPageState extends State<InfoPage> {
         return [MessageCategory.campusNews];
       case MessageSourceName.studentAffairs:
         return [MessageCategory.studentNews, MessageCategory.studentNotice];
+      case MessageSourceName.logisticsCenter:
+        return [MessageCategory.logisticsNotice, MessageCategory.logisticsNews];
+      case MessageSourceName.foreignStudentOffice:
+        return [
+          MessageCategory.foreignStudentNotice,
+          MessageCategory.foreignStudentNews,
+        ];
+      case MessageSourceName.intlExchangeOffice:
+        return [
+          MessageCategory.intlExchangeNews,
+          MessageCategory.intlExchangeNotice,
+        ];
+      case MessageSourceName.admissionsOffice:
+        return [MessageCategory.admissionsNews];
+      case MessageSourceName.hrOffice:
+        return [
+          MessageCategory.hrNews,
+          MessageCategory.hrRecruitment,
+          MessageCategory.hrNotice,
+        ];
+      case MessageSourceName.researchOffice:
+        return [
+          MessageCategory.researchInfo,
+          MessageCategory.researchNotice,
+          MessageCategory.researchAchievement,
+        ];
+      case MessageSourceName.union:
+        return [
+          MessageCategory.unionNews,
+          MessageCategory.unionPartyLeadership,
+          MessageCategory.unionNotice,
+        ];
+      case MessageSourceName.partyOrgDept:
+        return [MessageCategory.partyOrgNews, MessageCategory.partyOrgNotice];
+      case MessageSourceName.unitedFrontDept:
+        return [
+          MessageCategory.unitedFrontNews,
+          MessageCategory.unitedFrontVoice,
+          MessageCategory.unitedFrontStyle,
+        ];
+      case MessageSourceName.partyOffice:
+        return [MessageCategory.partyOfficeNews];
+      case MessageSourceName.youthLeague:
+        return [
+          MessageCategory.youthLeagueHighlights,
+          MessageCategory.youthLeagueNotice,
+          MessageCategory.youthLeagueGrassroots,
+        ];
+      case MessageSourceName.assetsLabOffice:
+        return [MessageCategory.assetsLabNews, MessageCategory.assetsLabNotice];
       case MessageSourceName.wechatPublicPlaceholder:
         return [MessageCategory.wechatArticle];
       case MessageSourceName.wechatServicePlaceholder:

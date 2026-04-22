@@ -229,6 +229,93 @@ class CollegeNewsService {
         MessageCategory.centerTrainingNotice: ['/3841/list.htm'],
       };
 
+  /// 后勤服务中心的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>>
+  _logisticsCenterCategoryPaths = {
+    MessageCategory.logisticsNotice: ['/1996/list.htm'],
+    MessageCategory.logisticsNews: ['/5690/list.htm'],
+  };
+
+  /// 外国留学生事务办公室的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>>
+  _foreignStudentOfficeCategoryPaths = {
+    MessageCategory.foreignStudentNotice: ['/749/list.htm'],
+    MessageCategory.foreignStudentNews: ['/750/list.htm'],
+  };
+
+  /// 国际交流处的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>>
+  _intlExchangeOfficeCategoryPaths = {
+    MessageCategory.intlExchangeNews: ['/179/list.htm'],
+    MessageCategory.intlExchangeNotice: ['/180/list.htm'],
+  };
+
+  /// 研究生处的聚合分类配置。
+  static const Map<MessageCategory, List<String>> _graduateCategoryPaths = {
+    MessageCategory.graduateNews: ['/2897/list.htm'],
+  };
+
+  /// 招生办的聚合分类配置。
+  static const Map<MessageCategory, List<String>>
+  _admissionsOfficeCategoryPaths = {
+    MessageCategory.admissionsNews: ['/3076/list.htm'],
+  };
+
+  /// 人事处的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _hrOfficeCategoryPaths = {
+    MessageCategory.hrNews: ['/5242/list.htm'],
+    MessageCategory.hrRecruitment: ['/rczp/list.htm'],
+    MessageCategory.hrNotice: ['/tzgg/list.htm'],
+  };
+
+  /// 科研处的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _researchOfficeCategoryPaths =
+      {
+        MessageCategory.researchInfo: ['/873/list.htm'],
+        MessageCategory.researchNotice: ['/kygg/list.htm'],
+        MessageCategory.researchAchievement: ['/kycgxx/list.htm'],
+      };
+
+  /// 校工会的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _unionCategoryPaths = {
+    MessageCategory.unionNews: ['/475/list.htm'],
+    MessageCategory.unionPartyLeadership: ['/djyl/list.htm'],
+    MessageCategory.unionNotice: ['/469/list.htm'],
+  };
+
+  /// 党委组织部的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _partyOrgDeptCategoryPaths = {
+    MessageCategory.partyOrgNews: ['/418/list.htm'],
+    MessageCategory.partyOrgNotice: ['/419/list.htm'],
+  };
+
+  /// 党委统战部的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>>
+  _unitedFrontDeptCategoryPaths = {
+    MessageCategory.unitedFrontNews: ['/5301/list.htm'],
+    MessageCategory.unitedFrontVoice: ['/5302/list.htm'],
+    MessageCategory.unitedFrontStyle: ['/5303/list.htm'],
+  };
+
+  /// 党委办公室的聚合分类配置。
+  static const Map<MessageCategory, List<String>> _partyOfficeCategoryPaths = {
+    MessageCategory.partyOfficeNews: ['/2477/list.htm'],
+  };
+
+  /// 校团委的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _youthLeagueCategoryPaths = {
+    MessageCategory.youthLeagueHighlights: ['/4570/list.htm'],
+    MessageCategory.youthLeagueNotice: ['/4569/list.htm'],
+    MessageCategory.youthLeagueGrassroots: ['/4571/list.htm'],
+  };
+
+  /// 资产与实验管理处的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>>
+  _assetsLabOfficeCategoryPaths = {
+    MessageCategory.assetsLabNews: ['/1320/list.htm'],
+    MessageCategory.assetsLabNotice: ['/1321/list.htm'],
+  };
+
   /// 计信学院的三个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
     MessageCategory.collegeCsNews: ['/1216/list.htm'],
@@ -546,6 +633,45 @@ class CollegeNewsService {
     }
     if (channelId == 'center_training') {
       return _fetchCenterTrainingNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'logistics_center') {
+      return _fetchLogisticsCenterNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'foreign_student_office') {
+      return _fetchForeignStudentOfficeNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'intl_exchange_office') {
+      return _fetchIntlExchangeOfficeNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'graduate') {
+      return _fetchGraduateNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'admissions_office') {
+      return _fetchAdmissionsOfficeNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'hr_office') {
+      return _fetchHrOfficeNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'research_office') {
+      return _fetchResearchOfficeNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'union') {
+      return _fetchUnionNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'party_org_dept') {
+      return _fetchPartyOrgDeptNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'united_front_dept') {
+      return _fetchUnitedFrontDeptNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'party_office') {
+      return _fetchPartyOfficeNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'youth_league') {
+      return _fetchYouthLeagueNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'assets_lab_office') {
+      return _fetchAssetsLabOfficeNews(knownMessageIds: knownMessageIds);
     }
 
     final config = configs[channelId];
@@ -989,6 +1115,392 @@ class CollegeNewsService {
     });
 
     return messages;
+  }
+
+  /// 后勤服务中心使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchLogisticsCenterNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _logisticsCenterCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://hqgl.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.logisticsCenter,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 外国留学生事务办公室使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchForeignStudentOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _foreignStudentOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://lxs.sspu.edu.cn',
+          template: CollegeTemplate.customD,
+          sourceName: MessageSourceName.foreignStudentOffice,
+          category: category,
+          customItemSelector: 'div.list-1 a.item',
+          customTitleSelector: 'p.item-tit',
+          customDateSelector: 'div.item-time',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 国际交流处使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchIntlExchangeOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _intlExchangeOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://gjjlc.sspu.edu.cn',
+          template: CollegeTemplate.customD,
+          sourceName: MessageSourceName.intlExchangeOffice,
+          category: category,
+          customItemSelector: 'div.rightlist ul li',
+          customTitleSelector: 'a',
+          customDateSelector: 'span',
+          customLinkSelector: 'a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 研究生处使用指定列表页聚合成动态分类。
+  Future<List<MessageItem>> _fetchGraduateNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _graduateCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://yjs.sspu.edu.cn',
+          template: CollegeTemplate.listA,
+          sourceName: MessageSourceName.graduate,
+          category: category,
+          listContainerSelector: 'div.tyList ul',
+          listItemSelector: 'li',
+          dateSelector: 'span.riqi',
+          titleSelector: 'a',
+          titleFromAttribute: true,
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 招生办使用指定列表页聚合成招生动态分类。
+  Future<List<MessageItem>> _fetchAdmissionsOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _admissionsOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://zsb.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.admissionsOffice,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 人事处使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchHrOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _hrOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://hr.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.hrOffice,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 科研处使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchResearchOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _researchOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://kyc.sspu.edu.cn',
+          template: CollegeTemplate.listA,
+          sourceName: MessageSourceName.researchOffice,
+          category: category,
+          listContainerSelector: 'div.rightlist ul',
+          listItemSelector: 'li',
+          dateSelector: 'span',
+          titleSelector: 'a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 校工会使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchUnionNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _unionCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://gh.sspu.edu.cn',
+          template: CollegeTemplate.customD,
+          sourceName: MessageSourceName.union,
+          category: category,
+          customItemSelector: 'div.jzlb.clearfix',
+          customTitleSelector: 'div.btt3 a',
+          customDateSelector: 'div.fbsj4',
+          customLinkSelector: 'div.btt3 a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 党委组织部使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchPartyOrgDeptNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _partyOrgDeptCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://zzb.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.partyOrgDept,
+          category: category,
+          newsListContainerSelector: 'ul.news_list',
+          newsListTitleSelector: 'div.item-right a',
+          newsListDateSelector: 'div.item-time',
+          newsListLinkSelector: 'div.item-right a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 党委统战部使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchUnitedFrontDeptNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _unitedFrontDeptCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://tzb.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.unitedFrontDept,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 党委办公室使用指定列表页聚合成工作动态分类。
+  Future<List<MessageItem>> _fetchPartyOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _partyOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://db.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.partyOffice,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 校团委使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchYouthLeagueNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _youthLeagueCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://tuanwei.sspu.edu.cn',
+          template: CollegeTemplate.newsListB,
+          sourceName: MessageSourceName.youthLeague,
+          category: category,
+          newsListContainerSelector: 'ul.news_list.list2',
+          newsListTitleSelector: 'span.news_title a',
+          newsListDateSelector: 'span.news_meta',
+          newsListLinkSelector: 'span.news_title a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 资产与实验管理处使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchAssetsLabOfficeNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchMergedCategoryPages(
+      _assetsLabOfficeCategoryPaths,
+      (relativePath, category, ids) => _fetchConfiguredListPage(
+        relativePath: relativePath,
+        config: CollegeConfig(
+          baseUrl: 'https://zc.sspu.edu.cn',
+          template: CollegeTemplate.listA,
+          sourceName: MessageSourceName.assetsLabOffice,
+          category: category,
+          listContainerSelector: 'div.listbody div.list_news ul',
+          listItemSelector: 'li',
+          dateSelector: 'span',
+          titleSelector: 'a',
+        ),
+        knownMessageIds: ids,
+      ),
+      knownMessageIds: knownMessageIds,
+    );
+  }
+
+  /// 通用的多分类聚合抓取逻辑。
+  Future<List<MessageItem>> _fetchMergedCategoryPages(
+    Map<MessageCategory, List<String>> categoryPaths,
+    Future<List<MessageItem>> Function(
+      String relativePath,
+      MessageCategory category,
+      Set<String> knownMessageIds,
+    )
+    fetchPage, {
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in categoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await fetchPage(relativePath, entry.key, seenIds);
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+    return messages;
+  }
+
+  /// 使用临时配置抓取指定列表页，复用现有模板解析逻辑。
+  Future<List<MessageItem>> _fetchConfiguredListPage({
+    required String relativePath,
+    required CollegeConfig config,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText('${config.baseUrl}$relativePath');
+      final document = html_parser.parse(htmlText);
+
+      switch (config.template) {
+        case CollegeTemplate.listA:
+          return _parseListA(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
+        case CollegeTemplate.newsListB:
+          return _parseNewsListB(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
+        case CollegeTemplate.swiperC:
+          return _parseSwiperC(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
+        case CollegeTemplate.customD:
+          return _parseCustomD(
+            document,
+            config,
+            knownMessageIds: knownMessageIds,
+          );
+      }
+    } catch (_) {
+      return [];
+    }
   }
 
   /// 抓取计信学院某个子栏目列表页。
