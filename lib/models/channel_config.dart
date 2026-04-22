@@ -69,7 +69,7 @@ class ChannelConfig {
 const List<ChannelConfig> departmentChannels = [
   ChannelConfig(
     id: 'latest_info',
-    name: '最新公开信息',
+    name: '公开信息',
     description: '信息公开网 — 学校新闻动态',
     icon: FluentIcons.news,
     group: ChannelGroup.department,
