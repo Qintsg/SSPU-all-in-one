@@ -86,6 +86,9 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 公众号平台是否已认证
   bool _wxmpAuthenticated = false;
 
+  /// 公众号平台认证诊断状态。
+  WxmpAuthStatus? _wxmpAuthStatus;
+
   /// 微信推文获取总开关。
   bool _wechatChannelEnabled = false;
 
@@ -143,7 +146,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndSM = await _messageState.getDndStartMinute();
     final dndEH = await _messageState.getDndEndHour();
     final dndEM = await _messageState.getDndEndMinute();
-    final wxmpHasAuth = await _wxmpAuth.hasAuth();
+    final wxmpAuthStatus = await _wxmpAuth.getAuthStatus();
+    final wxmpHasAuth = wxmpAuthStatus.isUsable;
     final wechatEnabled = await _messageState.isChannelEnabled(
       'wechat_public',
       defaultValue: false,
@@ -172,6 +176,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _dndEndHour = dndEH;
         _dndEndMinute = dndEM;
         _wxmpAuthenticated = wxmpHasAuth;
+        _wxmpAuthStatus = wxmpAuthStatus;
         _wechatChannelEnabled = wechatEnabled;
         _wechatAutoRefreshEnabled = wechatAutoEnabled;
         _wechatRefreshInterval = wechatInterval;
@@ -1066,6 +1071,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 '通过公众号管理平台 (mp.weixin.qq.com) 获取推文，需拥有公众号（个人订阅号即可）',
                 style: theme.typography.caption,
               ),
+              if (_wxmpAuthStatus != null) ...[
+                const SizedBox(height: FluentSpacing.xs),
+                Text(
+                  _wxmpAuthStatus!.message,
+                  style: theme.typography.caption?.copyWith(
+                    color: theme.resources.textFillColorSecondary,
+                  ),
+                ),
+              ],
               const SizedBox(height: FluentSpacing.m),
 
               // 认证状态
@@ -1374,8 +1388,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (success == true && mounted) {
-      setState(() => _wxmpAuthenticated = true);
-      await _loadWxmpFollowedMps();
+      final authStatus = await _wxmpAuth.getAuthStatus();
+      setState(() {
+        _wxmpAuthenticated = authStatus.isUsable;
+        _wxmpAuthStatus = authStatus;
+      });
+      if (authStatus.isUsable) await _loadWxmpFollowedMps();
       if (mounted) {
         displayInfoBar(
           context,
@@ -1400,6 +1418,10 @@ class _SettingsPageState extends State<SettingsPage> {
     if (mounted) {
       setState(() {
         _wxmpAuthenticated = false;
+        _wxmpAuthStatus = const WxmpAuthStatus(
+          state: WxmpAuthState.missingCookie,
+          lastUpdate: null,
+        );
         _wxmpFollowedMps = [];
         _wxmpSearchResults = [];
       });

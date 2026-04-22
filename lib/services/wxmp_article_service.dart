@@ -11,6 +11,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/message_item.dart';
 import 'message_state_service.dart';
@@ -49,6 +50,13 @@ class WxmpArticleService {
   static const int _requestDelayMs = 3000;
 
   // ==================== HTTP 请求 ====================
+
+  /// 输出脱敏调试日志；Release 构建不输出。
+  void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint('[WxmpArticleService] $message');
+    }
+  }
 
   /// 构造标准请求头
   Future<Map<String, String>> _buildHeaders() async {
@@ -91,8 +99,11 @@ class WxmpArticleService {
     int begin = 0,
     int count = 5,
   }) async {
-    final hasAuth = await _auth.hasAuth();
-    if (!hasAuth) return [];
+    final authStatus = await _auth.getAuthStatus();
+    if (!authStatus.isUsable) {
+      _debugLog('search skipped: ${authStatus.message}');
+      return [];
+    }
 
     final token = await _auth.getToken();
     final headers = await _buildHeaders();
@@ -140,8 +151,11 @@ class WxmpArticleService {
     int page = 0,
     int count = 5,
   }) async {
-    final hasAuth = await _auth.hasAuth();
-    if (!hasAuth) return [];
+    final authStatus = await _auth.getAuthStatus();
+    if (!authStatus.isUsable) {
+      _debugLog('article list skipped: ${authStatus.message}');
+      return [];
+    }
 
     final token = await _auth.getToken();
     final headers = await _buildHeaders();
@@ -203,8 +217,11 @@ class WxmpArticleService {
     int maxCount = 50,
     Set<String>? knownMessageIds,
   }) async {
-    final hasAuth = await _auth.hasAuth();
-    if (!hasAuth) return [];
+    final authStatus = await _auth.getAuthStatus();
+    if (!authStatus.isUsable) {
+      _debugLog('refresh skipped: ${authStatus.message}');
+      return [];
+    }
 
     final followedMps = await getLocalFollowedMps();
     if (followedMps.isEmpty) return [];
@@ -237,12 +254,15 @@ class WxmpArticleService {
           await Future.delayed(const Duration(milliseconds: _requestDelayMs));
         }
       } on WxmpSessionExpiredException {
+        _debugLog('refresh stopped: session expired');
         // Session 过期，停止后续请求
         break;
       } on WxmpFrequencyLimitException {
+        _debugLog('refresh stopped: frequency limited');
         // 频率限制，停止后续请求
         break;
-      } catch (_) {
+      } catch (error) {
+        _debugLog('refresh skipped one account "$mpName": $error');
         // 单个公众号失败不影响其他
         continue;
       }

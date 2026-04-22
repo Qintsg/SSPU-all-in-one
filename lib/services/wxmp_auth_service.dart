@@ -9,6 +9,49 @@
 
 import 'storage_service.dart';
 
+/// 公众号平台认证状态。
+enum WxmpAuthState {
+  /// Cookie 和 Token 均可用。
+  ready,
+
+  /// 缺少 Cookie。
+  missingCookie,
+
+  /// 缺少 Token。
+  missingToken,
+
+  /// Token 不是公众平台常见的数字格式。
+  malformedToken,
+}
+
+/// 公众号平台认证诊断结果。
+class WxmpAuthStatus {
+  /// 状态枚举。
+  final WxmpAuthState state;
+
+  /// 最后更新时间。
+  final DateTime? lastUpdate;
+
+  const WxmpAuthStatus({required this.state, required this.lastUpdate});
+
+  /// 是否具备调用公众号平台接口的本地认证条件。
+  bool get isUsable => state == WxmpAuthState.ready;
+
+  /// 面向设置页和调试日志的状态说明，不包含 Cookie 或 Token。
+  String get message {
+    switch (state) {
+      case WxmpAuthState.ready:
+        return '认证信息可用';
+      case WxmpAuthState.missingCookie:
+        return '缺少 Cookie，请重新扫码登录';
+      case WxmpAuthState.missingToken:
+        return '缺少 Token，请重新扫码登录';
+      case WxmpAuthState.malformedToken:
+        return 'Token 格式异常，请重新扫码登录';
+    }
+  }
+}
+
 /// 微信公众号平台认证服务（单例）
 /// 负责 Cookie 和 Token 的存储、读取、校验和清除
 class WxmpAuthService {
@@ -40,14 +83,36 @@ class WxmpAuthService {
     return StorageService.getString(_keyToken);
   }
 
-  /// 检查是否已配置认证
+  /// 检查是否已配置认证。
   Future<bool> hasAuth() async {
+    return (await getAuthStatus()).isUsable;
+  }
+
+  /// 获取认证诊断状态，避免调用侧直接读取敏感字段。
+  Future<WxmpAuthStatus> getAuthStatus() async {
     final cookie = await getCookie();
     final token = await getToken();
-    return cookie != null &&
-        cookie.isNotEmpty &&
-        token != null &&
-        token.isNotEmpty;
+    final lastUpdate = await getLastUpdate();
+
+    if (cookie == null || cookie.trim().isEmpty) {
+      return WxmpAuthStatus(
+        state: WxmpAuthState.missingCookie,
+        lastUpdate: lastUpdate,
+      );
+    }
+    if (token == null || token.trim().isEmpty) {
+      return WxmpAuthStatus(
+        state: WxmpAuthState.missingToken,
+        lastUpdate: lastUpdate,
+      );
+    }
+    if (!RegExp(r'^\d+$').hasMatch(token.trim())) {
+      return WxmpAuthStatus(
+        state: WxmpAuthState.malformedToken,
+        lastUpdate: lastUpdate,
+      );
+    }
+    return WxmpAuthStatus(state: WxmpAuthState.ready, lastUpdate: lastUpdate);
   }
 
   /// 清除所有认证信息
