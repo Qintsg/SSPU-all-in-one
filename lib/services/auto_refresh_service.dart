@@ -275,8 +275,10 @@ class AutoRefreshService {
       channelKey: 'constructionNews',
       getInterval: () => _stateService.getChannelInterval('construction'),
       isEnabled: () => _stateService.isChannelEnabled('construction'),
-      fetchMessages: (knownMessageIds) =>
-          _constructionService.fetchNews(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _constructionService.fetchNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 校区建设办通知
@@ -284,8 +286,10 @@ class AutoRefreshService {
       channelKey: 'constructionNotice',
       getInterval: () => _stateService.getChannelInterval('construction'),
       isEnabled: () => _stateService.isChannelEnabled('construction'),
-      fetchMessages: (knownMessageIds) =>
-          _constructionService.fetchNotices(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _constructionService.fetchNotices(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 新闻网综合新闻
@@ -471,10 +475,16 @@ class AutoRefreshService {
     }
     if (await _stateService.isChannelEnabled('construction')) {
       futures.add(
-        _constructionService.fetchNews(knownMessageIds: knownMessageIds),
+        _constructionService.fetchNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
       futures.add(
-        _constructionService.fetchNotices(knownMessageIds: knownMessageIds),
+        _constructionService.fetchNotices(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
     if (await _stateService.isChannelEnabled('news_center')) {
@@ -772,8 +782,10 @@ class AutoRefreshService {
           channelKey: 'constructionNews',
           getInterval: () => _stateService.getChannelInterval('construction'),
           isEnabled: () => _stateService.isChannelEnabled('construction'),
-          fetchMessages: (knownMessageIds) =>
-              _constructionService.fetchNews(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _constructionService.fetchNews(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       case 'constructionNotice':
@@ -782,6 +794,7 @@ class AutoRefreshService {
           getInterval: () => _stateService.getChannelInterval('construction'),
           isEnabled: () => _stateService.isChannelEnabled('construction'),
           fetchMessages: (knownMessageIds) => _constructionService.fetchNotices(
+            maxCount: _defaultFetchCount,
             knownMessageIds: knownMessageIds,
           ),
         );

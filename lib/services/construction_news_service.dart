@@ -1,7 +1,7 @@
 /*
- * 校区建设办消息解析服务 — 抓取校区建设办首页的要闻与通知
- * 仅抓取首页内容，不翻页；日期仅有 MM-DD 格式，需补全年份
- * 列表结构: ul.lis li > a[title](标题) + span(MM-DD)
+ * 校区建设办消息解析服务 — 抓取校区建设办建设要闻与通知公告
+ * 通过栏目列表页解析，支持翻页与完整发布日期
+ * 列表结构: li > a[title] > span.first(标题) + span.last(日期)
  * @Project : SSPU-all-in-one
  * @File : construction_news_service.dart
  * @Author : Qintsg
@@ -17,7 +17,7 @@ import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 校区建设办消息解析服务（单例）
-/// 从 xqjsb.sspu.edu.cn 首页抓取建设要闻和建设通知
+/// 从 xqjsb.sspu.edu.cn 抓取建设要闻和通知公告
 class ConstructionNewsService {
   ConstructionNewsService._();
 
@@ -26,65 +26,109 @@ class ConstructionNewsService {
   /// 校区建设办基础 URL
   static const String _baseUrl = 'https://xqjsb.sspu.edu.cn';
 
+  /// 建设要闻栏目路径
+  static const String _newsPath = '/405';
+
+  /// 通知公告栏目路径
+  static const String _noticePath = '/406';
+
   final HttpService _http = HttpService.instance;
 
-  /// 获取建设要闻（首页窗口4/c405区块）
-  Future<List<MessageItem>> fetchNews({Set<String>? knownMessageIds}) async {
-    return _fetchFromHomepage(
+  /// 获取建设要闻
+  Future<List<MessageItem>> fetchNews({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchFromColumn(
+      columnPath: _newsPath,
       category: MessageCategory.constructionNews,
+      maxCount: maxCount,
       knownMessageIds: knownMessageIds,
     );
   }
 
-  /// 获取建设通知（首页窗口5/c406区块）
-  Future<List<MessageItem>> fetchNotices({Set<String>? knownMessageIds}) async {
-    return _fetchFromHomepage(
+  /// 获取通知公告
+  Future<List<MessageItem>> fetchNotices({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchFromColumn(
+      columnPath: _noticePath,
       category: MessageCategory.constructionNotice,
+      maxCount: maxCount,
       knownMessageIds: knownMessageIds,
     );
   }
 
-  /// 从首页抓取指定分类的消息
-  /// 因两个区块 HTML 结构相同（ul.lis），通过内容区域区分
-  Future<List<MessageItem>> _fetchFromHomepage({
+  /// 根据页码生成栏目列表页 URL
+  String _buildPageUrl(String columnPath, int page) {
+    if (page <= 1) return '$_baseUrl$columnPath/list.htm';
+    return '$_baseUrl$columnPath/list$page.htm';
+  }
+
+  /// 从指定栏目抓取消息，支持自动翻页
+  Future<List<MessageItem>> _fetchFromColumn({
+    required String columnPath,
+    required MessageCategory category,
+    required int maxCount,
+    Set<String>? knownMessageIds,
+    int maxPages = 10,
+  }) async {
+    final messages = <MessageItem>[];
+    var currentPage = 1;
+
+    while (messages.length < maxCount && currentPage <= maxPages) {
+      final pageMessages = await _fetchSinglePage(
+        url: _buildPageUrl(columnPath, currentPage),
+        category: category,
+        knownMessageIds: knownMessageIds,
+      );
+
+      if (pageMessages.isEmpty) break;
+
+      for (final message in pageMessages) {
+        if (messages.length >= maxCount) break;
+        messages.add(message);
+      }
+
+      currentPage++;
+    }
+
+    return messages;
+  }
+
+  /// 抓取栏目单页内所有消息项
+  Future<List<MessageItem>> _fetchSinglePage({
+    required String url,
     required MessageCategory category,
     Set<String>? knownMessageIds,
   }) async {
     try {
-      final htmlText = await _http.fetchText(_baseUrl);
+      final htmlText = await _http.fetchText(url);
       final document = html_parser.parse(htmlText);
 
-      // 所有 ul.lis 列表块
-      final allLists = document.querySelectorAll('ul.lis');
-      if (allLists.isEmpty) return [];
-
-      // 首页有两个 ul.lis 区块：第一个是建设要闻，第二个是通知公告
-      final targetIndex = category == MessageCategory.constructionNews ? 0 : 1;
-      if (targetIndex >= allLists.length) return [];
-
-      final targetList = allLists[targetIndex];
-      final listItems = targetList.querySelectorAll('li');
+      final listItems = document.querySelectorAll('li');
       final messages = <MessageItem>[];
 
       for (final item in listItems) {
-        // 提取链接和标题
         final anchor = item.querySelector('a[title]');
         if (anchor == null) continue;
+
+        final rawDate =
+            item.querySelector('span.last')?.text.trim() ??
+            item.querySelector('span')?.text.trim() ??
+            '';
+        if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(rawDate)) continue;
 
         final title = anchor.attributes['title']?.trim() ?? anchor.text.trim();
         final href = anchor.attributes['href'] ?? '';
         if (title.isEmpty || href.isEmpty) continue;
 
         final fullUrl = href.startsWith('http') ? href : '$_baseUrl$href';
-
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
-        // 提取日期（仅 MM-DD，通过统一工具补全年份）
-        final dateSpan = item.querySelector('span');
-        final rawDate = dateSpan?.text.trim() ?? '';
         final date = normalizeDate(rawDate);
-
         messages.add(
           MessageItem(
             id: messageId,
@@ -100,7 +144,7 @@ class ConstructionNewsService {
       }
 
       return messages;
-    } catch (error) {
+    } catch (_) {
       return [];
     }
   }
