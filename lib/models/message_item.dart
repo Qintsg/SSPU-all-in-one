@@ -272,7 +272,10 @@ enum MessageCategory {
   collegeVteNotice('通知公告'),
 
   /// 职业技术学院动态
-  collegeVtNews('职技学院动态'),
+  collegeVtNews('学院新闻'),
+
+  /// 职业技术学院学院公告
+  collegeVtNotice('学院公告'),
 
   /// 马克思主义学院动态
   collegeMarxNews('马院动态'),
