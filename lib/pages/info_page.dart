@@ -107,6 +107,9 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeIcNews: 'college_ic',
     MessageCategory.collegeImheNews: 'college_imhe',
     MessageCategory.collegeEconNews: 'college_econ',
+    MessageCategory.collegeEconNotice: 'college_econ',
+    MessageCategory.collegeEconStudentDevelopment: 'college_econ',
+    MessageCategory.collegeEconPartyLeadership: 'college_econ',
     MessageCategory.collegeLangNews: 'college_lang',
     MessageCategory.collegeMathNews: 'college_math',
     MessageCategory.collegeArtNews: 'college_art',
@@ -788,7 +791,12 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.collegeImhe:
         return [MessageCategory.collegeImheNews];
       case MessageSourceName.collegeEcon:
-        return [MessageCategory.collegeEconNews];
+        return [
+          MessageCategory.collegeEconNews,
+          MessageCategory.collegeEconNotice,
+          MessageCategory.collegeEconStudentDevelopment,
+          MessageCategory.collegeEconPartyLeadership,
+        ];
       case MessageSourceName.collegeLang:
         return [MessageCategory.collegeLangNews];
       case MessageSourceName.collegeMath:

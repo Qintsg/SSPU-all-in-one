@@ -226,8 +226,17 @@ enum MessageCategory {
   /// 智能医学与健康工程学院动态
   collegeImheNews('智医学院动态'),
 
-  /// 经济与管理学院动态
-  collegeEconNews('经管学院动态'),
+  /// 经济与管理学院学院动态
+  collegeEconNews('学院动态'),
+
+  /// 经济与管理学院通知公告
+  collegeEconNotice('通知公告'),
+
+  /// 经济与管理学院育人园地
+  collegeEconStudentDevelopment('育人园地'),
+
+  /// 经济与管理学院党群引领
+  collegeEconPartyLeadership('党群引领'),
 
   /// 语言与文化传播学院动态
   collegeLangNews('文传学院动态'),
