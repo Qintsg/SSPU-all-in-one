@@ -187,8 +187,14 @@ enum MessageCategory {
   /// 计算机与信息工程学院学生工作
   collegeCsStudentWork('学生工作'),
 
-  /// 智能制造与控制工程学院动态
-  collegeImNews('智控学院动态'),
+  /// 智能制造与控制工程学院学院动态
+  collegeImNews('学院动态'),
+
+  /// 智能制造与控制工程学院教学科研
+  collegeImTeachingResearch('教学科研'),
+
+  /// 智能制造与控制工程学院通知公告
+  collegeImNotice('通知公告'),
 
   /// 资源与环境工程学院动态
   collegeReNews('资环学院动态'),

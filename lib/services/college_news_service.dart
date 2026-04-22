@@ -143,6 +143,13 @@ class CollegeNewsService {
 
   final HttpService _http = HttpService.instance;
 
+  /// 智控学院的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeImCategoryPaths = {
+    MessageCategory.collegeImNews: ['/4015/list.htm'],
+    MessageCategory.collegeImTeachingResearch: ['/4016/list.htm'],
+    MessageCategory.collegeImNotice: ['/4017/list.htm'],
+  };
+
   /// 计信学院的三个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
     MessageCategory.collegeCsNews: ['/1216/list.htm'],
@@ -413,6 +420,9 @@ class CollegeNewsService {
     if (channelId == 'college_cs') {
       return _fetchCollegeCsNews(knownMessageIds: knownMessageIds);
     }
+    if (channelId == 'college_im') {
+      return _fetchCollegeImNews(knownMessageIds: knownMessageIds);
+    }
 
     final config = configs[channelId];
     if (config == null) return [];
@@ -485,6 +495,37 @@ class CollegeNewsService {
     return messages;
   }
 
+  /// 智控学院使用三个列表页聚合成三个分类。
+  Future<List<MessageItem>> _fetchCollegeImNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _collegeImCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCollegeImListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
   /// 抓取计信学院某个子栏目列表页。
   Future<List<MessageItem>> _fetchCollegeCsListPage({
     required String relativePath,
@@ -523,6 +564,56 @@ class CollegeNewsService {
             url: fullUrl,
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.collegeCs,
+            category: category,
+            timestamp: MessageItem.computeTimestamp(date),
+          ),
+        );
+      }
+
+      return messages;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 抓取智控学院某个子栏目列表页。
+  Future<List<MessageItem>> _fetchCollegeImListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://imce.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final items = document.querySelectorAll('div.jzlb');
+      final messages = <MessageItem>[];
+
+      for (final item in items) {
+        final titleElement = item.querySelector('div.xysbt a');
+        final dateElement = item.querySelector('div.xyssj');
+        if (titleElement == null || dateElement == null) continue;
+
+        final href = titleElement.attributes['href'] ?? '';
+        final title =
+            titleElement.attributes['title']?.trim() ??
+            titleElement.text.trim();
+        if (href.isEmpty || title.isEmpty) continue;
+
+        final fullUrl = _buildFullUrl(href, 'https://imce.sspu.edu.cn');
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
+        final date = normalizeDate(dateElement.text.trim());
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.collegeIm,
             category: category,
             timestamp: MessageItem.computeTimestamp(date),
           ),
