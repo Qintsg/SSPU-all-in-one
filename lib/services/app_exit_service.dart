@@ -30,8 +30,19 @@ class AppExitService {
 
   bool _isExiting = false;
 
+  static const Duration _desktopExitStepTimeout = Duration(milliseconds: 800);
+
   /// 当前是否处于退出流程中，用于避免重复触发。
   bool get isExiting => _isExiting;
+
+  /// 执行桌面端退出步骤，超时或异常都继续后续销毁流程。
+  Future<void> _runDesktopExitStep(Future<void> Function() step) async {
+    try {
+      await step().timeout(_desktopExitStepTimeout, onTimeout: () {});
+    } catch (_) {
+      // 退出路径不应因为单个平台资源释放失败而阻塞进程关闭。
+    }
+  }
 
   /// 按平台执行安全退出。
   Future<void> exit() async {
@@ -40,14 +51,22 @@ class AppExitService {
 
     try {
       if (_supportsDesktopShell) {
-        final isPreventClose = await windowManager.isPreventClose();
+        var isPreventClose = true;
+        try {
+          isPreventClose = await windowManager.isPreventClose().timeout(
+            _desktopExitStepTimeout,
+            onTimeout: () => true,
+          );
+        } catch (_) {
+          isPreventClose = true;
+        }
         if (isPreventClose) {
-          await windowManager.setPreventClose(false);
+          await _runDesktopExitStep(() => windowManager.setPreventClose(false));
         }
 
         AutoRefreshService.instance.dispose();
-        await TrayService.instance.destroy();
-        await windowManager.destroy();
+        await _runDesktopExitStep(() => TrayService.instance.destroy());
+        await _runDesktopExitStep(() => windowManager.destroy());
         return;
       }
 

@@ -230,23 +230,45 @@ class WxmpArticleService {
         knownMessageIds ??
         (await _stateService.loadMessages()).map((msg) => msg.id).toSet();
     final allMessages = <MessageItem>[];
-    final perMpLimit = maxCount > 0 && maxCount < _perMpArticleCount
-        ? maxCount
-        : _perMpArticleCount;
-
     for (final entry in followedMps.entries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
       final mpName = mpInfo['name'] ?? fakeid;
+      final perRequestCount = maxCount > 0 && maxCount < _perMpArticleCount
+          ? maxCount
+          : _perMpArticleCount;
+      var fetchedForMp = 0;
+      var page = 0;
+      var reachedKnownMessage = false;
 
       try {
-        final articles = await getArticles(fakeid, count: perMpLimit);
+        while (fetchedForMp < maxCount && !reachedKnownMessage) {
+          final articles = await getArticles(
+            fakeid,
+            page: page,
+            count: perRequestCount,
+          );
+          if (articles.isEmpty) break;
 
-        for (final article in articles) {
-          final msgItem = _articleToMessageItem(article, mpName, fakeid);
-          if (msgItem == null) continue;
-          if (storedMessageIds.contains(msgItem.id)) break;
-          allMessages.add(msgItem);
+          for (final article in articles) {
+            final msgItem = _articleToMessageItem(article, mpName, fakeid);
+            if (msgItem == null) continue;
+            if (storedMessageIds.contains(msgItem.id)) {
+              reachedKnownMessage = true;
+              break;
+            }
+            allMessages.add(msgItem);
+            fetchedForMp++;
+            if (fetchedForMp >= maxCount) break;
+          }
+
+          if (articles.length < perRequestCount) break;
+          page++;
+
+          // 翻页请求同样需要限速，避免单个公众号连续请求触发平台限制。
+          if (fetchedForMp < maxCount && !reachedKnownMessage) {
+            await Future.delayed(const Duration(milliseconds: _requestDelayMs));
+          }
         }
 
         // 请求间隔，避免频率限制
