@@ -97,6 +97,9 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeImTeachingResearch: 'college_im',
     MessageCategory.collegeImNotice: 'college_im',
     MessageCategory.collegeReNews: 'college_re',
+    MessageCategory.collegeReNotice: 'college_re',
+    MessageCategory.collegeReResearchService: 'college_re',
+    MessageCategory.collegeRePartyIdeology: 'college_re',
     MessageCategory.collegeEmNews: 'college_em',
     MessageCategory.collegeIcNews: 'college_ic',
     MessageCategory.collegeImheNews: 'college_imhe',
@@ -750,7 +753,7 @@ class _InfoPageState extends State<InfoPage> {
         return [MessageCategory.wechatArticle];
       case MessageSourceName.wechatServicePlaceholder:
         return [MessageCategory.wechatArticle];
-      // 教学单位渠道 — 每个学院只有一个新闻分类
+      // 教学单位渠道 — 部分学院会把多个站点栏目聚合为多个分类
       case MessageSourceName.collegeCs:
         return [
           MessageCategory.collegeCsNews,
@@ -764,7 +767,12 @@ class _InfoPageState extends State<InfoPage> {
           MessageCategory.collegeImNotice,
         ];
       case MessageSourceName.collegeRe:
-        return [MessageCategory.collegeReNews];
+        return [
+          MessageCategory.collegeReNews,
+          MessageCategory.collegeReNotice,
+          MessageCategory.collegeReResearchService,
+          MessageCategory.collegeRePartyIdeology,
+        ];
       case MessageSourceName.collegeEm:
         return [MessageCategory.collegeEmNews];
       case MessageSourceName.collegeIc:

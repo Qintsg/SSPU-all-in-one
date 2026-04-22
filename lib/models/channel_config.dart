@@ -216,7 +216,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'college_re',
     name: '资源与环境工程学院',
-    description: '学院通知与公告',
+    description: '新闻资讯、通知公告、科研与服务与党建思政',
     icon: FluentIcons.globe,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -435,6 +435,12 @@ const Map<String, List<SubCategory>> channelSubcategories = {
     SubCategory(MessageCategory.collegeImNews, '学院动态'),
     SubCategory(MessageCategory.collegeImTeachingResearch, '教学科研'),
     SubCategory(MessageCategory.collegeImNotice, '通知公告'),
+  ],
+  'college_re': [
+    SubCategory(MessageCategory.collegeReNews, '新闻资讯'),
+    SubCategory(MessageCategory.collegeReNotice, '通知公告'),
+    SubCategory(MessageCategory.collegeReResearchService, '科研与服务'),
+    SubCategory(MessageCategory.collegeRePartyIdeology, '党建思政'),
   ],
   'jwc': [
     SubCategory(MessageCategory.jwcTeaching, '教学动态'),

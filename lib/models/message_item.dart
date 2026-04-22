@@ -196,8 +196,17 @@ enum MessageCategory {
   /// 智能制造与控制工程学院通知公告
   collegeImNotice('通知公告'),
 
-  /// 资源与环境工程学院动态
-  collegeReNews('资环学院动态'),
+  /// 资源与环境工程学院新闻资讯
+  collegeReNews('新闻资讯'),
+
+  /// 资源与环境工程学院通知公告
+  collegeReNotice('通知公告'),
+
+  /// 资源与环境工程学院科研与服务
+  collegeReResearchService('科研与服务'),
+
+  /// 资源与环境工程学院党建思政
+  collegeRePartyIdeology('党建思政'),
 
   /// 能源与材料学院动态
   collegeEmNews('能材学院动态'),
