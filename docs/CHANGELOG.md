@@ -45,6 +45,7 @@
 
 ### 修复
 
+- 将 macOS Flutter Debug / Release xcconfig wrapper 纳入版本控制，修复新检出后 `flutter run -d macos` 找不到 Flutter 配置文件的问题
 - 过滤官网解析中的 `javascript:` 等无效链接，并为 WebView 增加非法 URL 兜底页，避免点击消息时崩溃
 - 将自动打标中的 `release` 标签更名为 `release-files`，避免仓库治理 / 安装器 / Release 配置类 PR 在合并时误触发发布工作流
 - 调整 `develop` / `main` 同步策略：移除导致历史持续分叉的线性历史要求，并明确同步 PR 必须使用 merge commit
