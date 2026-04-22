@@ -151,8 +151,8 @@ enum MessageCategory {
   /// 体育部通知公告 (342)
   sportsNotice('体育部通知'),
 
-  /// 体育部赛事通知 (343)
-  sportsEvent('体育赛事'),
+  /// 体育部部门动态 (343)
+  sportsEvent('部门动态'),
 
   /// 保卫处平安动态 (1019)
   securityNews('平安动态'),
