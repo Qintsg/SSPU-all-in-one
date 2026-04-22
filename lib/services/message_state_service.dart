@@ -221,6 +221,18 @@ class MessageStateService {
   static String _channelIntervalKey(String channelId) =>
       'channel_${channelId}_interval';
 
+  /// 记录最近一次非 0 刷新间隔，便于自动刷新重新开启时恢复用户配置。
+  static String _channelLastIntervalKey(String channelId) =>
+      'channel_${channelId}_last_interval';
+
+  /// 手动刷新条数配置键。
+  static String _channelManualFetchCountKey(String channelId) =>
+      'channel_${channelId}_manual_fetch_count';
+
+  /// 自动刷新条数配置键。
+  static String _channelAutoFetchCountKey(String channelId) =>
+      'channel_${channelId}_auto_fetch_count';
+
   /// 获取指定渠道是否启用
   /// [channelId] 渠道唯一标识
   /// [defaultValue] 默认值，未设置时优先使用此值，否则使用渠道配置默认值
@@ -284,7 +296,93 @@ class MessageStateService {
   /// [channelId] 渠道唯一标识
   /// [minutes] 间隔分钟数（0 = 关闭）
   Future<void> setChannelInterval(String channelId, int minutes) async {
-    await StorageService.setInt(_channelIntervalKey(channelId), minutes);
+    final normalized = minutes < 0 ? 0 : minutes;
+    await StorageService.setInt(_channelIntervalKey(channelId), normalized);
+    if (normalized > 0) {
+      await StorageService.setInt(
+        _channelLastIntervalKey(channelId),
+        normalized,
+      );
+    }
+  }
+
+  /// 获取用于设置页展示的刷新间隔。
+  /// 自动刷新关闭时回显最近一次非 0 间隔，避免重新开启后丢失原选择。
+  Future<int> getChannelDisplayInterval(
+    String channelId, {
+    int? defaultValue,
+  }) async {
+    final current = await getChannelInterval(
+      channelId,
+      defaultValue: defaultValue,
+    );
+    if (current > 0) return current;
+    return (await StorageService.getInt(_channelLastIntervalKey(channelId))) ??
+        defaultValue ??
+        _channelDefaults[channelId]?.defaultInterval ??
+        60;
+  }
+
+  /// 判断指定渠道的自动刷新是否开启。
+  Future<bool> isChannelAutoRefreshEnabled(String channelId) async {
+    return (await getChannelInterval(channelId)) > 0;
+  }
+
+  /// 切换指定渠道的自动刷新状态。
+  /// 关闭时将当前间隔落盘为最近一次有效值；开启时恢复最近一次有效值或默认值。
+  Future<void> setChannelAutoRefreshEnabled(
+    String channelId,
+    bool enabled,
+  ) async {
+    if (enabled) {
+      final restored = await getChannelDisplayInterval(channelId);
+      await setChannelInterval(channelId, restored <= 0 ? 60 : restored);
+      return;
+    }
+
+    final current = await getChannelInterval(channelId);
+    if (current > 0) {
+      await StorageService.setInt(_channelLastIntervalKey(channelId), current);
+    }
+    await StorageService.setInt(_channelIntervalKey(channelId), 0);
+  }
+
+  /// 获取指定渠道的手动刷新条数。
+  Future<int> getChannelManualFetchCount(
+    String channelId, {
+    int defaultValue = 20,
+  }) async {
+    final stored = await StorageService.getInt(
+      _channelManualFetchCountKey(channelId),
+    );
+    return (stored ?? defaultValue).clamp(1, 200);
+  }
+
+  /// 设置指定渠道的手动刷新条数。
+  Future<void> setChannelManualFetchCount(String channelId, int count) async {
+    await StorageService.setInt(
+      _channelManualFetchCountKey(channelId),
+      count.clamp(1, 200),
+    );
+  }
+
+  /// 获取指定渠道的自动刷新条数。
+  Future<int> getChannelAutoFetchCount(
+    String channelId, {
+    int defaultValue = 20,
+  }) async {
+    final stored = await StorageService.getInt(
+      _channelAutoFetchCountKey(channelId),
+    );
+    return (stored ?? defaultValue).clamp(1, 200);
+  }
+
+  /// 设置指定渠道的自动刷新条数。
+  Future<void> setChannelAutoFetchCount(String channelId, int count) async {
+    await StorageService.setInt(
+      _channelAutoFetchCountKey(channelId),
+      count.clamp(1, 200),
+    );
   }
 
   // ==================== 自动刷新间隔管理（旧接口，保持兼容） ====================

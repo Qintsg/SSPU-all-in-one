@@ -35,4 +35,35 @@ void main() {
     expect(await stateService.getChannelInterval('wechat_public'), 120);
     expect(await stateService.getChannelInterval('unknown_channel'), 0);
   });
+
+  test('自动刷新关闭后保留最近一次有效间隔并可恢复', () async {
+    SharedPreferences.setMockInitialValues({});
+    await StorageService.init();
+    final stateService = MessageStateService.instance;
+
+    // 设置页关闭自动刷新时仍需要保留原间隔，重新开启时恢复用户选择。
+    await stateService.setChannelInterval('jwc', 30);
+    expect(await stateService.isChannelAutoRefreshEnabled('jwc'), isTrue);
+
+    await stateService.setChannelAutoRefreshEnabled('jwc', false);
+    expect(await stateService.getChannelInterval('jwc'), 0);
+    expect(await stateService.getChannelDisplayInterval('jwc'), 30);
+
+    await stateService.setChannelAutoRefreshEnabled('jwc', true);
+    expect(await stateService.getChannelInterval('jwc'), 30);
+    expect(await stateService.isChannelAutoRefreshEnabled('jwc'), isTrue);
+  });
+
+  test('刷新条数配置限制在正整数安全范围内', () async {
+    SharedPreferences.setMockInitialValues({});
+    await StorageService.init();
+    final stateService = MessageStateService.instance;
+
+    // 数字框只允许正整数；服务层额外兜底，避免异常值进入刷新链路。
+    await stateService.setChannelManualFetchCount('jwc', -5);
+    await stateService.setChannelAutoFetchCount('jwc', 250);
+
+    expect(await stateService.getChannelManualFetchCount('jwc'), 1);
+    expect(await stateService.getChannelAutoFetchCount('jwc'), 200);
+  });
 }
