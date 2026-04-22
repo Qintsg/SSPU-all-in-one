@@ -176,7 +176,7 @@ enum MessageCategory {
   studentNews('学工要闻'),
 
   /// 学生处通知公告 (490)
-  studentNotice('学生通知'),
+  studentNotice('通知公告'),
 
   /// 计算机与信息工程学院动态
   collegeCsNews('计信学院动态'),

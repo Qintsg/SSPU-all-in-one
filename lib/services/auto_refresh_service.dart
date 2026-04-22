@@ -319,8 +319,10 @@ class AutoRefreshService {
       channelKey: 'studentNews',
       getInterval: () => _stateService.getChannelInterval('student_affairs'),
       isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-      fetchMessages: (knownMessageIds) =>
-          _studentService.fetchNews(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _studentService.fetchNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 学生处通知公告
@@ -328,8 +330,10 @@ class AutoRefreshService {
       channelKey: 'studentNotice',
       getInterval: () => _stateService.getChannelInterval('student_affairs'),
       isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-      fetchMessages: (knownMessageIds) =>
-          _studentService.fetchNotices(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _studentService.fetchNotices(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // ==================== 教学单位渠道（19个学院/部门） ====================
@@ -515,9 +519,17 @@ class AutoRefreshService {
       );
     }
     if (await _stateService.isChannelEnabled('student_affairs')) {
-      futures.add(_studentService.fetchNews(knownMessageIds: knownMessageIds));
       futures.add(
-        _studentService.fetchNotices(knownMessageIds: knownMessageIds),
+        _studentService.fetchNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
+      );
+      futures.add(
+        _studentService.fetchNotices(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
 
@@ -849,8 +861,10 @@ class AutoRefreshService {
           getInterval: () =>
               _stateService.getChannelInterval('student_affairs'),
           isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-          fetchMessages: (knownMessageIds) =>
-              _studentService.fetchNews(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _studentService.fetchNews(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       case 'studentNotice':
@@ -859,8 +873,10 @@ class AutoRefreshService {
           getInterval: () =>
               _stateService.getChannelInterval('student_affairs'),
           isEnabled: () => _stateService.isChannelEnabled('student_affairs'),
-          fetchMessages: (knownMessageIds) =>
-              _studentService.fetchNotices(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _studentService.fetchNotices(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       // 教学单位渠道（19个学院/部门，统一处理）
