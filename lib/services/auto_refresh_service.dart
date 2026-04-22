@@ -100,7 +100,7 @@ class AutoRefreshService {
       case 'latest_info':
         return ['latestInfo'];
       case 'jwc':
-        return ['jwcStudent', 'jwcTeacher'];
+        return ['jwcTeaching', 'jwcStudent', 'jwcTeacher'];
       case 'sspu_news':
         return ['sspuNews'];
       case 'sspu_notice':
@@ -155,6 +155,17 @@ class AutoRefreshService {
       getInterval: _stateService.getNoticeInterval,
       isEnabled: _stateService.isNoticeEnabled,
       fetchMessages: (knownMessageIds) => _newsService.fetchNotices(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
+    );
+
+    // 教务处教学动态
+    await _setupTimer(
+      channelKey: 'jwcTeaching',
+      getInterval: () => _stateService.getChannelInterval('jwc'),
+      isEnabled: () => _stateService.isChannelEnabled('jwc'),
+      fetchMessages: (knownMessageIds) => _jwcService.fetchTeachingNews(
         maxCount: _defaultFetchCount,
         knownMessageIds: knownMessageIds,
       ),
@@ -396,6 +407,12 @@ class AutoRefreshService {
 
     // 职能部门
     if (await _stateService.isChannelEnabled('jwc')) {
+      futures.add(
+        _jwcService.fetchTeachingNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
+      );
       futures.add(
         _jwcService.fetchStudentNews(
           maxCount: maxCount,
@@ -652,6 +669,17 @@ class AutoRefreshService {
           getInterval: _stateService.getNoticeInterval,
           isEnabled: _stateService.isNoticeEnabled,
           fetchMessages: (knownMessageIds) => _newsService.fetchNotices(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
+        );
+        break;
+      case 'jwcTeaching':
+        await _setupTimer(
+          channelKey: 'jwcTeaching',
+          getInterval: () => _stateService.getChannelInterval('jwc'),
+          isEnabled: () => _stateService.isChannelEnabled('jwc'),
+          fetchMessages: (knownMessageIds) => _jwcService.fetchTeachingNews(
             maxCount: _defaultFetchCount,
             knownMessageIds: knownMessageIds,
           ),

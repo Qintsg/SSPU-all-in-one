@@ -131,13 +131,16 @@ enum MessageCategory {
   notice('通知公示'),
 
   /// 教务处学生专栏 (897)
-  jwcStudent('教务处学生专栏'),
+  jwcStudent('学生专栏'),
 
   /// 教务处教师专栏 (898)
-  jwcTeacher('教务处教师专栏'),
+  jwcTeacher('教师专栏'),
 
   /// 信息技术中心资讯 (zxxx)
   itcNews('信息技术中心'),
+
+  /// 教务处教学动态 (895)
+  jwcTeaching('教学动态'),
 
   /// 学校官网学校新闻 (2964)
   sspuNews('学校新闻'),

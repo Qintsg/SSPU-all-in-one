@@ -74,6 +74,7 @@ class _InfoPageState extends State<InfoPage> {
   static const Map<MessageCategory, String> _categoryToChannelId = {
     MessageCategory.latestInfo: 'latest_info',
     MessageCategory.notice: 'notice',
+    MessageCategory.jwcTeaching: 'jwc',
     MessageCategory.jwcStudent: 'jwc',
     MessageCategory.jwcTeacher: 'jwc',
     MessageCategory.itcNews: 'itc',
@@ -712,7 +713,11 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.infoDisclosure:
         return [MessageCategory.latestInfo, MessageCategory.notice];
       case MessageSourceName.jwc:
-        return [MessageCategory.jwcStudent, MessageCategory.jwcTeacher];
+        return [
+          MessageCategory.jwcTeaching,
+          MessageCategory.jwcStudent,
+          MessageCategory.jwcTeacher,
+        ];
       case MessageSourceName.itc:
         return [MessageCategory.itcNews];
       case MessageSourceName.sspuOfficial:

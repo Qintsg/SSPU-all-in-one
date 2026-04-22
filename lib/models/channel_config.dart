@@ -427,6 +427,7 @@ class SubCategory {
 /// 单分类渠道不需要子开关，渠道主开关即可控制
 const Map<String, List<SubCategory>> channelSubcategories = {
   'jwc': [
+    SubCategory(MessageCategory.jwcTeaching, '教学动态'),
     SubCategory(MessageCategory.jwcStudent, '学生专栏'),
     SubCategory(MessageCategory.jwcTeacher, '教师专栏'),
   ],
