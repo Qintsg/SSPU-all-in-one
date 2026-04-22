@@ -124,6 +124,9 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeVtNews: 'college_vt',
     MessageCategory.collegeVtNotice: 'college_vt',
     MessageCategory.collegeMarxNews: 'college_marx',
+    MessageCategory.collegeMarxNotice: 'college_marx',
+    MessageCategory.collegeMarxResearch: 'college_marx',
+    MessageCategory.collegeMarxTeaching: 'college_marx',
     MessageCategory.collegeCeNews: 'college_ce',
     MessageCategory.collegeCeNotice: 'college_ce',
     MessageCategory.centerArtEduNews: 'center_art_edu',
@@ -831,7 +834,12 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.collegeVt:
         return [MessageCategory.collegeVtNews, MessageCategory.collegeVtNotice];
       case MessageSourceName.collegeMarx:
-        return [MessageCategory.collegeMarxNews];
+        return [
+          MessageCategory.collegeMarxNews,
+          MessageCategory.collegeMarxNotice,
+          MessageCategory.collegeMarxResearch,
+          MessageCategory.collegeMarxTeaching,
+        ];
       case MessageSourceName.collegeCe:
         return [MessageCategory.collegeCeNews, MessageCategory.collegeCeNotice];
       case MessageSourceName.centerArtEdu:

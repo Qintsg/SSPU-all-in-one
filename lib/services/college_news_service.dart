@@ -202,6 +202,14 @@ class CollegeNewsService {
     MessageCategory.collegeVtNotice: ['/586/list.htm'],
   };
 
+  /// 马克思主义学院的四个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeMarxCategoryPaths = {
+    MessageCategory.collegeMarxNews: ['/250/list.htm'],
+    MessageCategory.collegeMarxNotice: ['/251/list.htm'],
+    MessageCategory.collegeMarxResearch: ['/252/list.htm'],
+    MessageCategory.collegeMarxTeaching: ['/247/list.htm'],
+  };
+
   /// 继续教育学院的两个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCeCategoryPaths = {
     MessageCategory.collegeCeNews: ['/1687/list.htm'],
@@ -388,14 +396,13 @@ class CollegeNewsService {
     // --- 5.13 马克思主义学院 (模板A) ---
     'college_marx': CollegeConfig(
       baseUrl: 'https://mkszyxy.sspu.edu.cn',
-      template: CollegeTemplate.listA,
+      template: CollegeTemplate.newsListB,
       sourceName: MessageSourceName.collegeMarx,
       category: MessageCategory.collegeMarxNews,
-      listContainerSelector: 'ul.list',
-      listItemSelector: 'li.ui-preDot',
-      dateSelector: 'span.time',
-      titleSelector: 'span.news_title a',
-      titleFromAttribute: true,
+      newsListContainerSelector: 'ul.news_list',
+      newsListTitleSelector: 'div.item-right a',
+      newsListDateSelector: 'div.item-time',
+      newsListLinkSelector: 'div.item-right a',
     ),
 
     // --- 5.14 继续教育学院 (模板A，MM-DD短日期) ---
@@ -507,6 +514,9 @@ class CollegeNewsService {
     }
     if (channelId == 'college_vt') {
       return _fetchCollegeVtNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'college_marx') {
+      return _fetchCollegeMarxNews(knownMessageIds: knownMessageIds);
     }
     if (channelId == 'college_ce') {
       return _fetchCollegeCeNews(knownMessageIds: knownMessageIds);
@@ -875,6 +885,37 @@ class CollegeNewsService {
     for (final entry in _collegeVtCategoryPaths.entries) {
       for (final relativePath in entry.value) {
         final pageMessages = await _fetchCollegeVtListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
+  /// 马克思主义学院使用四个列表页聚合成四个分类。
+  Future<List<MessageItem>> _fetchCollegeMarxNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _collegeMarxCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCollegeMarxListPage(
           relativePath: relativePath,
           category: entry.key,
           knownMessageIds: seenIds,
@@ -1339,6 +1380,38 @@ class CollegeNewsService {
         newsListTitleSelector: 'span.news_title a',
         newsListDateSelector: 'span.news_meta',
         newsListLinkSelector: 'a',
+      );
+
+      return _parseNewsListB(
+        document,
+        config,
+        knownMessageIds: knownMessageIds,
+      );
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 抓取马克思主义学院某个子栏目列表页。
+  Future<List<MessageItem>> _fetchCollegeMarxListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://mkszyxy.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final config = CollegeConfig(
+        baseUrl: 'https://mkszyxy.sspu.edu.cn',
+        template: CollegeTemplate.newsListB,
+        sourceName: MessageSourceName.collegeMarx,
+        category: category,
+        newsListContainerSelector: 'ul.news_list',
+        newsListTitleSelector: 'div.item-right a',
+        newsListDateSelector: 'div.item-time',
+        newsListLinkSelector: 'div.item-right a',
       );
 
       return _parseNewsListB(

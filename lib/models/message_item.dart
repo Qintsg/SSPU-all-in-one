@@ -278,7 +278,16 @@ enum MessageCategory {
   collegeVtNotice('学院公告'),
 
   /// 马克思主义学院动态
-  collegeMarxNews('马院动态'),
+  collegeMarxNews('学院新闻'),
+
+  /// 马克思主义学院通知公告
+  collegeMarxNotice('通知公告'),
+
+  /// 马克思主义学院学术科研
+  collegeMarxResearch('学术科研'),
+
+  /// 马克思主义学院教育教学
+  collegeMarxTeaching('教育教学'),
 
   /// 继续教育学院动态
   collegeCeNews('学院新闻'),
