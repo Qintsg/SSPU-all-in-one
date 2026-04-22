@@ -1731,6 +1731,7 @@ class CollegeNewsService {
         if (href.isEmpty || title.isEmpty) continue;
 
         final fullUrl = _buildFullUrl(href, 'https://jxxy.sspu.edu.cn');
+        if (fullUrl.isEmpty) continue;
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -1781,6 +1782,7 @@ class CollegeNewsService {
         if (href.isEmpty || title.isEmpty) continue;
 
         final fullUrl = _buildFullUrl(href, 'https://imce.sspu.edu.cn');
+        if (fullUrl.isEmpty) continue;
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -1831,6 +1833,7 @@ class CollegeNewsService {
         if (href.isEmpty || title.isEmpty) continue;
 
         final fullUrl = _buildFullUrl(href, 'https://zihuan.sspu.edu.cn');
+        if (fullUrl.isEmpty) continue;
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -1955,6 +1958,7 @@ class CollegeNewsService {
         if (href.isEmpty || title.isEmpty) continue;
 
         final fullUrl = _buildFullUrl(href, 'https://wywh.sspu.edu.cn');
+        if (fullUrl.isEmpty) continue;
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -2016,6 +2020,7 @@ class CollegeNewsService {
         if (href.isEmpty || title.isEmpty) continue;
 
         final fullUrl = _buildFullUrl(href, 'https://sltj.sspu.edu.cn');
+        if (fullUrl.isEmpty) continue;
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -2297,6 +2302,7 @@ class CollegeNewsService {
       if (title.isEmpty || href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      if (fullUrl.isEmpty) continue;
       final messageId = _generateId(fullUrl);
       if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -2373,6 +2379,7 @@ class CollegeNewsService {
       if (title.isEmpty || href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      if (fullUrl.isEmpty) continue;
       final messageId = _generateId(fullUrl);
       if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -2425,6 +2432,7 @@ class CollegeNewsService {
       if (href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      if (fullUrl.isEmpty) continue;
       final messageId = _generateId(fullUrl);
       if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -2492,6 +2500,7 @@ class CollegeNewsService {
       if (href.isEmpty) continue;
 
       final fullUrl = _buildFullUrl(href, config.baseUrl);
+      if (fullUrl.isEmpty) continue;
       final messageId = _generateId(fullUrl);
       if (knownMessageIds?.contains(messageId) ?? false) break;
 
@@ -2543,10 +2552,29 @@ class CollegeNewsService {
 
   // ==================== 工具方法 ====================
 
-  /// 构建完整 URL：相对路径拼接 baseUrl，绝对路径直接返回
+  /// 构建完整 URL：过滤脚本/锚点等无效链接，避免 WebView 加载非法 URL。
   String _buildFullUrl(String href, String baseUrl) {
-    if (href.startsWith('http')) return href;
-    return '$baseUrl$href';
+    final normalizedHref = href.trim();
+    if (normalizedHref.isEmpty) return '';
+
+    final lowerHref = normalizedHref.toLowerCase();
+    if (lowerHref == '#' ||
+        lowerHref.startsWith('#') ||
+        lowerHref.startsWith('javascript:') ||
+        lowerHref.startsWith('mailto:') ||
+        lowerHref.startsWith('tel:')) {
+      return '';
+    }
+
+    final baseUri = Uri.tryParse(baseUrl);
+    if (baseUri == null || !baseUri.hasScheme || baseUri.host.isEmpty) {
+      return '';
+    }
+
+    final resolved = baseUri.resolve(normalizedHref);
+    if (!resolved.hasScheme || resolved.host.isEmpty) return '';
+    if (resolved.scheme != 'http' && resolved.scheme != 'https') return '';
+    return resolved.toString();
   }
 
   /// 基于 URL 生成稳定的消息唯一 ID（MD5 哈希）
