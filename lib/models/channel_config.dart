@@ -346,7 +346,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'center_intl',
     name: '国际教育中心',
-    description: '中心通知与公告',
+    description: '新闻与公告',
     icon: FluentIcons.globe,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -469,6 +469,10 @@ const Map<String, List<SubCategory>> channelSubcategories = {
   'college_vte': [
     SubCategory(MessageCategory.collegeVteNews, '新闻动态'),
     SubCategory(MessageCategory.collegeVteNotice, '通知公告'),
+  ],
+  'center_intl': [
+    SubCategory(MessageCategory.centerIntlNews, '新闻'),
+    SubCategory(MessageCategory.centerIntlNotice, '公告'),
   ],
   'jwc': [
     SubCategory(MessageCategory.jwcTeaching, '教学动态'),

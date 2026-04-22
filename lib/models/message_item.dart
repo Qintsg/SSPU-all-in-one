@@ -283,8 +283,11 @@ enum MessageCategory {
   /// 艺术教育中心动态
   centerArtEduNews('艺教中心动态'),
 
-  /// 国际教育中心动态
-  centerIntlNews('国教中心动态'),
+  /// 国际教育中心新闻
+  centerIntlNews('新闻'),
+
+  /// 国际教育中心公告
+  centerIntlNotice('公告'),
 
   /// 创新创业教育中心动态
   centerInnovNews('双创中心动态'),

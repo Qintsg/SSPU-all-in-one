@@ -126,6 +126,7 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.collegeCeNews: 'college_ce',
     MessageCategory.centerArtEduNews: 'center_art_edu',
     MessageCategory.centerIntlNews: 'center_intl',
+    MessageCategory.centerIntlNotice: 'center_intl',
     MessageCategory.centerInnovNews: 'center_innov',
     MessageCategory.graduateNews: 'graduate',
     MessageCategory.libCenterNews: 'lib_center',
@@ -834,7 +835,10 @@ class _InfoPageState extends State<InfoPage> {
       case MessageSourceName.centerArtEdu:
         return [MessageCategory.centerArtEduNews];
       case MessageSourceName.centerIntl:
-        return [MessageCategory.centerIntlNews];
+        return [
+          MessageCategory.centerIntlNews,
+          MessageCategory.centerIntlNotice,
+        ];
       case MessageSourceName.centerInnov:
         return [MessageCategory.centerInnovNews];
       case MessageSourceName.graduate:
