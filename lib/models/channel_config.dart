@@ -196,7 +196,7 @@ const List<ChannelConfig> teachingChannels = [
   ChannelConfig(
     id: 'college_cs',
     name: '计算机与信息工程学院',
-    description: '学院通知与公告',
+    description: '工作动态、教师工作与学生工作',
     icon: FluentIcons.settings,
     group: ChannelGroup.teaching,
     implemented: true,
@@ -426,6 +426,11 @@ class SubCategory {
 /// 渠道子分类映射 — 仅列出有多个子分类的渠道
 /// 单分类渠道不需要子开关，渠道主开关即可控制
 const Map<String, List<SubCategory>> channelSubcategories = {
+  'college_cs': [
+    SubCategory(MessageCategory.collegeCsNews, '工作动态'),
+    SubCategory(MessageCategory.collegeCsTeacherWork, '教师工作'),
+    SubCategory(MessageCategory.collegeCsStudentWork, '学生工作'),
+  ],
   'jwc': [
     SubCategory(MessageCategory.jwcTeaching, '教学动态'),
     SubCategory(MessageCategory.jwcStudent, '学生专栏'),

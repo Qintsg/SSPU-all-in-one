@@ -178,8 +178,14 @@ enum MessageCategory {
   /// 学生处通知公告 (490)
   studentNotice('通知公告'),
 
-  /// 计算机与信息工程学院动态
-  collegeCsNews('计信学院动态'),
+  /// 计算机与信息工程学院工作动态
+  collegeCsNews('工作动态'),
+
+  /// 计算机与信息工程学院教师工作
+  collegeCsTeacherWork('教师工作'),
+
+  /// 计算机与信息工程学院学生工作
+  collegeCsStudentWork('学生工作'),
 
   /// 智能制造与控制工程学院动态
   collegeImNews('智控学院动态'),

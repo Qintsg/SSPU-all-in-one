@@ -143,6 +143,29 @@ class CollegeNewsService {
 
   final HttpService _http = HttpService.instance;
 
+  /// 计信学院的三个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
+    MessageCategory.collegeCsNews: ['/1216/list.htm'],
+    MessageCategory.collegeCsTeacherWork: [
+      '/2059/list.htm',
+      '/2062/list.htm',
+      '/2063/list.htm',
+      '/2064/list.htm',
+      '/2065/list.htm',
+      '/2066/list.htm',
+      '/2068/list.htm',
+      '/2069/list.htm',
+      '/2070/list.htm',
+    ],
+    MessageCategory.collegeCsStudentWork: [
+      '/2075/list.htm',
+      '/xshd/list.htm',
+      '/2084/list.htm',
+      '/2085/list.htm',
+      '/2086/list.htm',
+    ],
+  };
+
   // ==================== 19 个学院/部门的配置表 ====================
 
   /// 全部学院配置，key 为 channel_config 中的 channelId
@@ -387,6 +410,10 @@ class CollegeNewsService {
     String channelId, {
     Set<String>? knownMessageIds,
   }) async {
+    if (channelId == 'college_cs') {
+      return _fetchCollegeCsNews(knownMessageIds: knownMessageIds);
+    }
+
     final config = configs[channelId];
     if (config == null) return [];
 
@@ -423,6 +450,87 @@ class CollegeNewsService {
       }
     } catch (_) {
       // 网络异常或解析失败，静默返回空列表
+      return [];
+    }
+  }
+
+  /// 计信学院使用多个子栏目拼成三个聚合分类。
+  Future<List<MessageItem>> _fetchCollegeCsNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _collegeCsCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCollegeCsListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
+  /// 抓取计信学院某个子栏目列表页。
+  Future<List<MessageItem>> _fetchCollegeCsListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://jxxy.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final items = document.querySelectorAll('li.ui-preDot');
+      final messages = <MessageItem>[];
+
+      for (final item in items) {
+        final titleElement = item.querySelector('a.text-overflow');
+        final dateElement = item.querySelector('span.time');
+        if (titleElement == null || dateElement == null) continue;
+
+        final href = titleElement.attributes['href'] ?? '';
+        final title =
+            titleElement.attributes['title']?.trim() ??
+            titleElement.text.trim();
+        if (href.isEmpty || title.isEmpty) continue;
+
+        final fullUrl = _buildFullUrl(href, 'https://jxxy.sspu.edu.cn');
+        final messageId = _generateId(fullUrl);
+        if (knownMessageIds?.contains(messageId) ?? false) break;
+
+        final date = normalizeDate(dateElement.text.trim());
+        messages.add(
+          MessageItem(
+            id: messageId,
+            title: title,
+            date: date,
+            url: fullUrl,
+            sourceType: MessageSourceType.schoolWebsite,
+            sourceName: MessageSourceName.collegeCs,
+            category: category,
+            timestamp: MessageItem.computeTimestamp(date),
+          ),
+        );
+      }
+
+      return messages;
+    } catch (_) {
       return [];
     }
   }

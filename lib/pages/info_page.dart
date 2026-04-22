@@ -91,6 +91,8 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.studentNews: 'student_affairs',
     MessageCategory.studentNotice: 'student_affairs',
     MessageCategory.collegeCsNews: 'college_cs',
+    MessageCategory.collegeCsTeacherWork: 'college_cs',
+    MessageCategory.collegeCsStudentWork: 'college_cs',
     MessageCategory.collegeImNews: 'college_im',
     MessageCategory.collegeReNews: 'college_re',
     MessageCategory.collegeEmNews: 'college_em',
@@ -748,7 +750,11 @@ class _InfoPageState extends State<InfoPage> {
         return [MessageCategory.wechatArticle];
       // 教学单位渠道 — 每个学院只有一个新闻分类
       case MessageSourceName.collegeCs:
-        return [MessageCategory.collegeCsNews];
+        return [
+          MessageCategory.collegeCsNews,
+          MessageCategory.collegeCsTeacherWork,
+          MessageCategory.collegeCsStudentWork,
+        ];
       case MessageSourceName.collegeIm:
         return [MessageCategory.collegeImNews];
       case MessageSourceName.collegeRe:
