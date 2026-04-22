@@ -46,6 +46,7 @@
 
 ### 修复
 
+- 设置页在窄屏设备改用顶部下拉切换分区，避免固定左侧导航挤压内容导致移动端出框
 - 优化微信公众平台认证状态检测，增加脱敏调试日志和认证状态诊断，避免无效 Token 被误判为可用
 - 将 macOS Flutter Debug / Release xcconfig wrapper 纳入版本控制，修复新检出后 `flutter run -d macos` 找不到 Flutter 配置文件的问题
 - 过滤官网解析中的 `javascript:` 等无效链接，并为 WebView 增加非法 URL 兜底页，避免点击消息时崩溃

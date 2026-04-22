@@ -9,9 +9,12 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/app.dart';
 import 'package:sspu_all_in_one/main.dart';
+import 'package:sspu_all_in_one/pages/settings_page.dart';
 import 'package:sspu_all_in_one/pages/webview_page.dart';
+import 'package:sspu_all_in_one/services/storage_service.dart';
 
 void main() {
   testWidgets('应用启动冒烟测试', (WidgetTester tester) async {
@@ -61,5 +64,27 @@ void main() {
     // 历史缓存中的非法 URL 不应继续传给 WebView 构造器。
     expect(find.text('链接无效，无法打开'), findsOneWidget);
     expect(find.text('返回'), findsOneWidget);
+  });
+
+  testWidgets('设置页窄屏使用顶部下拉切换分区', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await StorageService.init();
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+
+    try {
+      await tester.pumpWidget(const FluentApp(home: SettingsPage()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // 窄屏不渲染固定左侧导航，避免挤压设置内容。
+      expect(find.byType(ComboBox<int>), findsOneWidget);
+      expect(find.text('系统设置'), findsNothing);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 300));
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    }
   });
 }
