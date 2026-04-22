@@ -16,6 +16,7 @@
 - 为移动端竖屏手机切换到底部导航，并为窄屏保留顶栏入口，修复低 DPI 竖屏下导航栏缺失的问题
 - 为 Linux Release 显式补齐并校验主程序可执行权限，同时补充压缩包解压与 `chmod +x` 使用说明
 - 收窄“刷新官网消息”的手动刷新范围，避免微信公众号抓取串入官网刷新链路导致信息中心长时间卡在加载状态
+- 为 macOS Debug / Release entitlements 补充 `com.apple.security.network.client`，修复官网刷新与内嵌 WebView 页面统一空白的问题
 
 ## [0.1.5-alpha] - 2026-04-21
 
