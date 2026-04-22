@@ -268,8 +268,12 @@ class _InfoPageState extends State<InfoPage> {
 
     try {
       final persistedMessages = await _stateService.loadMessages();
+      final maxCount = await _stateService.getChannelManualFetchCount(
+        'wechat_public',
+        defaultValue: 50,
+      );
       final articles = await WechatArticleService.instance.fetchArticles(
-        maxCount: 50,
+        maxCount: maxCount,
         knownMessageIds: persistedMessages.map((msg) => msg.id).toSet(),
       );
 

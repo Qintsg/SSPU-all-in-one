@@ -12,8 +12,10 @@ import 'dart:async';
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/app_exit_service.dart';
 import '../models/channel_config.dart';
+import '../services/auto_refresh_service.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
 import '../services/message_state_service.dart';
@@ -78,8 +80,26 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 公众号平台文章服务引用
   final WxmpArticleService _wxmpService = WxmpArticleService.instance;
 
+  /// 自动刷新服务引用，用于设置变更后即时重载微信公众号定时器。
+  final AutoRefreshService _autoRefresh = AutoRefreshService.instance;
+
   /// 公众号平台是否已认证
   bool _wxmpAuthenticated = false;
+
+  /// 微信推文获取总开关。
+  bool _wechatChannelEnabled = false;
+
+  /// 微信推文自动刷新开关。
+  bool _wechatAutoRefreshEnabled = false;
+
+  /// 微信推文自动刷新间隔。
+  int _wechatRefreshInterval = 120;
+
+  /// 微信推文手动刷新文章个数。
+  int _wechatManualFetchCount = 20;
+
+  /// 微信推文自动刷新文章个数。
+  int _wechatAutoFetchCount = 20;
 
   /// 公众号平台已关注的公众号列表
   List<Map<String, String>> _wxmpFollowedMps = [];
@@ -124,6 +144,23 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndEH = await _messageState.getDndEndHour();
     final dndEM = await _messageState.getDndEndMinute();
     final wxmpHasAuth = await _wxmpAuth.hasAuth();
+    final wechatEnabled = await _messageState.isChannelEnabled(
+      'wechat_public',
+      defaultValue: false,
+    );
+    final wechatAutoEnabled = await _messageState.isChannelAutoRefreshEnabled(
+      'wechat_public',
+    );
+    final wechatInterval = await _messageState.getChannelDisplayInterval(
+      'wechat_public',
+      defaultValue: 120,
+    );
+    final wechatManualCount = await _messageState.getChannelManualFetchCount(
+      'wechat_public',
+    );
+    final wechatAutoCount = await _messageState.getChannelAutoFetchCount(
+      'wechat_public',
+    );
     if (mounted) {
       setState(() {
         _isPasswordEnabled = isSet;
@@ -135,9 +172,15 @@ class _SettingsPageState extends State<SettingsPage> {
         _dndEndHour = dndEH;
         _dndEndMinute = dndEM;
         _wxmpAuthenticated = wxmpHasAuth;
+        _wechatChannelEnabled = wechatEnabled;
+        _wechatAutoRefreshEnabled = wechatAutoEnabled;
+        _wechatRefreshInterval = wechatInterval;
+        _wechatManualFetchCount = wechatManualCount;
+        _wechatAutoFetchCount = wechatAutoCount;
         _isLoading = false;
       });
     }
+    if (wxmpHasAuth) await _loadWxmpFollowedMps();
   }
 
   /// 显示操作成功的提示条
@@ -147,6 +190,75 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (infoBarContext, close) =>
           InfoBar(title: Text(message), severity: InfoBarSeverity.success),
     );
+  }
+
+  /// 打开外部链接。
+  Future<void> _openExternalUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    if (!mounted) return;
+    displayInfoBar(
+      context,
+      builder: (infoBarContext, close) => InfoBar(
+        title: const Text('无法打开链接'),
+        content: Text(url),
+        severity: InfoBarSeverity.warning,
+      ),
+    );
+  }
+
+  /// 切换微信推文获取总开关。
+  Future<void> _onWechatChannelToggled(bool enabled) async {
+    await _messageState.setChannelEnabled('wechat_public', enabled);
+    setState(() => _wechatChannelEnabled = enabled);
+    await _autoRefresh.reloadChannel('wechat_public');
+  }
+
+  /// 修改微信推文手动刷新条数。
+  Future<void> _onWechatManualFetchCountChanged(int count) async {
+    final normalized = count.clamp(1, 200);
+    await _messageState.setChannelManualFetchCount('wechat_public', normalized);
+    setState(() => _wechatManualFetchCount = normalized);
+  }
+
+  /// 切换微信推文自动刷新状态。
+  Future<void> _onWechatAutoRefreshToggled(bool enabled) async {
+    if (enabled) {
+      final interval = _wechatRefreshInterval <= 0
+          ? 120
+          : _wechatRefreshInterval;
+      await _messageState.setChannelInterval('wechat_public', interval);
+      setState(() {
+        _wechatAutoRefreshEnabled = true;
+        _wechatRefreshInterval = interval;
+      });
+    } else {
+      await _messageState.setChannelAutoRefreshEnabled('wechat_public', false);
+      setState(() => _wechatAutoRefreshEnabled = false);
+    }
+    await _autoRefresh.reloadChannel('wechat_public');
+  }
+
+  /// 修改微信推文自动刷新频率。
+  Future<void> _onWechatRefreshIntervalChanged(int minutes) async {
+    await _messageState.setChannelInterval('wechat_public', minutes);
+    setState(() {
+      _wechatRefreshInterval = minutes;
+      _wechatAutoRefreshEnabled = minutes > 0;
+    });
+    await _autoRefresh.reloadChannel('wechat_public');
+  }
+
+  /// 修改微信推文自动刷新条数。
+  Future<void> _onWechatAutoFetchCountChanged(int count) async {
+    final normalized = count.clamp(1, 200);
+    await _messageState.setChannelAutoFetchCount('wechat_public', normalized);
+    setState(() => _wechatAutoFetchCount = normalized);
+    await _autoRefresh.reloadChannel('wechat_public');
   }
 
   @override
@@ -638,47 +750,172 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// 微信栏目设置内容 — 仅保留公众号平台认证与推文抓取能力
+  /// 微信栏目设置内容 — 展示刷新设置、公众号平台认证与 SSPU 微信矩阵。
   Widget _buildWechatSection(BuildContext context) {
     final theme = FluentTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('微信', style: theme.typography.subtitle),
+        Text('微信推文消息获取', style: theme.typography.subtitle),
         const SizedBox(height: FluentSpacing.l),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(FluentSpacing.l),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('获取方式', style: theme.typography.bodyStrong),
-                const SizedBox(height: FluentSpacing.xs),
-                Text(
-                  '微信公众号来源已统一为公众号平台，应用不再提供微信读书接入方式。',
-                  style: theme.typography.caption,
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildWechatRefreshSettings(context),
+        const SizedBox(height: FluentSpacing.l),
+        _buildWechatFetchMethodCard(context),
         const SizedBox(height: FluentSpacing.l),
         ..._buildWxmpAuthUI(context),
-        ChannelListSection(title: '微信渠道', channels: wechatChannels),
-        const SizedBox(height: FluentSpacing.l),
         _buildSspuRecommendedAccounts(context),
       ],
     );
   }
 
-  /// 方式二：公众号平台认证区域
+  /// 构建微信推文刷新设置卡片。
+  Widget _buildWechatRefreshSettings(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    final disabledColor = theme.resources.textFillColorSecondary.withValues(
+      alpha: 0.7,
+    );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(FluentSpacing.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('刷新设置', style: theme.typography.bodyStrong),
+            const SizedBox(height: FluentSpacing.s),
+            Wrap(
+              spacing: FluentSpacing.l,
+              runSpacing: FluentSpacing.s,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                buildCountNumberBox(
+                  context: context,
+                  label: '手动刷新文章个数',
+                  value: _wechatManualFetchCount,
+                  enabled: _wechatChannelEnabled,
+                  onChanged: _onWechatManualFetchCountChanged,
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '启用自动刷新：',
+                      style: theme.typography.caption?.copyWith(
+                        color: _wechatChannelEnabled ? null : disabledColor,
+                      ),
+                    ),
+                    const SizedBox(width: FluentSpacing.xs),
+                    ToggleSwitch(
+                      checked: _wechatAutoRefreshEnabled,
+                      onChanged: _wechatChannelEnabled
+                          ? _onWechatAutoRefreshToggled
+                          : null,
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '自动刷新频率：',
+                      style: theme.typography.caption?.copyWith(
+                        color:
+                            _wechatChannelEnabled && _wechatAutoRefreshEnabled
+                            ? null
+                            : disabledColor,
+                      ),
+                    ),
+                    const SizedBox(width: FluentSpacing.xs),
+                    ComboBox<int>(
+                      value:
+                          kIntervalOptions.containsKey(_wechatRefreshInterval)
+                          ? _wechatRefreshInterval
+                          : 120,
+                      items: kIntervalOptions.entries
+                          .where((entry) => entry.key > 0)
+                          .map(
+                            (entry) => ComboBoxItem<int>(
+                              value: entry.key,
+                              child: Text(entry.value),
+                            ),
+                          )
+                          .toList(),
+                      onChanged:
+                          _wechatChannelEnabled && _wechatAutoRefreshEnabled
+                          ? (value) {
+                              if (value != null) {
+                                _onWechatRefreshIntervalChanged(value);
+                              }
+                            }
+                          : null,
+                    ),
+                  ],
+                ),
+                buildCountNumberBox(
+                  context: context,
+                  label: '自动刷新文章个数',
+                  value: _wechatAutoFetchCount,
+                  enabled: _wechatChannelEnabled && _wechatAutoRefreshEnabled,
+                  onChanged: _onWechatAutoFetchCountChanged,
+                ),
+              ],
+            ),
+            const SizedBox(height: FluentSpacing.s),
+            Text(
+              '注意：若频率过快，可能会触发微信公众平台的接口频率限制。',
+              style: theme.typography.caption?.copyWith(
+                color: theme.resources.textFillColorSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建公众号平台获取方式卡片。
+  Widget _buildWechatFetchMethodCard(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(FluentSpacing.l),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(FluentIcons.cloud_download, size: 20),
+            const SizedBox(width: FluentSpacing.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('获取方式：微信公众平台', style: theme.typography.bodyStrong),
+                  const SizedBox(height: FluentSpacing.xs),
+                  Text(
+                    '通过微信公众平台 API 获取推文，需要先注册并登录公众号平台账号。应用不再提供微信读书接入方式。',
+                    style: theme.typography.caption,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: FluentSpacing.m),
+            ToggleSwitch(
+              checked: _wechatChannelEnabled,
+              onChanged: _onWechatChannelToggled,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 公众号平台认证区域
   List<Widget> _buildWxmpAuthUI(BuildContext context) {
     final theme = FluentTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     return [
       // 使用指引
       Expander(
-        header: const Text('使用指引：公众号平台方式'),
+        header: const Text('微信公众平台注册方式 >'),
         icon: const Icon(FluentIcons.help, size: 16),
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -719,6 +956,18 @@ class _SettingsPageState extends State<SettingsPage> {
             Text(
               '如果扫码登录时页面提示“该微信还未注册公众平台账号”，说明当前微信下没有可登录的公众号，需要先完成上面的注册流程。',
               style: theme.typography.body,
+            ),
+            const SizedBox(height: FluentSpacing.s),
+            Button(
+              onPressed: () => _openExternalUrl('https://mp.weixin.qq.com/'),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('打开微信公众平台官网'),
+                  SizedBox(width: 6),
+                  Icon(FluentIcons.open_in_new_window, size: 12),
+                ],
+              ),
             ),
             const SizedBox(height: FluentSpacing.m),
             Text('在本应用中的配置步骤', style: theme.typography.bodyStrong),
@@ -1460,8 +1709,21 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// 构建 SSPU 推荐公众号卡片
-  /// 展示校园+微信矩阵中的所有官方公众号
+  /// 在已关注列表中查找推荐公众号对应的公众号平台记录。
+  Map<String, String>? _findFollowedSspuAccount(SspuWechatAccount account) {
+    for (final mp in _wxmpFollowedMps) {
+      final name = mp['name'] ?? '';
+      final alias = mp['alias'] ?? '';
+      if (name == account.name ||
+          name == account.wxAccount ||
+          alias == account.wxAccount) {
+        return mp;
+      }
+    }
+    return null;
+  }
+
+  /// 构建 SSPU 微信矩阵卡片。
   Widget _buildSspuRecommendedAccounts(BuildContext context) {
     final theme = FluentTheme.of(context);
     return Card(
@@ -1472,7 +1734,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             Row(
               children: [
-                Text('SSPU 推荐公众号', style: theme.typography.bodyStrong),
+                Text('SSPU 微信矩阵', style: theme.typography.bodyStrong),
                 const SizedBox(width: FluentSpacing.s),
                 Text(
                   '来源：校园+微信矩阵·共 ${sspuWechatAccounts.length} 个',
@@ -1484,14 +1746,14 @@ class _SettingsPageState extends State<SettingsPage> {
             Text('以下为上海第二工业大学官方认可的微信公众号', style: theme.typography.caption),
             const SizedBox(height: FluentSpacing.s),
             Text(
-              '点击下方按钮可自动搜索并关注全部推荐公众号（已关注的会自动跳过）',
+              '已关注的公众号可在此直接控制是否获取推文；未关注项仅展示状态。',
               style: theme.typography.caption,
             ),
             const SizedBox(height: FluentSpacing.s),
             Row(
               children: [
                 FilledButton(
-                  onPressed: _wxmpBatchFollowing
+                  onPressed: !_wxmpAuthenticated || _wxmpBatchFollowing
                       ? null
                       : () => _batchFollowSspuWxmp(context),
                   child: Row(
@@ -1523,31 +1785,88 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
             const SizedBox(height: FluentSpacing.m),
-            // 公众号网格列表（每行 3 个）
             Wrap(
               spacing: FluentSpacing.m,
               runSpacing: FluentSpacing.s,
               children: sspuWechatAccounts.map((account) {
+                final followed = _findFollowedSspuAccount(account);
+                final fakeid = followed?['fakeid'] ?? '';
+                final enabled = fakeid.isEmpty
+                    ? false
+                    : (_wxmpMpNotificationEnabled[fakeid] ?? true);
+
                 return SizedBox(
-                  width: 240,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                  width: 340,
+                  child: Container(
+                    padding: const EdgeInsets.all(FluentSpacing.s),
+                    decoration: BoxDecoration(
+                      color: theme.inactiveColor.withValues(alpha: 0.035),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Row(
                       children: [
-                        Icon(
-                          FluentIcons.chat,
-                          size: 14,
-                          color: theme.accentColor,
-                        ),
-                        const SizedBox(width: FluentSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            account.name,
-                            style: theme.typography.body,
-                            overflow: TextOverflow.ellipsis,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            account.iconUrl,
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              FluentIcons.chat,
+                              size: 28,
+                              color: theme.accentColor,
+                            ),
                           ),
                         ),
-                        // 推荐列表仅展示名称，统一通过公众号平台执行关注。
+                        const SizedBox(width: FluentSpacing.s),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                account.name,
+                                style: theme.typography.bodyStrong,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                account.wxAccount,
+                                style: theme.typography.caption,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: FluentSpacing.s),
+                        if (!_wxmpAuthenticated)
+                          Text(
+                            '未认证',
+                            style: theme.typography.caption?.copyWith(
+                              color: theme.resources.textFillColorSecondary,
+                            ),
+                          )
+                        else if (followed == null)
+                          Text(
+                            '未关注',
+                            style: theme.typography.caption?.copyWith(
+                              color: theme.resources.textFillColorSecondary,
+                            ),
+                          )
+                        else
+                          Tooltip(
+                            message: '控制是否获取该公众号推文',
+                            child: ToggleSwitch(
+                              checked: enabled,
+                              onChanged: (value) async {
+                                await MessageStateService.instance
+                                    .setMpNotificationEnabled(fakeid, value);
+                                setState(() {
+                                  _wxmpMpNotificationEnabled[fakeid] = value;
+                                });
+                              },
+                            ),
+                          ),
                       ],
                     ),
                   ),
