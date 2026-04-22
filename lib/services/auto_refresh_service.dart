@@ -308,8 +308,10 @@ class AutoRefreshService {
       channelKey: 'campusNews',
       getInterval: () => _stateService.getChannelInterval('news_center'),
       isEnabled: () => _stateService.isChannelEnabled('news_center'),
-      fetchMessages: (knownMessageIds) =>
-          _campusService.fetchCampusNews(knownMessageIds: knownMessageIds),
+      fetchMessages: (knownMessageIds) => _campusService.fetchCampusNews(
+        maxCount: _defaultFetchCount,
+        knownMessageIds: knownMessageIds,
+      ),
     );
 
     // 学生处学工要闻
@@ -506,7 +508,10 @@ class AutoRefreshService {
     }
     if (await _stateService.isChannelEnabled('news_center')) {
       futures.add(
-        _campusService.fetchCampusNews(knownMessageIds: knownMessageIds),
+        _campusService.fetchCampusNews(
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
     if (await _stateService.isChannelEnabled('student_affairs')) {
@@ -832,8 +837,10 @@ class AutoRefreshService {
           channelKey: 'campusNews',
           getInterval: () => _stateService.getChannelInterval('news_center'),
           isEnabled: () => _stateService.isChannelEnabled('news_center'),
-          fetchMessages: (knownMessageIds) =>
-              _campusService.fetchCampusNews(knownMessageIds: knownMessageIds),
+          fetchMessages: (knownMessageIds) => _campusService.fetchCampusNews(
+            maxCount: _defaultFetchCount,
+            knownMessageIds: knownMessageIds,
+          ),
         );
         break;
       case 'studentNews':
