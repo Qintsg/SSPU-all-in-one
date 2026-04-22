@@ -279,11 +279,11 @@ class AutoRefreshService {
     // await _setupTimer(channelKey: 'wechatService', ...);
   }
 
-  /// 立即抓取所有已启用官网渠道的消息并返回合并结果
-  /// 用于手动刷新按钮，不依赖定时器
+  /// 立即抓取所有已启用官网/信息中心渠道的消息并返回合并结果
+  /// 用于“刷新官网消息”按钮，不包含微信公众号渠道
   /// [maxCount] 支持 maxCount 参数的服务使用此值
-  /// :return: 所有已启用渠道的消息列表
-  Future<List<MessageItem>> fetchAllEnabledNow({int maxCount = 20}) async {
+  /// :return: 所有已启用官网/信息中心渠道的消息列表
+  Future<List<MessageItem>> fetchEnabledSchoolWebsiteMessages({int maxCount = 20}) async {
     final futures = <Future<List<MessageItem>>>[];
     final existingMessages = await _stateService.loadMessages();
     final knownMessageIds = existingMessages.map((msg) => msg.id).toSet();
@@ -421,16 +421,6 @@ class AutoRefreshService {
           _collegeService.fetchNews(id, knownMessageIds: knownMessageIds),
         );
       }
-    }
-
-    // 微信公众号
-    if (await _stateService.isChannelEnabled('wechat_public')) {
-      futures.add(
-        _wechatService.fetchArticles(
-          maxCount: maxCount,
-          knownMessageIds: knownMessageIds,
-        ),
-      );
     }
 
     if (futures.isEmpty) return [];
