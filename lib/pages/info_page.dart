@@ -133,6 +133,8 @@ class _InfoPageState extends State<InfoPage> {
     MessageCategory.centerIntlNews: 'center_intl',
     MessageCategory.centerIntlNotice: 'center_intl',
     MessageCategory.centerInnovNews: 'center_innov',
+    MessageCategory.centerTrainingNews: 'center_training',
+    MessageCategory.centerTrainingNotice: 'center_training',
     MessageCategory.graduateNews: 'graduate',
     MessageCategory.libCenterNews: 'lib_center',
   };
@@ -722,6 +724,7 @@ class _InfoPageState extends State<InfoPage> {
           MessageSourceName.centerArtEdu,
           MessageSourceName.centerIntl,
           MessageSourceName.centerInnov,
+          MessageSourceName.centerTraining,
           MessageSourceName.graduate,
           MessageSourceName.libCenter,
         ];
@@ -851,6 +854,11 @@ class _InfoPageState extends State<InfoPage> {
         ];
       case MessageSourceName.centerInnov:
         return [MessageCategory.centerInnovNews];
+      case MessageSourceName.centerTraining:
+        return [
+          MessageCategory.centerTrainingNews,
+          MessageCategory.centerTrainingNotice,
+        ];
       case MessageSourceName.graduate:
         return [MessageCategory.graduateNews];
       case MessageSourceName.libCenter:

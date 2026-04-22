@@ -135,7 +135,7 @@ class CollegeConfig {
 }
 
 /// 学院/部门通用新闻解析服务（单例）
-/// 通过 [CollegeConfig] 配置表驱动 19 个学院的首页新闻抓取
+/// 通过 [CollegeConfig] 配置表驱动 20 个教学单位首页新闻抓取
 class CollegeNewsService {
   CollegeNewsService._();
 
@@ -221,6 +221,13 @@ class CollegeNewsService {
     MessageCategory.centerIntlNews: ['/5894/list.htm'],
     MessageCategory.centerIntlNotice: ['/649/list.htm'],
   };
+
+  /// 工程训练与创新教育中心的两个聚合分类配置。
+  static const Map<MessageCategory, List<String>> _centerTrainingCategoryPaths =
+      {
+        MessageCategory.centerTrainingNews: ['/3840/list.htm'],
+        MessageCategory.centerTrainingNotice: ['/3841/list.htm'],
+      };
 
   /// 计信学院的三个聚合分类配置。
   static const Map<MessageCategory, List<String>> _collegeCsCategoryPaths = {
@@ -455,7 +462,20 @@ class CollegeNewsService {
       newsListLinkSelector: 'a',
     ),
 
-    // --- 5.18 研究生处 (模板A) ---
+    // --- 5.18 工程训练与创新教育中心 (模板A) ---
+    'center_training': CollegeConfig(
+      baseUrl: 'https://training.sspu.edu.cn',
+      template: CollegeTemplate.listA,
+      sourceName: MessageSourceName.centerTraining,
+      category: MessageCategory.centerTrainingNews,
+      listContainerSelector: 'div.content ul',
+      listItemSelector: 'li',
+      dateSelector: 'span.riqi',
+      titleSelector: 'a',
+      titleFromAttribute: true,
+    ),
+
+    // --- 5.19 研究生处 (模板A) ---
     'graduate': CollegeConfig(
       baseUrl: 'https://yjs.sspu.edu.cn',
       template: CollegeTemplate.listA,
@@ -468,7 +488,7 @@ class CollegeNewsService {
       titleFromAttribute: true,
     ),
 
-    // --- 5.19 图书馆 (模板A，MM-DD短日期) ---
+    // --- 5.20 图书馆 (模板A，MM-DD短日期) ---
     'lib_center': CollegeConfig(
       baseUrl: 'https://library.sspu.edu.cn',
       template: CollegeTemplate.listA,
@@ -523,6 +543,9 @@ class CollegeNewsService {
     }
     if (channelId == 'center_intl') {
       return _fetchCenterIntlNews(knownMessageIds: knownMessageIds);
+    }
+    if (channelId == 'center_training') {
+      return _fetchCenterTrainingNews(knownMessageIds: knownMessageIds);
     }
 
     final config = configs[channelId];
@@ -916,6 +939,37 @@ class CollegeNewsService {
     for (final entry in _collegeMarxCategoryPaths.entries) {
       for (final relativePath in entry.value) {
         final pageMessages = await _fetchCollegeMarxListPage(
+          relativePath: relativePath,
+          category: entry.key,
+          knownMessageIds: seenIds,
+        );
+        for (final message in pageMessages) {
+          if (seenIds.add(message.id)) {
+            messages.add(message);
+          }
+        }
+      }
+    }
+
+    messages.sort((a, b) {
+      final left = a.timestamp ?? MessageItem.computeTimestamp(a.date);
+      final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
+      return right.compareTo(left);
+    });
+
+    return messages;
+  }
+
+  /// 工程训练与创新教育中心使用两个列表页聚合成两个分类。
+  Future<List<MessageItem>> _fetchCenterTrainingNews({
+    Set<String>? knownMessageIds,
+  }) async {
+    final messages = <MessageItem>[];
+    final seenIds = <String>{...?(knownMessageIds)};
+
+    for (final entry in _centerTrainingCategoryPaths.entries) {
+      for (final relativePath in entry.value) {
+        final pageMessages = await _fetchCenterTrainingListPage(
           relativePath: relativePath,
           category: entry.key,
           knownMessageIds: seenIds,
@@ -1419,6 +1473,35 @@ class CollegeNewsService {
         config,
         knownMessageIds: knownMessageIds,
       );
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 抓取工程训练与创新教育中心某个子栏目列表页。
+  Future<List<MessageItem>> _fetchCenterTrainingListPage({
+    required String relativePath,
+    required MessageCategory category,
+    Set<String>? knownMessageIds,
+  }) async {
+    try {
+      final htmlText = await _http.fetchText(
+        'https://training.sspu.edu.cn$relativePath',
+      );
+      final document = html_parser.parse(htmlText);
+      final config = CollegeConfig(
+        baseUrl: 'https://training.sspu.edu.cn',
+        template: CollegeTemplate.listA,
+        sourceName: MessageSourceName.centerTraining,
+        category: category,
+        listContainerSelector: 'div.content ul',
+        listItemSelector: 'li',
+        dateSelector: 'span.riqi',
+        titleSelector: 'a',
+        titleFromAttribute: true,
+      );
+
+      return _parseListA(document, config, knownMessageIds: knownMessageIds);
     } catch (_) {
       return [];
     }

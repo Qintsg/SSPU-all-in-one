@@ -104,6 +104,9 @@ enum MessageSourceName {
   /// 创新创业教育中心
   centerInnov('创新创业教育中心'),
 
+  /// 工程训练与创新教育中心
+  centerTraining('工程训练与创新教育中心'),
+
   /// 研究生处
   graduate('研究生处'),
 
@@ -306,6 +309,12 @@ enum MessageCategory {
 
   /// 创新创业教育中心动态
   centerInnovNews('双创中心动态'),
+
+  /// 工程训练与创新教育中心中心动态
+  centerTrainingNews('中心动态'),
+
+  /// 工程训练与创新教育中心通知公告
+  centerTrainingNotice('通知公告'),
 
   /// 研究生处动态
   graduateNews('研究生处动态'),

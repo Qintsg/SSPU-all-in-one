@@ -364,6 +364,16 @@ const List<ChannelConfig> teachingChannels = [
     defaultEnabled: false,
   ),
   ChannelConfig(
+    id: 'center_training',
+    name: '工程训练与创新教育中心',
+    description: '中心动态与通知公告',
+    icon: FluentIcons.education,
+    group: ChannelGroup.teaching,
+    implemented: true,
+    defaultInterval: 120,
+    defaultEnabled: false,
+  ),
+  ChannelConfig(
     id: 'graduate',
     name: '研究生处',
     description: '研究生管理通知与公告',
@@ -487,6 +497,10 @@ const Map<String, List<SubCategory>> channelSubcategories = {
   'center_intl': [
     SubCategory(MessageCategory.centerIntlNews, '新闻'),
     SubCategory(MessageCategory.centerIntlNotice, '公告'),
+  ],
+  'center_training': [
+    SubCategory(MessageCategory.centerTrainingNews, '中心动态'),
+    SubCategory(MessageCategory.centerTrainingNotice, '通知公告'),
   ],
   'jwc': [
     SubCategory(MessageCategory.jwcTeaching, '教学动态'),

@@ -88,6 +88,7 @@ class AutoRefreshService {
     'center_art_edu',
     'center_intl',
     'center_innov',
+    'center_training',
     'graduate',
     'lib_center',
     'wechat_public',
@@ -336,7 +337,7 @@ class AutoRefreshService {
       ),
     );
 
-    // ==================== 教学单位渠道（19个学院/部门） ====================
+    // ==================== 教学单位渠道（20个学院/部门） ====================
     // 所有学院共用 CollegeNewsService，通过 channelId 区分解析配置
     final collegeChannelIds = [
       'college_cs',
@@ -356,6 +357,7 @@ class AutoRefreshService {
       'center_art_edu',
       'center_intl',
       'center_innov',
+      'center_training',
       'graduate',
       'lib_center',
     ];
@@ -533,7 +535,7 @@ class AutoRefreshService {
       );
     }
 
-    // 教学单位（19个学院/部门）
+    // 教学单位（20个学院/部门）
     const collegeIds = [
       'college_cs',
       'college_im',
@@ -552,6 +554,7 @@ class AutoRefreshService {
       'center_art_edu',
       'center_intl',
       'center_innov',
+      'center_training',
       'graduate',
       'lib_center',
     ];
@@ -879,7 +882,7 @@ class AutoRefreshService {
           ),
         );
         break;
-      // 教学单位渠道（19个学院/部门，统一处理）
+      // 教学单位渠道（20个学院/部门，统一处理）
       case 'college_cs':
       case 'college_im':
       case 'college_re':
@@ -897,6 +900,7 @@ class AutoRefreshService {
       case 'center_art_edu':
       case 'center_intl':
       case 'center_innov':
+      case 'center_training':
       case 'graduate':
       case 'lib_center':
         await _setupTimer(
