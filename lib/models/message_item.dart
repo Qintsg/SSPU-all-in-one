@@ -278,7 +278,10 @@ enum MessageCategory {
   collegeMarxNews('马院动态'),
 
   /// 继续教育学院动态
-  collegeCeNews('继教学院动态'),
+  collegeCeNews('学院新闻'),
+
+  /// 继续教育学院学院公告
+  collegeCeNotice('学院公告'),
 
   /// 艺术教育中心动态
   centerArtEduNews('艺教中心动态'),
