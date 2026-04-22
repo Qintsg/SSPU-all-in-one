@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.0.1--alpha-orange)](docs/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.1.5--alpha-orange)](docs/CHANGELOG.md)
 
 ## 简介
 
