@@ -157,11 +157,11 @@ enum MessageCategory {
   /// 体育部部门动态 (343)
   sportsEvent('部门动态'),
 
-  /// 保卫处平安动态 (1019)
-  securityNews('平安动态'),
+  /// 保卫处动态/通知 (1019)
+  securityNews('动态/通知'),
 
   /// 保卫处宣教专栏 (1023)
-  securityEducation('安全宣教'),
+  securityEducation('宣教专栏'),
 
   /// 校区建设办要闻 (405)
   constructionNews('建设要闻'),

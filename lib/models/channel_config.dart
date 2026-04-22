@@ -436,8 +436,8 @@ const Map<String, List<SubCategory>> channelSubcategories = {
     SubCategory(MessageCategory.sportsEvent, '部门动态'),
   ],
   'security_dept': [
-    SubCategory(MessageCategory.securityNews, '安全动态'),
-    SubCategory(MessageCategory.securityEducation, '安全教育'),
+    SubCategory(MessageCategory.securityNews, '动态/通知'),
+    SubCategory(MessageCategory.securityEducation, '宣教专栏'),
   ],
   'construction': [
     SubCategory(MessageCategory.constructionNews, '建设动态'),
