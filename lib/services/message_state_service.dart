@@ -8,6 +8,7 @@
  */
 
 import 'dart:convert';
+import '../models/channel_config.dart';
 import '../models/message_item.dart';
 import '../services/storage_service.dart';
 
@@ -70,6 +71,16 @@ class MessageStateService {
   MessageStateService._();
 
   static final MessageStateService instance = MessageStateService._();
+
+  /// 渠道默认配置索引，确保服务层与设置页展示使用同一份默认值。
+  static final Map<String, ChannelConfig> _channelDefaults = {
+    for (final channel in [
+      ...departmentChannels,
+      ...teachingChannels,
+      ...wechatChannels,
+    ])
+      channel.id: channel,
+  };
 
   /// 内存中缓存的已读消息 ID 集合，减少频繁读取存储
   Set<String> _readIds = {};
@@ -212,15 +223,13 @@ class MessageStateService {
 
   /// 获取指定渠道是否启用
   /// [channelId] 渠道唯一标识
-  /// [defaultValue] 默认值，未设置时返回此值
+  /// [defaultValue] 默认值，未设置时优先使用此值，否则使用渠道配置默认值
   /// :return: 渠道启用状态
-  Future<bool> isChannelEnabled(
-    String channelId, {
-    bool defaultValue = false,
-  }) async {
+  Future<bool> isChannelEnabled(String channelId, {bool? defaultValue}) async {
     return await StorageService.getBool(
       _channelEnabledKey(channelId),
-      defaultValue: defaultValue,
+      defaultValue:
+          defaultValue ?? _channelDefaults[channelId]?.defaultEnabled ?? false,
     );
   }
 
@@ -262,14 +271,13 @@ class MessageStateService {
 
   /// 获取指定渠道的自动刷新间隔
   /// [channelId] 渠道唯一标识
-  /// [defaultValue] 默认间隔（分钟，0 = 关闭）
+  /// [defaultValue] 默认间隔，未设置时优先使用此值，否则使用渠道配置默认值
   /// :return: 自动刷新间隔（分钟）
-  Future<int> getChannelInterval(
-    String channelId, {
-    int defaultValue = 0,
-  }) async {
+  Future<int> getChannelInterval(String channelId, {int? defaultValue}) async {
     return (await StorageService.getInt(_channelIntervalKey(channelId))) ??
-        defaultValue;
+        defaultValue ??
+        _channelDefaults[channelId]?.defaultInterval ??
+        0;
   }
 
   /// 设置指定渠道的自动刷新间隔

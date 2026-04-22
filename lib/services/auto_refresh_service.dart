@@ -9,6 +9,8 @@
  */
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+
 import '../models/message_item.dart';
 import 'message_state_service.dart';
 import 'sspu_news_service.dart';
@@ -54,6 +56,76 @@ class AutoRefreshService {
 
   /// 默认每次自动抓取的条数
   static const int _defaultFetchCount = 20;
+
+  /// 设置页使用的逻辑渠道 ID 列表，用于全量重载时覆盖所有可配置渠道。
+  static const List<String> _refreshChannelIds = [
+    'latest_info',
+    'notice',
+    'jwc',
+    'itc',
+    'sspu_notice',
+    'sspu_activity',
+    'sports',
+    'security_dept',
+    'construction',
+    'news_center',
+    'student_affairs',
+    'college_cs',
+    'college_im',
+    'college_re',
+    'college_em',
+    'college_ic',
+    'college_imhe',
+    'college_econ',
+    'college_lang',
+    'college_math',
+    'college_art',
+    'college_vte',
+    'college_vt',
+    'college_marx',
+    'college_ce',
+    'center_art_edu',
+    'center_intl',
+    'center_innov',
+    'graduate',
+    'lib_center',
+    'wechat_public',
+  ];
+
+  /// 将设置页逻辑渠道 ID 映射到实际定时器 key。
+  /// 多子栏目的渠道共用一个设置项，但需要重载多个抓取定时器。
+  List<String> _timerKeysForChannel(String channelKey) {
+    switch (channelKey) {
+      case 'latest_info':
+        return ['latestInfo'];
+      case 'jwc':
+        return ['jwcStudent', 'jwcTeacher'];
+      case 'sspu_notice':
+        return ['sspuNotice'];
+      case 'sspu_activity':
+        return ['sspuActivity'];
+      case 'sports':
+        return ['sportsNotice', 'sportsEvent'];
+      case 'security_dept':
+        return ['securityNews', 'securityEducation'];
+      case 'construction':
+        return ['constructionNews', 'constructionNotice'];
+      case 'news_center':
+        return ['campusNews'];
+      case 'student_affairs':
+        return ['studentNews', 'studentNotice'];
+      case 'wechat_public':
+        return ['wechatPublic'];
+      default:
+        return [channelKey];
+    }
+  }
+
+  /// 测试入口：确认设置页渠道 ID 能正确映射到内部定时器 key。
+  @visibleForTesting
+  List<String> debugTimerKeysForChannel(String channelKey) {
+    return List.unmodifiable(_timerKeysForChannel(channelKey));
+  }
 
   /// 初始化并启动自动刷新
   /// 应在 app 启动时调用一次
@@ -283,7 +355,9 @@ class AutoRefreshService {
   /// 用于“刷新官网消息”按钮，不包含微信公众号渠道
   /// [maxCount] 支持 maxCount 参数的服务使用此值
   /// :return: 所有已启用官网/信息中心渠道的消息列表
-  Future<List<MessageItem>> fetchEnabledSchoolWebsiteMessages({int maxCount = 20}) async {
+  Future<List<MessageItem>> fetchEnabledSchoolWebsiteMessages({
+    int maxCount = 20,
+  }) async {
     final futures = <Future<List<MessageItem>>>[];
     final existingMessages = await _stateService.loadMessages();
     final knownMessageIds = existingMessages.map((msg) => msg.id).toSet();
@@ -521,10 +595,17 @@ class AutoRefreshService {
     }
   }
 
-  /// 重新加载某个渠道的定时器配置
-  /// 设置页修改间隔后调用此方法使新间隔生效
-  /// [channelKey] 渠道标识：'latestInfo' / 'notice' / 'wechatPublic' / 'wechatService'
+  /// 重新加载某个渠道的定时器配置。
+  /// [channelKey] 可传设置页渠道 ID，也可传内部定时器 key。
   Future<void> reloadChannel(String channelKey) async {
+    final timerKeys = _timerKeysForChannel(channelKey);
+    if (timerKeys.length != 1 || timerKeys.single != channelKey) {
+      for (final timerKey in timerKeys) {
+        await reloadChannel(timerKey);
+      }
+      return;
+    }
+
     switch (channelKey) {
       case 'latestInfo':
         await _setupTimer(
@@ -746,44 +827,9 @@ class AutoRefreshService {
   /// 重新加载所有渠道定时器
   /// 适用于应用恢复前台或全局刷新设置后
   Future<void> reloadAll() async {
-    await reloadChannel('latestInfo');
-    await reloadChannel('notice');
-    await reloadChannel('jwcStudent');
-    await reloadChannel('jwcTeacher');
-    await reloadChannel('itc');
-    await reloadChannel('sspuNotice');
-    await reloadChannel('sspuActivity');
-    await reloadChannel('sportsNotice');
-    await reloadChannel('sportsEvent');
-    await reloadChannel('securityNews');
-    await reloadChannel('securityEducation');
-    await reloadChannel('constructionNews');
-    await reloadChannel('constructionNotice');
-    await reloadChannel('campusNews');
-    await reloadChannel('studentNews');
-    await reloadChannel('studentNotice');
-    // 教学单位渠道
-    await reloadChannel('college_cs');
-    await reloadChannel('college_im');
-    await reloadChannel('college_re');
-    await reloadChannel('college_em');
-    await reloadChannel('college_ic');
-    await reloadChannel('college_imhe');
-    await reloadChannel('college_econ');
-    await reloadChannel('college_lang');
-    await reloadChannel('college_math');
-    await reloadChannel('college_art');
-    await reloadChannel('college_vte');
-    await reloadChannel('college_vt');
-    await reloadChannel('college_marx');
-    await reloadChannel('college_ce');
-    await reloadChannel('center_art_edu');
-    await reloadChannel('center_intl');
-    await reloadChannel('center_innov');
-    await reloadChannel('graduate');
-    await reloadChannel('lib_center');
-    // 微信公众号渠道
-    await reloadChannel('wechatPublic');
+    for (final channelId in _refreshChannelIds) {
+      await reloadChannel(channelId);
+    }
   }
 
   /// 销毁所有定时器
