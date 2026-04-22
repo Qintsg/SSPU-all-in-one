@@ -226,6 +226,21 @@ flutter build linux --release
 
 输出路径：`build/linux/x64/release/bundle/`
 
+若使用 Release 压缩包运行，建议使用 `tar` 解压以保留 Unix 可执行权限：
+
+```bash
+tar -xzf sspu-all-in-one-linux-x64.tar.gz
+cd sspu-all-in-one-linux-x64
+./sspu_all_in_one
+```
+
+如果使用图形化解压工具后出现 `Permission denied`，请补一次可执行权限：
+
+```bash
+chmod +x sspu_all_in_one
+./sspu_all_in_one
+```
+
 ---
 
 ## 8. 常用开发命令

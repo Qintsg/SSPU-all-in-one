@@ -112,10 +112,30 @@ jobs:
       - name: 构建 Linux ${{ matrix.arch }}
         run: flutter build linux --release --target-platform ${{ matrix.target_platform }}
 
+      - name: 校验 Linux 主程序可执行权限
+        run: |
+          linux_executable="${{ matrix.bundle_path }}/sspu_all_in_one"
+          if [ ! -f "$linux_executable" ]; then
+            echo "未找到 Linux 主程序: $linux_executable" >&2
+            exit 1
+          fi
+
+          chmod +x "$linux_executable"
+          stat -c '%A %n' "$linux_executable"
+
+          if [ ! -x "$linux_executable" ]; then
+            echo "Linux 主程序缺少可执行权限" >&2
+            exit 1
+          fi
+
       - name: 打包 Linux 运行目录
         run: |
           cd "${{ matrix.bundle_path }}"
           tar -czf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" .
+
+      - name: 校验 Linux 压缩包中的可执行权限
+        run: |
+          tar -tvzf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" | grep '^-rwxr-xr-x .* ./sspu_all_in_one$'
 
       - uses: actions/upload-artifact@v7.0.1
         with:
@@ -327,6 +347,7 @@ jobs:
             - 当前仓库 Release 工作流已验证 Windows x64 与 Linux x64 桌面产物。
             - iOS 没有仓库签名证书，Release 提供未签名应用压缩包。
             - Linux 与 Web 暂无仓库内安装器配置，保留压缩包形式。
+            - Linux 压缩包建议使用 `tar -xzf` 解压；若使用不保留 Unix 权限的图形工具解压后无法直接运行，请执行 `chmod +x sspu_all_in_one` 后再启动。
           draft: false
           prerelease: true
           files: |
