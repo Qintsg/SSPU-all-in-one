@@ -106,6 +106,7 @@ const Map<MessageCategory, String> _infoCategoryToChannelId = {
 };
 
 Future<void> _filterInfoPageByEnabledChannels(_InfoPageState state) async {
+  final messageSnapshot = List<MessageItem>.of(state._allMessages);
   final allConfigs = [...departmentChannels, ...teachingChannels];
   final enabledCache = <String, bool>{};
   for (final config in allConfigs) {
@@ -128,41 +129,45 @@ Future<void> _filterInfoPageByEnabledChannels(_InfoPageState state) async {
       .isWechatServiceEnabled();
 
   final mpEnabledCache = <String, bool>{};
-  for (final msg in state._allMessages) {
+  for (final msg in messageSnapshot) {
     if (msg.mpBookId != null && !mpEnabledCache.containsKey(msg.mpBookId)) {
       mpEnabledCache[msg.mpBookId!] = await state._stateService
           .isMpNotificationEnabled(msg.mpBookId!);
     }
   }
 
-  state._allMessages.removeWhere((msg) {
+  final visibleMessages = messageSnapshot.where((msg) {
     if (msg.sourceType == MessageSourceType.wechatPublic) {
-      if (!wechatPublicEnabled) return true;
+      if (!wechatPublicEnabled) return false;
       if (msg.mpBookId != null) {
-        return !(mpEnabledCache[msg.mpBookId] ?? true);
+        return mpEnabledCache[msg.mpBookId] ?? true;
       }
-      return false;
+      return true;
     }
     if (msg.sourceType == MessageSourceType.wechatService) {
-      return !wechatServiceEnabled;
+      return wechatServiceEnabled;
     }
 
     final channelId = _infoCategoryToChannelId[msg.category];
     if (channelId != null) {
-      if (!(enabledCache[channelId] ?? false)) return true;
+      if (!(enabledCache[channelId] ?? false)) return false;
       final categoryName = msg.category.name;
       if (categoryEnabledCache.containsKey(categoryName)) {
-        return !categoryEnabledCache[categoryName]!;
+        return categoryEnabledCache[categoryName]!;
       }
+      return true;
     }
-    return false;
-  });
+    return true;
+  }).toList();
 
-  state._allMessages.sort((a, b) {
+  visibleMessages.sort((a, b) {
     final tsA = a.timestamp ?? _infoDateToTimestamp(a.date);
     final tsB = b.timestamp ?? _infoDateToTimestamp(b.date);
     return tsB.compareTo(tsA);
   });
+  state._allMessages
+    ..clear()
+    ..addAll(visibleMessages);
 
   state._applyFilters();
 }
