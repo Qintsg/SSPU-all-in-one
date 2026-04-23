@@ -24,7 +24,7 @@ class WxmpApiError {
   static const int success = 0;
   static const int sessionExpired = 200003;
   static const int frequencyLimit = 200013;
-  static const int searchUnavailable = 200040;
+  static const int invalidCsrfToken = 200040;
 }
 
 /// 公众号平台认证有效性校验结果。
@@ -114,7 +114,7 @@ class WxmpArticleService {
 
   /// 检查 API 响应的错误码
   /// 返回 ret 值；成功返回 0
-  /// 如果 session 过期（200003）或频率限制（200013），抛出特定异常
+  /// 如果 session 过期（200003）、频率限制（200013）或 CSRF 失效（200040），抛出特定异常
   int _checkResponse(Map<String, dynamic> data) {
     final baseResp = data['base_resp'] as Map<String, dynamic>?;
     if (baseResp == null) return -1;
@@ -125,11 +125,14 @@ class WxmpArticleService {
     if (ret == WxmpApiError.frequencyLimit) {
       throw WxmpFrequencyLimitException('请求频率过快，请稍后再试');
     }
+    if (ret == WxmpApiError.invalidCsrfToken) {
+      throw WxmpInvalidCsrfException('CSRF Token 无效，请重新扫码登录');
+    }
     return ret;
   }
 
   /// 将公众号平台业务错误码转换为认证校验结果。
-  /// 200040 会出现在 searchbiz 探针上，不代表 Cookie / Token 已失效。
+  /// 200040 表示 Cookie 与 Token 不匹配，通常是扫码页提取的路径 Cookie 不完整。
   @visibleForTesting
   static WxmpAuthValidationResult validationResultForRet(int ret) {
     if (ret == WxmpApiError.success) {
@@ -138,10 +141,10 @@ class WxmpArticleService {
         message: '认证有效，可正常访问公众号平台接口',
       );
     }
-    if (ret == WxmpApiError.searchUnavailable) {
+    if (ret == WxmpApiError.invalidCsrfToken) {
       return const WxmpAuthValidationResult(
-        isValid: true,
-        message: '认证信息可用；公众号搜索接口暂时不可用，刷新文章时将继续使用文章接口',
+        isValid: false,
+        message: '公众号平台 CSRF 校验失败，请重新扫码登录以刷新完整 Cookie',
       );
     }
     return WxmpAuthValidationResult(
@@ -205,6 +208,9 @@ class WxmpArticleService {
         isValid: false,
         message: '平台限制了当前请求频率，请稍后再试',
       );
+    } on WxmpInvalidCsrfException {
+      _debugLog('validate auth failed: invalid csrf token');
+      return validationResultForRet(WxmpApiError.invalidCsrfToken);
     } catch (error) {
       _debugLog('auth validation failed: $error');
       return WxmpAuthValidationResult(isValid: false, message: '认证校验失败：$error');
@@ -479,6 +485,9 @@ class WxmpArticleService {
         _debugLog('refresh stopped: frequency limited');
         // 频率限制，停止后续请求
         break;
+      } on WxmpInvalidCsrfException {
+        _debugLog('refresh stopped: invalid csrf token');
+        break;
       } catch (error) {
         _debugLog('refresh skipped one account "$mpName": $error');
         // 单个公众号失败不影响其他
@@ -614,6 +623,14 @@ class WxmpSessionExpiredException implements Exception {
 class WxmpFrequencyLimitException implements Exception {
   final String message;
   WxmpFrequencyLimitException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// CSRF Token 无效异常
+class WxmpInvalidCsrfException implements Exception {
+  final String message;
+  WxmpInvalidCsrfException(this.message);
   @override
   String toString() => message;
 }

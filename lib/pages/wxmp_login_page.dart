@@ -47,24 +47,42 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
       final tokenMatch = RegExp(r'token=(\d+)').firstMatch(url);
       if (tokenMatch != null) {
         final token = tokenMatch.group(1)!;
-        _extractCookieAndSave(token);
+        _extractCookieAndSave(token, url);
       }
     }
   }
 
   /// 提取 Cookie 并与 Token 一起保存
-  Future<void> _extractCookieAndSave(String token) async {
+  Future<void> _extractCookieAndSave(String token, String successUrl) async {
     if (_extracting) return;
     setState(() => _extracting = true);
 
     try {
+      // onUpdateVisitedHistory 可能早于后台路径 Cookie 写入，稍等页面完成会话落盘。
+      await Future.delayed(const Duration(milliseconds: 800));
       final cookieManager = CookieManager.instance();
-      final cookies = await cookieManager.getCookies(
-        url: WebUri('https://mp.weixin.qq.com'),
-        webViewController: _controller,
-      );
+      final cookieMap = <String, String>{};
+      final cookieNames = <String>{};
+      final cookieUrls = <String>{
+        'https://mp.weixin.qq.com/',
+        'https://mp.weixin.qq.com/cgi-bin/home',
+        'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
+        successUrl,
+      };
 
-      if (cookies.isEmpty) {
+      for (final cookieUrl in cookieUrls) {
+        final cookies = await cookieManager.getCookies(
+          url: WebUri(cookieUrl),
+          webViewController: _controller,
+        );
+        for (final cookie in cookies) {
+          if (cookie.name.isEmpty) continue;
+          cookieMap[cookie.name] = cookie.value;
+          cookieNames.add(cookie.name);
+        }
+      }
+
+      if (cookieMap.isEmpty) {
         if (mounted) {
           setState(() {
             _extracting = false;
@@ -78,14 +96,16 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
       }
 
       // 拼接为标准 Cookie 字符串
-      final cookieStr = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      final cookieStr = cookieMap.entries
+          .map((entry) => '${entry.key}=${entry.value}')
+          .join('; ');
 
       // 保存到 WxmpAuthService
       await WxmpAuthService.instance.saveAuth(cookieStr, token);
 
       debugPrint(
-        '[WxmpLogin] 认证保存成功, Token: $token, Cookie 键名: '
-        '${cookies.map((c) => c.name).toList()}',
+        '[WxmpLogin] 认证保存成功, Cookie 数量: ${cookieMap.length}, Cookie 键名: '
+        '${cookieNames.toList()..sort()}',
       );
 
       if (mounted) {
