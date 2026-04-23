@@ -109,6 +109,7 @@
 - Release 工作流新增 Windows arm64、Linux arm64 正式构建与打包步骤，删除独立实验性架构发布分叉
 - 预发布 Release 的目标分支约束调整为允许 `main`、`develop` 与 `release/*`，并同步到 CI、Release workflow 与仓库模板
 - 依赖升级：`package_info_plus` 升级到 `10.1.0`，并同步刷新锁文件中的 `package_info_plus_platform_interface` 与 `win32`
+- `Build & Release` 工作流新增 `workflow_dispatch` 手动触发入口，支持显式传入目标分支与 Release Notes
 
 ### 修复
 

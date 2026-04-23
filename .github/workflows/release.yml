@@ -9,6 +9,15 @@ on:
       - main
       - develop
       - release/**
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: '本次手动发布对应的目标分支（正式版填 main；预发布填 main / develop / release/*）'
+        required: true
+        default: 'develop'
+      release_notes:
+        description: '手动触发时使用的 Release Notes，必须包含标准 7 个章节'
+        required: true
 
 env:
   FLUTTER_VERSION: '3.41.7'
@@ -20,8 +29,11 @@ permissions:
 jobs:
   prepare:
     if: >
-      github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'release')
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.merged == true &&
+        contains(github.event.pull_request.labels.*.name, 'release')
+      )
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.release.outputs.version }}
@@ -42,7 +54,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          base_ref='${{ github.event.pull_request.base.ref }}'
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            base_ref='${{ github.event.inputs.base_ref }}'
+          else
+            base_ref='${{ github.event.pull_request.base.ref }}'
+          fi
+
           channel='${{ steps.release.outputs.channel }}'
 
           if [[ "$channel" == "stable" ]]; then
@@ -749,9 +766,16 @@ jobs:
         shell: bash
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          MANUAL_RELEASE_NOTES: ${{ github.event.inputs.release_notes }}
         run: |
           set -euo pipefail
-          printf '%s' "$PR_BODY" > pr-body.md
+
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            printf '%s' "$MANUAL_RELEASE_NOTES" > pr-body.md
+          else
+            printf '%s' "$PR_BODY" > pr-body.md
+          fi
+
           python scripts/release/render_release_notes.py \
             --body-file pr-body.md \
             --output dist/release-notes.md
