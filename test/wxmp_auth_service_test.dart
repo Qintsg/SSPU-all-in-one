@@ -6,12 +6,31 @@
  * @Date : 2026-04-22
  */
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/services/storage_service.dart';
 import 'package:sspu_all_in_one/services/wxmp_auth_service.dart';
+import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
 
 void main() {
+  late Directory configDirectory;
+
+  setUp(() async {
+    configDirectory = await Directory.systemTemp.createTemp('wxmp_auth_test_');
+    WxmpConfigService.instance.debugSetConfigPathForTesting(
+      '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml',
+    );
+  });
+
+  tearDown(() async {
+    WxmpConfigService.instance.debugSetConfigPathForTesting(null);
+    if (await configDirectory.exists()) {
+      await configDirectory.delete(recursive: true);
+    }
+  });
+
   test('缺少 Cookie 或 Token 时返回不可用认证状态', () async {
     SharedPreferences.setMockInitialValues({});
     await StorageService.init();
@@ -54,5 +73,25 @@ void main() {
     expect(status.isUsable, isTrue);
     expect(await authService.hasAuth(), isTrue);
     expect(status.message, '认证信息可用');
+  });
+
+  test('配置文件中的 Cookie 与 Token 优先于扫码缓存', () async {
+    SharedPreferences.setMockInitialValues({});
+    await StorageService.init();
+    final authService = WxmpAuthService.instance;
+    await authService.saveAuth('stored-cookie', 'stored-token');
+    await WxmpConfigService.instance.ensureConfigFile();
+    await File(await WxmpConfigService.instance.getConfigPath()).writeAsString(
+      '''
+[wxmp]
+cookie = "file-cookie"
+token = "654321"
+''',
+    );
+
+    // 高级配置用于 WebView 不可用时手动接管认证信息。
+    expect(await authService.getCookie(), 'file-cookie');
+    expect(await authService.getToken(), '654321');
+    expect((await authService.getAuthStatus()).isUsable, isTrue);
   });
 }

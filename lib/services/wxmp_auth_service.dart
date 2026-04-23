@@ -8,6 +8,7 @@
  */
 
 import 'storage_service.dart';
+import 'wxmp_config_service.dart';
 
 /// 公众号平台认证状态。
 enum WxmpAuthState {
@@ -63,6 +64,8 @@ class WxmpAuthService {
   static const String _keyToken = 'wxmp_token';
   static const String _keyLastUpdate = 'wxmp_last_update';
 
+  final WxmpConfigService _configService = WxmpConfigService.instance;
+
   /// 保存认证信息（Cookie + Token）
   Future<void> saveAuth(String cookie, String token) async {
     await StorageService.setString(_keyCookie, cookie);
@@ -75,11 +78,27 @@ class WxmpAuthService {
 
   /// 获取 Cookie
   Future<String?> getCookie() async {
+    try {
+      final fileConfig = await _configService.loadConfig();
+      if (fileConfig.cookie.trim().isNotEmpty) {
+        return fileConfig.cookie.trim();
+      }
+    } catch (_) {
+      // 配置文件不可读时回退到扫码登录缓存，避免认证检查阻塞设置页。
+    }
     return StorageService.getString(_keyCookie);
   }
 
   /// 获取 Token
   Future<String?> getToken() async {
+    try {
+      final fileConfig = await _configService.loadConfig();
+      if (fileConfig.token.trim().isNotEmpty) {
+        return fileConfig.token.trim();
+      }
+    } catch (_) {
+      // 配置文件不可读时回退到扫码登录缓存，避免认证检查阻塞设置页。
+    }
     return StorageService.getString(_keyToken);
   }
 
