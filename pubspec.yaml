@@ -60,7 +60,7 @@ dependencies:
   flutter_inappwebview: ^6.1.5
 
   # 读取应用版本号与包信息，避免关于页手写版本常量
-  package_info_plus: ^8.3.0
+  package_info_plus: ^10.1.0
 
 dev_dependencies:
   flutter_test:
