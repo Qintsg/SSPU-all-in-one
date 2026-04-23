@@ -6,8 +6,9 @@
 
     <application
         android:label="SSPU All-in-One"
-        android:name="android.app.Application"
-        android:icon="@mipmap/ic_launcher">
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher">
         <activity
             android:name="cn.qintsg.sspu_all_in_one.MainActivity"
             android:exported="true"
