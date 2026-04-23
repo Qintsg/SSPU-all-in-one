@@ -9,6 +9,15 @@ on:
       - main
       - develop
       - release/**
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: '本次手动发布对应的目标分支（正式版填 main；预发布填 main / develop / release/*）'
+        required: true
+        default: 'develop'
+      release_notes:
+        description: '手动触发时使用的 Release Notes，必须包含标准 7 个章节'
+        required: true
 
 env:
   FLUTTER_VERSION: '3.41.7'
@@ -20,8 +29,11 @@ permissions:
 jobs:
   prepare:
     if: >
-      github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'release')
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.merged == true &&
+        contains(github.event.pull_request.labels.*.name, 'release')
+      )
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.release.outputs.version }}
@@ -42,7 +54,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          base_ref='${{ github.event.pull_request.base.ref }}'
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            base_ref='${{ github.event.inputs.base_ref }}'
+          else
+            base_ref='${{ github.event.pull_request.base.ref }}'
+          fi
+
           channel='${{ steps.release.outputs.channel }}'
 
           if [[ "$channel" == "stable" ]]; then
@@ -210,6 +227,19 @@ jobs:
       - name: 构建 Windows arm64
         run: flutter build windows --release
 
+      - name: 定位 Windows arm64 构建目录
+        shell: pwsh
+        run: |
+          $windowsExecutables = Get-ChildItem -Path 'build\windows' -Filter 'sspu_all_in_one.exe' -Recurse
+          if ($windowsExecutables.Count -eq 0) {
+            Get-ChildItem -Path 'build\windows' -Recurse | Select-Object FullName
+            throw '未找到 Windows arm64 构建产物中的主程序。'
+          }
+
+          $bundlePath = $windowsExecutables[0].Directory.FullName
+          "WINDOWS_ARM64_BUNDLE_DIR=$bundlePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Windows arm64 bundle path: $bundlePath"
+
       - name: 安装 Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
@@ -218,14 +248,13 @@ jobs:
         shell: pwsh
         run: |
           $installerCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
-          $bundlePath = 'build\windows\arm64\runner\Release'
 
           if (-not (Test-Path $installerCompiler)) {
             throw "未找到 Inno Setup 编译器：$installerCompiler"
           }
 
-          if (-not (Test-Path $bundlePath)) {
-            throw "未找到 Windows arm64 构建目录：$bundlePath"
+          if (-not (Test-Path $env:WINDOWS_ARM64_BUNDLE_DIR)) {
+            throw "未找到 Windows arm64 构建目录：$env:WINDOWS_ARM64_BUNDLE_DIR"
           }
 
           New-Item -ItemType Directory -Force -Path dist | Out-Null
@@ -234,7 +263,7 @@ jobs:
       - name: 生成 Windows arm64 Portable ZIP
         shell: pwsh
         run: |
-          $bundlePath = 'build\windows\arm64\runner\Release'
+          $bundlePath = $env:WINDOWS_ARM64_BUNDLE_DIR
           $portableRoot = Join-Path $env:RUNNER_TEMP 'SSPU-All-in-One'
           $portableFile = "dist\SSPU-All-in-One-v${env:APP_VERSION}-windows-arm64-portable.zip"
 
@@ -737,9 +766,16 @@ jobs:
         shell: bash
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          MANUAL_RELEASE_NOTES: ${{ github.event.inputs.release_notes }}
         run: |
           set -euo pipefail
-          printf '%s' "$PR_BODY" > pr-body.md
+
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            printf '%s' "$MANUAL_RELEASE_NOTES" > pr-body.md
+          else
+            printf '%s' "$PR_BODY" > pr-body.md
+          fi
+
           python scripts/release/render_release_notes.py \
             --body-file pr-body.md \
             --output dist/release-notes.md

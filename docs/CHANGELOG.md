@@ -109,11 +109,14 @@
 - Release 工作流新增 Windows arm64、Linux arm64 正式构建与打包步骤，删除独立实验性架构发布分叉
 - 预发布 Release 的目标分支约束调整为允许 `main`、`develop` 与 `release/*`，并同步到 CI、Release workflow 与仓库模板
 - 依赖升级：`package_info_plus` 升级到 `10.1.0`，并同步刷新锁文件中的 `package_info_plus_platform_interface` 与 `win32`
+- `Build & Release` 工作流新增 `workflow_dispatch` 手动触发入口，支持显式传入目标分支与 Release Notes
 
 ### 修复
 
 - 修复 Release 工作流中的 macOS DMG 打包路径错误，改为自动发现真实 `.app` 产物
 - 修复 Windows 安装器编译依赖宿主机缺失中文语言文件导致的发布失败
+- 修复 Windows arm64 Release 安装器脚本中的 Inno Setup 架构标识，改用 `arm64compatible` 以匹配当前编译器支持的架构名称
+- 修复 Windows arm64 Release workflow 对 Flutter 输出目录的硬编码假设，改为构建后自动定位主程序目录并传入 Inno Setup
 - 暂时收敛未验证的 Windows arm64 / Linux arm64 桌面发布矩阵，避免 Release 因官方 Flutter SDK 架构解析失败而整体中断
 - 修复 macOS Runner 的 Xcode 配置引用错误，恢复 Flutter 生成配置与 CocoaPods 支持文件的正确加载，解决 `flutter build macos` 编译失败问题
 - 修复 Android 启动阶段调用桌面插件导致黑屏闪退的问题，并同步 Android / iOS / macOS / Linux / Web 的应用名称与图标资源
