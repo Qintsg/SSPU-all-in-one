@@ -72,9 +72,9 @@ flutter build windows --release
 
 - 产物位置：
   `build/windows/x64/runner/Release/`
-  `build/windows/arm64/runner/Release/`
 - 使用方式：
-  将对应架构的整个 `Release/` 目录连同其中的 DLL 和 `data/` 一起分发；直接运行目录中的 `sspu_all_in_one.exe`
+  将 `x64` 架构的整个 `Release/` 目录连同其中的 DLL 和 `data/` 一起分发；直接运行目录中的 `sspu_all_in_one.exe`
+  Release workflow 中保留了 Windows arm64 的实验性 action，仅在手动触发时尝试
 
 ### Linux
 
@@ -86,10 +86,10 @@ flutter build linux --release
 
 - 产物位置：
   `build/linux/x64/release/bundle/`
-  `build/linux/arm64/release/bundle/`
 - 使用方式：
   打包并分发整个 `bundle/` 目录；目标机器上运行 `./sspu_all_in_one`
-  对 Debian / Ubuntu 及其衍生版，Release workflow 还会额外提供 x64 / arm64 的 `.deb` 安装包
+  对 Debian / Ubuntu 及其衍生版，Release workflow 还会额外提供 `x64` 的 `.deb` 安装包
+  Linux arm64 的 workflow 作为实验性 action 保留，仅在手动触发时尝试
 
 ### macOS
 

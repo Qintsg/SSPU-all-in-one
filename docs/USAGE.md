@@ -226,12 +226,12 @@ flutter build windows --release
 输出路径：
 
 - `build/windows/x64/runner/Release/`
-- `build/windows/arm64/runner/Release/`
 
 发布后使用：
 
 - 需要连同整个 `Release/` 目录一起分发，不能只拷贝单个 `.exe`
 - 启动入口为 `sspu_all_in_one.exe`
+- Windows arm64 发布链路保留为实验性 workflow，仅在手动触发时尝试
 
 ### 7.5 macOS 桌面
 
@@ -256,7 +256,6 @@ flutter build linux --release
 输出路径：
 
 - `build/linux/x64/release/bundle/`
-- `build/linux/arm64/release/bundle/`
 
 若使用 Release 压缩包运行，建议使用 `tar` 解压以保留 Unix 可执行权限：
 
@@ -276,13 +275,14 @@ chmod +x sspu_all_in_one
 若通过 GitHub Release 工作流发布，当前还会额外生成：
 
 - `sspu-all-in-one-linux-x64.deb`
-- `sspu-all-in-one-linux-arm64.deb`
 
 面向 Debian / Ubuntu 及其衍生发行版，可直接使用：
 
 ```bash
 sudo apt install ./sspu-all-in-one-linux-x64.deb
 ```
+
+Linux arm64 发布链路保留为实验性 workflow，仅在手动触发时尝试。
 
 ---
 

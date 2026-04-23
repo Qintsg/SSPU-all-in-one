@@ -12,6 +12,11 @@ on:
         description: '版本号 (如 0.1.5-alpha)'
         required: true
         default: '0.1.5-alpha'
+      experimental_arm64:
+        description: '是否尝试实验性的 Windows/Linux arm64 发布构建'
+        required: false
+        default: false
+        type: boolean
 
 env:
   FLUTTER_VERSION: '3.41.7'
@@ -27,18 +32,10 @@ jobs:
         include:
           - arch: x64
             runner: windows-latest
-            flutter_target_platform: windows-x64
             installer_script: .github\installer\windows-x64.iss
             bundle_path: build\windows\x64\runner\Release
             output_file: sspu-all-in-one-windows-x64-setup.exe
             artifact_name: windows-x64-installer
-          - arch: arm64
-            runner: windows-11-arm
-            flutter_target_platform: windows-arm64
-            installer_script: .github\installer\windows-arm64.iss
-            bundle_path: build\windows\arm64\runner\Release
-            output_file: sspu-all-in-one-windows-arm64-setup.exe
-            artifact_name: windows-arm64-installer
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6.0.2
@@ -64,7 +61,7 @@ jobs:
         run: flutter pub get
 
       - name: 构建 Windows ${{ matrix.arch }}
-        run: flutter build windows --release --target-platform ${{ matrix.flutter_target_platform }}
+        run: flutter build windows --release
 
       - name: 安装 Inno Setup
         shell: pwsh
@@ -85,6 +82,21 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.output_file }}
 
+  build-windows-arm64:
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.experimental_arm64 == 'true'
+    runs-on: windows-11-arm
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: 说明
+        shell: pwsh
+        run: |
+          Write-Host 'Flutter 3.41.7 当前未提供 GitHub Hosted Windows arm64 可直接消费的稳定 SDK 分发链路。'
+          Write-Host '该实验性 job 预留给后续官方 arm64 SDK 或自建缓存接入，当前不纳入正式 release 成败。'
+
   build-linux:
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -102,15 +114,6 @@ jobs:
             tar_artifact_name: linux-x64-bundle
             deb_artifact_name: linux-x64-deb
             deb_arch: amd64
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-            target_platform: linux-arm64
-            bundle_path: build/linux/arm64/release/bundle
-            tar_output_file: sspu-all-in-one-linux-arm64.tar.gz
-            deb_output_file: sspu-all-in-one-linux-arm64.deb
-            tar_artifact_name: linux-arm64-bundle
-            deb_artifact_name: linux-arm64-deb
-            deb_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6.0.2
@@ -219,6 +222,20 @@ jobs:
         with:
           name: ${{ matrix.deb_artifact_name }}
           path: ${{ matrix.deb_output_file }}
+
+  build-linux-arm64:
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.experimental_arm64 == 'true'
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: 说明
+        run: |
+          echo "Flutter 3.41.7 当前未提供 GitHub Hosted Linux arm64 可直接消费的稳定 SDK 分发链路。"
+          echo "该实验性 job 预留给后续官方 arm64 SDK 或自建缓存接入，当前不纳入正式 release 成败。"
 
   build-macos:
     if: >
@@ -434,7 +451,6 @@ jobs:
             | 平台 | 文件 | 说明 |
             |------|------|------|
             | Windows x64 | `sspu-all-in-one-windows-x64-setup.exe` | 安装器 |
-            | Windows arm64 | `sspu-all-in-one-windows-arm64-setup.exe` | 安装器 |
             | Android arm32 | `sspu-all-in-one-android-arm32.apk` | APK 安装包 |
             | Android arm64 | `sspu-all-in-one-android-arm64.apk` | APK 安装包 |
             | Android x64 | `sspu-all-in-one-android-x64.apk` | APK 安装包 |
@@ -442,14 +458,13 @@ jobs:
             | macOS universal | `sspu-all-in-one-macos-universal.dmg` | 同时支持 x64 与 arm64，未签名 |
             | Linux x64 | `sspu-all-in-one-linux-x64.tar.gz` | 运行目录压缩包 |
             | Linux x64 DEB | `sspu-all-in-one-linux-x64.deb` | Debian/Ubuntu 安装包 |
-            | Linux arm64 | `sspu-all-in-one-linux-arm64.tar.gz` | 运行目录压缩包 |
-            | Linux arm64 DEB | `sspu-all-in-one-linux-arm64.deb` | Debian/Ubuntu 安装包 |
             | Web JavaScript | `sspu-all-in-one-web-js.tar.gz` | 静态站点压缩包 |
             | Web WebAssembly | `sspu-all-in-one-web-wasm.tar.gz` | 静态站点压缩包 |
 
             ### 平台说明
             - Android 产物按 arm32、arm64、x64 拆分，减少单个安装包体积。
-            - 当前仓库 Release 工作流会分别构建 Windows x64 / arm64 与 Linux x64 / arm64 产物。
+            - 当前仓库 Release 工作流默认构建 Windows x64 与 Linux x64 产物。
+            - Windows arm64 / Linux arm64 作为实验性 job 保留，仅在手动触发时按需尝试，不纳入正式 release 成败。
             - iOS 没有仓库签名证书，Release 提供未签名应用压缩包。
             - Linux 同时提供 `tar.gz` 运行目录和 `.deb` 安装包；`.deb` 面向 Debian / Ubuntu 及其衍生发行版。
             - Linux 压缩包建议使用 `tar -xzf` 解压；若使用不保留 Unix 权限的图形工具解压后无法直接运行，请执行 `chmod +x sspu_all_in_one` 后再启动。
@@ -457,7 +472,6 @@ jobs:
           prerelease: true
           files: |
             artifacts/windows-x64-installer/sspu-all-in-one-windows-x64-setup.exe
-            artifacts/windows-arm64-installer/sspu-all-in-one-windows-arm64-setup.exe
             artifacts/android-apk/sspu-all-in-one-android-arm32.apk
             artifacts/android-apk/sspu-all-in-one-android-arm64.apk
             artifacts/android-apk/sspu-all-in-one-android-x64.apk
@@ -465,7 +479,5 @@ jobs:
             artifacts/macos-universal-dmg/sspu-all-in-one-macos-universal.dmg
             artifacts/linux-x64-bundle/sspu-all-in-one-linux-x64.tar.gz
             artifacts/linux-x64-deb/sspu-all-in-one-linux-x64.deb
-            artifacts/linux-arm64-bundle/sspu-all-in-one-linux-arm64.tar.gz
-            artifacts/linux-arm64-deb/sspu-all-in-one-linux-arm64.deb
             artifacts/web-js-bundle/sspu-all-in-one-web-js.tar.gz
             artifacts/web-wasm-bundle/sspu-all-in-one-web-wasm.tar.gz

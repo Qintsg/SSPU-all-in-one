@@ -18,6 +18,7 @@
 - 消息推送设置页新增一键全开、一键全关操作，支持职能部门、教学单位和微信推文分区快速切换
 - README 与使用文档补充各平台 Release 产物位置、分发方式与 Android 本地签名说明
 - Release 工作流新增 Windows arm64 安装器与 Linux x64/arm64 的 `.deb` 安装包产物
+- Windows arm64 / Linux arm64 发布链路调整为实验性手动 job，默认 release 流程保持稳定的 x64 产物输出
 
 ### 变更
 
