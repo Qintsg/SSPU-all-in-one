@@ -88,6 +88,61 @@ class WxmpArticleService {
     _debugLog('$endpoint response ret=$ret err_msg=$errMsg');
   }
 
+  /// 使用当前 Cookie 打开公众平台首页并提取最新 token。
+  /// 公众号平台 token 会变化；Cookie 仍有效时可从首页恢复新的 token。
+  Future<String> _refreshTokenFromCookie() async {
+    final cookie = await _auth.getCookie();
+    if (cookie == null || cookie.trim().isEmpty) {
+      throw WxmpInvalidCsrfException('缺少 Cookie，无法刷新 Token');
+    }
+
+    final config = await _loadConfigOrDefault();
+    final response = await _dio.get(
+      'https://mp.weixin.qq.com/',
+      options: Options(
+        responseType: ResponseType.plain,
+        headers: {
+          'Cookie': cookie,
+          'User-Agent': config.userAgent.isEmpty
+              ? _userAgent
+              : config.userAgent,
+          'Accept':
+              'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+      ),
+    );
+
+    final htmlText = response.data?.toString() ?? '';
+    final urlTokenMatch = RegExp(r'token=(\d+)').firstMatch(htmlText);
+    final jsonTokenMatch = RegExp(
+      r'"token"\s*:\s*"?(\d+)"?',
+    ).firstMatch(htmlText);
+    final freshToken = urlTokenMatch?.group(1) ?? jsonTokenMatch?.group(1);
+    if (freshToken == null || freshToken.isEmpty) {
+      throw WxmpInvalidCsrfException('Cookie 有效性不足，无法从首页提取 Token');
+    }
+
+    await _auth.saveAuth(cookie, freshToken);
+    _debugLog('token refreshed from mp home page');
+    return freshToken;
+  }
+
+  /// 当前 token 失效时自动刷新 token 并重试一次。
+  Future<T> _withTokenRefreshRetry<T>(
+    String operationName,
+    Future<T> Function(String token) request,
+  ) async {
+    final currentToken = await _auth.getToken();
+    try {
+      return await request(currentToken ?? '');
+    } on WxmpInvalidCsrfException {
+      _debugLog('$operationName invalid csrf; refreshing token and retrying');
+      final freshToken = await _refreshTokenFromCookie();
+      return request(freshToken);
+    }
+  }
+
   /// 读取配置失败时使用默认值，避免配置文件损坏影响扫码登录链路。
   Future<WxmpConfig> _loadConfigOrDefault() async {
     try {
@@ -167,30 +222,33 @@ class WxmpArticleService {
     }
 
     try {
-      final token = await _auth.getToken();
       final config = await _loadConfigOrDefault();
-      final queryParameters = <String, Object?>{
-        'action': 'search_biz',
-        'begin': 0,
-        'count': 1,
-        'query': '上海第二工业大学',
-        'token': token,
-        'lang': 'zh_CN',
-        'f': 'json',
-        'ajax': '1',
-      };
-      if (config.appId.trim().isNotEmpty) {
-        queryParameters['appid'] = config.appId.trim();
-      }
+      final ret = await _withTokenRefreshRetry('validate/searchbiz', (
+        token,
+      ) async {
+        final queryParameters = <String, Object?>{
+          'action': 'search_biz',
+          'begin': 0,
+          'count': 1,
+          'query': '上海第二工业大学',
+          'token': token,
+          'lang': 'zh_CN',
+          'f': 'json',
+          'ajax': '1',
+        };
+        if (config.appId.trim().isNotEmpty) {
+          queryParameters['appid'] = config.appId.trim();
+        }
 
-      final response = await _dio.get(
-        'https://mp.weixin.qq.com/cgi-bin/searchbiz',
-        queryParameters: queryParameters,
-        options: Options(headers: await _buildHeaders()),
-      );
-      final data = response.data as Map<String, dynamic>;
-      _logApiRet('validate/searchbiz', data);
-      final ret = _checkResponse(data);
+        final response = await _dio.get(
+          'https://mp.weixin.qq.com/cgi-bin/searchbiz',
+          queryParameters: queryParameters,
+          options: Options(headers: await _buildHeaders()),
+        );
+        final data = response.data as Map<String, dynamic>;
+        _logApiRet('validate/searchbiz', data);
+        return _checkResponse(data);
+      });
       final result = validationResultForRet(ret);
       _debugLog(
         'validate auth result valid=${result.isValid} message=${result.message}',
@@ -236,30 +294,31 @@ class WxmpArticleService {
       return [];
     }
 
-    final token = await _auth.getToken();
     final config = await _loadConfigOrDefault();
-    final headers = await _buildHeaders();
-    final queryParameters = <String, Object?>{
-      'action': 'search_biz',
-      'begin': begin,
-      'count': count,
-      'query': keyword,
-      'token': token,
-      'lang': 'zh_CN',
-      'f': 'json',
-      'ajax': '1',
-    };
-    if (config.appId.trim().isNotEmpty) {
-      queryParameters['appid'] = config.appId.trim();
-    }
+    final data = await _withTokenRefreshRetry('searchbiz', (token) async {
+      final headers = await _buildHeaders();
+      final queryParameters = <String, Object?>{
+        'action': 'search_biz',
+        'begin': begin,
+        'count': count,
+        'query': keyword,
+        'token': token,
+        'lang': 'zh_CN',
+        'f': 'json',
+        'ajax': '1',
+      };
+      if (config.appId.trim().isNotEmpty) {
+        queryParameters['appid'] = config.appId.trim();
+      }
 
-    final response = await _dio.get(
-      'https://mp.weixin.qq.com/cgi-bin/searchbiz',
-      queryParameters: queryParameters,
-      options: Options(headers: headers),
-    );
+      final response = await _dio.get(
+        'https://mp.weixin.qq.com/cgi-bin/searchbiz',
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
+      return response.data as Map<String, dynamic>;
+    });
 
-    final data = response.data as Map<String, dynamic>;
     _logApiRet('searchbiz', data);
     final ret = _checkResponse(data);
     if (ret != WxmpApiError.success) {
@@ -301,31 +360,32 @@ class WxmpArticleService {
       return [];
     }
 
-    final token = await _auth.getToken();
     final config = await _loadConfigOrDefault();
-    final headers = await _buildHeaders();
-    final queryParameters = <String, Object?>{
-      'sub': 'list',
-      'sub_action': 'list_ex',
-      'begin': page * count,
-      'count': count,
-      'fakeid': fakeid,
-      'token': token,
-      'lang': 'zh_CN',
-      'f': 'json',
-      'ajax': 1,
-    };
-    if (config.appId.trim().isNotEmpty) {
-      queryParameters['appid'] = config.appId.trim();
-    }
+    final data = await _withTokenRefreshRetry('appmsgpublish', (token) async {
+      final headers = await _buildHeaders();
+      final queryParameters = <String, Object?>{
+        'sub': 'list',
+        'sub_action': 'list_ex',
+        'begin': page * count,
+        'count': count,
+        'fakeid': fakeid,
+        'token': token,
+        'lang': 'zh_CN',
+        'f': 'json',
+        'ajax': 1,
+      };
+      if (config.appId.trim().isNotEmpty) {
+        queryParameters['appid'] = config.appId.trim();
+      }
 
-    final response = await _dio.get(
-      'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
-      queryParameters: queryParameters,
-      options: Options(headers: headers),
-    );
+      final response = await _dio.get(
+        'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
+      return response.data as Map<String, dynamic>;
+    });
 
-    final data = response.data as Map<String, dynamic>;
     _logApiRet('appmsgpublish', data);
     final ret = _checkResponse(data);
     if (ret != WxmpApiError.success) {
