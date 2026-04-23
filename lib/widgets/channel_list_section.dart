@@ -169,7 +169,36 @@ class _ChannelListSectionState extends State<ChannelListSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.title, style: theme.typography.subtitle),
+        Wrap(
+          spacing: FluentSpacing.s,
+          runSpacing: FluentSpacing.s,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(widget.title, style: theme.typography.subtitle),
+            FilledButton(
+              onPressed: () => _setAllChannelsEnabled(true),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(FluentIcons.check_mark, size: 14),
+                  SizedBox(width: 6),
+                  Text('一键全开'),
+                ],
+              ),
+            ),
+            Button(
+              onPressed: () => _setAllChannelsEnabled(false),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(FluentIcons.blocked, size: 14),
+                  SizedBox(width: 6),
+                  Text('一键全关'),
+                ],
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: FluentSpacing.xxs),
         Text(
           '共 ${widget.channels.length} 个渠道，已启用 $enabledCount 个，自动刷新开启 $autoEnabledCount 个。',
@@ -456,6 +485,43 @@ class _ChannelListSectionState extends State<ChannelListSection> {
       builder: (ctx, close) => InfoBar(
         title: Text(message),
         severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.warning,
+        action: IconButton(
+          icon: const Icon(FluentIcons.clear),
+          onPressed: close,
+        ),
+      ),
+    );
+  }
+
+  /// 批量切换当前分区全部渠道；全开时同步恢复所有内容分类。
+  Future<void> _setAllChannelsEnabled(bool enabled) async {
+    for (final channel in widget.channels) {
+      await _messageState.setChannelEnabled(channel.id, enabled);
+      _enabledMap[channel.id] = enabled;
+      if (channel.implemented) {
+        await _autoRefresh.reloadChannel(channel.id);
+      }
+    }
+
+    if (enabled) {
+      for (final subcategoryList in channelSubcategories.values) {
+        for (final subcategory in subcategoryList) {
+          await _messageState.setCategoryEnabled(
+            subcategory.category.name,
+            true,
+          );
+          _categoryEnabledMap[subcategory.category.name] = true;
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {});
+    displayInfoBar(
+      context,
+      builder: (ctx, close) => InfoBar(
+        title: Text(enabled ? '已启用当前分区全部渠道' : '已关闭当前分区全部渠道'),
+        severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.info,
         action: IconButton(
           icon: const Icon(FluentIcons.clear),
           onPressed: close,

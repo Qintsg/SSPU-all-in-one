@@ -96,6 +96,9 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 公众号平台配置文件路径。
   String _wxmpConfigPath = '';
 
+  /// 统一状态文件路径。
+  String _stateFilePath = '';
+
   /// 公众号平台配置文件状态提示。
   String _wxmpConfigMessage = '';
 
@@ -120,14 +123,12 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 公众号平台公众号通知开关缓存（key = fakeid）
   Map<String, bool> _wxmpMpNotificationEnabled = {};
 
-  /// 搜索公众号的输入框控制器
-  final TextEditingController _wxmpSearchController = TextEditingController();
+  /// 是否正在校验公众号平台认证有效性。
+  bool _wxmpValidating = false;
 
-  /// 搜索结果
-  List<Map<String, String>> _wxmpSearchResults = [];
+  /// 当前正在关注的 SSPU 微信矩阵账号。
+  String _wxmpFollowingAccountId = '';
 
-  /// 是否正在搜索
-  bool _wxmpSearching = false;
   bool _wxmpBatchFollowing = false;
   String _wxmpBatchProgress = '';
 
@@ -135,12 +136,6 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _loadSettings();
-  }
-
-  @override
-  void dispose() {
-    _wxmpSearchController.dispose();
-    super.dispose();
   }
 
   /// 从本地存储加载密码保护状态、窗口行为偏好和推送配置
@@ -157,6 +152,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndEH = await _messageState.getDndEndHour();
     final dndEM = await _messageState.getDndEndMinute();
     var wxmpConfigPath = '';
+    final stateFilePath = await StorageService.getStateFilePath();
     var wxmpConfigMessage = '配置文件已就绪';
     try {
       wxmpConfigPath = await _wxmpConfigService.ensureConfigFile().timeout(
@@ -203,6 +199,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _wxmpAuthenticated = wxmpHasAuth;
         _wxmpAuthStatus = wxmpAuthStatus;
         _wxmpConfigPath = wxmpConfigPath;
+        _stateFilePath = stateFilePath;
         _wxmpConfigMessage = wxmpConfigMessage;
         _wechatChannelEnabled = wechatEnabled;
         _wechatAutoRefreshEnabled = wechatAutoEnabled;
@@ -327,6 +324,60 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       setState(() => _wxmpConfigMessage = '重新加载配置失败：$error');
     }
+  }
+
+  /// 校验公众号平台认证是否仍能访问接口。
+  Future<void> _validateWxmpAuth() async {
+    if (_wxmpValidating) return;
+    setState(() => _wxmpValidating = true);
+    final validation = await _wechatService.validateSource();
+    final authStatus = await _wxmpAuth.getAuthStatus();
+    if (!mounted) return;
+    setState(() {
+      _wxmpValidating = false;
+      _wxmpAuthenticated = validation.isValid && authStatus.isUsable;
+      _wxmpAuthStatus = authStatus;
+      _wxmpConfigMessage = validation.message;
+    });
+    displayInfoBar(
+      context,
+      builder: (ctx, close) => InfoBar(
+        title: Text(validation.isValid ? '认证有效' : '认证不可用'),
+        content: Text(validation.message),
+        severity: validation.isValid
+            ? InfoBarSeverity.success
+            : InfoBarSeverity.warning,
+        action: IconButton(
+          icon: const Icon(FluentIcons.clear),
+          onPressed: close,
+        ),
+      ),
+    );
+  }
+
+  /// 微信推文页一键切换全部相关开关。
+  Future<void> _setWechatPageEnabled(bool enabled) async {
+    await _onWechatChannelToggled(enabled);
+    await _onWechatAutoRefreshToggled(enabled);
+    for (final mp in _wxmpFollowedMps) {
+      final fakeid = mp['fakeid'] ?? '';
+      if (fakeid.isEmpty) continue;
+      await _messageState.setMpNotificationEnabled(fakeid, enabled);
+      _wxmpMpNotificationEnabled[fakeid] = enabled;
+    }
+    if (!mounted) return;
+    setState(() {});
+    displayInfoBar(
+      context,
+      builder: (ctx, close) => InfoBar(
+        title: Text(enabled ? '已启用微信推文页全部开关' : '已关闭微信推文页全部开关'),
+        severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.info,
+        action: IconButton(
+          icon: const Icon(FluentIcons.clear),
+          onPressed: close,
+        ),
+      ),
+    );
   }
 
   @override
@@ -816,7 +867,10 @@ class _SettingsPageState extends State<SettingsPage> {
             if (_dndEnabled && _notificationEnabled)
               Padding(
                 padding: const EdgeInsets.only(left: 32, top: 10),
-                child: Row(
+                child: Wrap(
+                  spacing: FluentSpacing.s,
+                  runSpacing: FluentSpacing.s,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     buildTimePicker(
                       context: context,
@@ -836,12 +890,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         });
                       },
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        '—',
-                        style: FluentTheme.of(context).typography.bodyStrong,
-                      ),
+                    Text(
+                      '—',
+                      style: FluentTheme.of(context).typography.bodyStrong,
                     ),
                     buildTimePicker(
                       context: context,
@@ -882,8 +933,6 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: FluentSpacing.l),
         _buildWechatFetchMethodCard(context),
         const SizedBox(height: FluentSpacing.l),
-        _buildWxmpConfigCard(context),
-        const SizedBox(height: FluentSpacing.l),
         ..._buildWxmpAuthUI(context),
         _buildSspuRecommendedAccounts(context),
       ],
@@ -903,7 +952,36 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('刷新设置', style: theme.typography.bodyStrong),
+            Wrap(
+              spacing: FluentSpacing.s,
+              runSpacing: FluentSpacing.s,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('刷新设置', style: theme.typography.bodyStrong),
+                FilledButton(
+                  onPressed: () => _setWechatPageEnabled(true),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.check_mark, size: 14),
+                      SizedBox(width: 6),
+                      Text('一键全开'),
+                    ],
+                  ),
+                ),
+                Button(
+                  onPressed: () => _setWechatPageEnabled(false),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.blocked, size: 14),
+                      SizedBox(width: 6),
+                      Text('一键全关'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: FluentSpacing.s),
             Wrap(
               spacing: FluentSpacing.l,
@@ -1030,66 +1108,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// 构建可手动编辑的公众号平台配置文件入口。
-  Widget _buildWxmpConfigCard(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(FluentSpacing.l),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('高级配置文件', style: theme.typography.bodyStrong),
-            const SizedBox(height: FluentSpacing.xs),
-            Text(
-              '可手动填写 Cookie、Token、AppID、User-Agent、请求条数和请求间隔。'
-              '配置文件中的 Cookie / Token 会优先于扫码登录信息使用。',
-              style: theme.typography.caption,
-            ),
-            const SizedBox(height: FluentSpacing.s),
-            SelectableText(
-              _wxmpConfigPath.isEmpty ? '配置文件路径加载中...' : _wxmpConfigPath,
-              style: theme.typography.caption?.copyWith(
-                color: theme.resources.textFillColorSecondary,
-              ),
-            ),
-            if (_wxmpConfigMessage.isNotEmpty) ...[
-              const SizedBox(height: FluentSpacing.xs),
-              Text(
-                _wxmpConfigMessage,
-                style: theme.typography.caption?.copyWith(
-                  color: theme.resources.textFillColorSecondary,
-                ),
-              ),
-            ],
-            const SizedBox(height: FluentSpacing.m),
-            Wrap(
-              spacing: FluentSpacing.s,
-              runSpacing: FluentSpacing.s,
-              children: [
-                FilledButton(
-                  onPressed: _openWxmpConfigFile,
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(FluentIcons.open_in_new_window, size: 14),
-                      SizedBox(width: 6),
-                      Text('打开配置文件'),
-                    ],
-                  ),
-                ),
-                Button(
-                  onPressed: _reloadWxmpConfigFile,
-                  child: const Text('重新加载配置'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// 公众号平台认证区域
   List<Widget> _buildWxmpAuthUI(BuildContext context) {
     final theme = FluentTheme.of(context);
@@ -1104,10 +1122,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             Text('适用人群', style: theme.typography.bodyStrong),
             const SizedBox(height: FluentSpacing.xs),
-            Text(
-              '• 想直接在本应用里搜索任意公众号、批量关注推荐公众号，并统一使用公众号平台链路。',
-              style: theme.typography.body,
-            ),
+            Text('• 想统一使用公众号平台链路获取 SSPU 微信矩阵推文。', style: theme.typography.body),
             Text(
               '• 能接受先注册一个微信公众号账号，再回来用该账号登录公众平台。',
               style: theme.typography.body,
@@ -1165,24 +1180,21 @@ class _SettingsPageState extends State<SettingsPage> {
               style: theme.typography.body,
             ),
             Text(
-              '5. 之后你可以在下方搜索公众号，或直接使用 SSPU 推荐列表中的「一键全部关注」。',
+              '5. 之后可在 SSPU 微信矩阵中关注未关注项，或使用「一键全部关注」。',
               style: theme.typography.body,
             ),
             const SizedBox(height: FluentSpacing.m),
-            Text('搜索与关注方式', style: theme.typography.bodyStrong),
+            Text('关注方式', style: theme.typography.bodyStrong),
             const SizedBox(height: FluentSpacing.xs),
             Text(
-              '• 手动方式：在「搜索公众号」输入名称，确认搜索结果后点击「关注」。',
+              '• SSPU 微信矩阵中未关注的公众号会显示「关注」按钮，系统会按推荐名称搜索并保存匹配结果。',
               style: theme.typography.body,
             ),
             Text(
-              '• 批量方式：对 SSPU 推荐公众号可直接点击「一键全部关注」，系统会逐个搜索并自动跳过已关注项。',
+              '• 批量方式：点击「一键全部关注」，系统会逐个搜索并自动跳过已关注项。',
               style: theme.typography.body,
             ),
-            Text(
-              '• 已关注列表中的通知开关只影响本应用是否抓取/提醒，不会改动公众平台后台本身。',
-              style: theme.typography.body,
-            ),
+            Text('• 矩阵中的通知开关只影响本应用是否抓取/提醒。', style: theme.typography.body),
             const SizedBox(height: FluentSpacing.m),
             Text('失败排查', style: theme.typography.bodyStrong),
             const SizedBox(height: FluentSpacing.xs),
@@ -1199,13 +1211,16 @@ class _SettingsPageState extends State<SettingsPage> {
               style: theme.typography.body,
             ),
             Text(
-              '• 搜到的第一个结果不对：可以手动搜索后确认名称/微信号，再点击关注，而不是完全依赖批量流程。',
+              '• 关注失败：可稍后重试，或确认公众平台搜索结果中能找到该公众号。',
               style: theme.typography.body,
             ),
             const SizedBox(height: FluentSpacing.m),
             Text('是否推荐使用', style: theme.typography.bodyStrong),
             const SizedBox(height: FluentSpacing.xs),
-            Text('• 如果你追求“搜索更全、应用内直接关注”，这一方式更强。', style: theme.typography.body),
+            Text(
+              '• 如果你追求稳定的 SSPU 微信矩阵推文聚合，这一方式更直接。',
+              style: theme.typography.body,
+            ),
             Text(
               '• 当前应用已统一保留这一条链路，完成一次认证后即可持续使用。',
               style: theme.typography.body,
@@ -1248,10 +1263,41 @@ class _SettingsPageState extends State<SettingsPage> {
                 '通过公众号管理平台 (mp.weixin.qq.com) 获取推文，需拥有公众号（个人订阅号即可）',
                 style: theme.typography.caption,
               ),
+              const SizedBox(height: FluentSpacing.xs),
+              Text(
+                '高级配置已合并到认证配置中，扫码登录成功后会自动更新配置文件。'
+                '用户配置与文章缓存统一保存在 ~/.sspu-all-in-one/。',
+                style: theme.typography.caption,
+              ),
               if (_wxmpAuthStatus != null) ...[
                 const SizedBox(height: FluentSpacing.xs),
                 Text(
                   _wxmpAuthStatus!.message,
+                  style: theme.typography.caption?.copyWith(
+                    color: theme.resources.textFillColorSecondary,
+                  ),
+                ),
+              ],
+              const SizedBox(height: FluentSpacing.s),
+              SelectableText(
+                _wxmpConfigPath.isEmpty ? '认证配置路径加载中...' : _wxmpConfigPath,
+                style: theme.typography.caption?.copyWith(
+                  color: theme.resources.textFillColorSecondary,
+                ),
+              ),
+              if (_stateFilePath.isNotEmpty) ...[
+                const SizedBox(height: FluentSpacing.xxs),
+                SelectableText(
+                  '状态与缓存：$_stateFilePath',
+                  style: theme.typography.caption?.copyWith(
+                    color: theme.resources.textFillColorSecondary,
+                  ),
+                ),
+              ],
+              if (_wxmpConfigMessage.isNotEmpty) ...[
+                const SizedBox(height: FluentSpacing.xxs),
+                Text(
+                  _wxmpConfigMessage,
                   style: theme.typography.caption?.copyWith(
                     color: theme.resources.textFillColorSecondary,
                   ),
@@ -1302,6 +1348,39 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   if (_wxmpAuthenticated)
                     Button(
+                      onPressed: _wxmpValidating ? null : _validateWxmpAuth,
+                      child: _wxmpValidating
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: ProgressRing(strokeWidth: 2),
+                            )
+                          : const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(FluentIcons.shield, size: 14),
+                                SizedBox(width: 6),
+                                Text('校验有效性'),
+                              ],
+                            ),
+                    ),
+                  Button(
+                    onPressed: _openWxmpConfigFile,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(FluentIcons.open_in_new_window, size: 14),
+                        SizedBox(width: 6),
+                        Text('打开配置文件'),
+                      ],
+                    ),
+                  ),
+                  Button(
+                    onPressed: _reloadWxmpConfigFile,
+                    child: const Text('重新加载配置'),
+                  ),
+                  if (_wxmpAuthenticated)
+                    Button(
                       onPressed: _clearWxmpAuth,
                       child: const Text('清除认证'),
                     ),
@@ -1312,173 +1391,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       const SizedBox(height: FluentSpacing.l),
-
-      // 搜索并关注公众号
-      if (_wxmpAuthenticated) ...[
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(FluentSpacing.l),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('搜索公众号', style: theme.typography.bodyStrong),
-                const SizedBox(height: FluentSpacing.xs),
-                Text('搜索并关注公众号，关注后可自动获取推文', style: theme.typography.caption),
-                const SizedBox(height: FluentSpacing.m),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextBox(
-                        controller: _wxmpSearchController,
-                        placeholder: '输入公众号名称搜索',
-                        onSubmitted: (_) => _searchWxmpMp(),
-                      ),
-                    ),
-                    const SizedBox(width: FluentSpacing.s),
-                    Button(
-                      onPressed: _wxmpSearching ? null : _searchWxmpMp,
-                      child: _wxmpSearching
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: ProgressRing(strokeWidth: 2),
-                            )
-                          : const Text('搜索'),
-                    ),
-                  ],
-                ),
-                // 搜索结果
-                if (_wxmpSearchResults.isNotEmpty) ...[
-                  const SizedBox(height: FluentSpacing.m),
-                  ...(_wxmpSearchResults.map(
-                    (mp) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Row(
-                        children: [
-                          Icon(
-                            FluentIcons.chat,
-                            size: 16,
-                            color: theme.accentColor,
-                          ),
-                          const SizedBox(width: FluentSpacing.s),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  mp['nickname'] ?? '',
-                                  style: theme.typography.body,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if ((mp['alias'] ?? '').isNotEmpty)
-                                  Text(
-                                    '微信号：${mp['alias']}',
-                                    style: theme.typography.caption,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Button(
-                            onPressed: () => _followWxmpMp(mp),
-                            child: const Text('关注'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: FluentSpacing.l),
-      ],
-
-      // 已关注公众号列表
-      if (_wxmpAuthenticated && _wxmpFollowedMps.isNotEmpty) ...[
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(FluentSpacing.l),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text('已关注公众号', style: theme.typography.bodyStrong),
-                    const Spacer(),
-                    Button(
-                      onPressed: _loadWxmpFollowedMps,
-                      child: const Text('刷新列表'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: FluentSpacing.s),
-                ...(_wxmpFollowedMps.map(
-                  (mp) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        Icon(
-                          FluentIcons.chat,
-                          size: 16,
-                          color: theme.accentColor,
-                        ),
-                        const SizedBox(width: FluentSpacing.s),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                mp['name'] ?? '',
-                                style: theme.typography.body,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if ((mp['alias'] ?? '').isNotEmpty)
-                                Text(
-                                  '微信号：${mp['alias']}',
-                                  style: theme.typography.caption,
-                                ),
-                            ],
-                          ),
-                        ),
-                        // 通知开关
-                        Tooltip(
-                          message: '控制是否接收该公众号的推文通知',
-                          child: ToggleSwitch(
-                            checked:
-                                _wxmpMpNotificationEnabled[mp['fakeid']] ??
-                                true,
-                            onChanged: (value) async {
-                              final fakeid = mp['fakeid'] ?? '';
-                              if (fakeid.isEmpty) return;
-                              await MessageStateService.instance
-                                  .setMpNotificationEnabled(fakeid, value);
-                              setState(() {
-                                _wxmpMpNotificationEnabled[fakeid] = value;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: FluentSpacing.xs),
-                        // 取消关注
-                        Tooltip(
-                          message: '取消关注',
-                          child: IconButton(
-                            icon: const Icon(FluentIcons.cancel, size: 14),
-                            onPressed: () =>
-                                _unfollowWxmpMp(mp['fakeid'] ?? ''),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: FluentSpacing.l),
-      ],
     ];
   }
 
@@ -1566,9 +1478,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (success == true && mounted) {
       final authStatus = await _wxmpAuth.getAuthStatus();
+      final configPath = await _wxmpConfigService.getConfigPath();
       setState(() {
         _wxmpAuthenticated = authStatus.isUsable;
         _wxmpAuthStatus = authStatus;
+        _wxmpConfigPath = configPath;
+        _wxmpConfigMessage = '扫码登录已自动更新配置文件';
       });
       if (authStatus.isUsable) await _loadWxmpFollowedMps();
       if (mounted) {
@@ -1600,7 +1515,7 @@ class _SettingsPageState extends State<SettingsPage> {
           lastUpdate: null,
         );
         _wxmpFollowedMps = [];
-        _wxmpSearchResults = [];
+        _wxmpMpNotificationEnabled = {};
       });
       displayInfoBar(
         context,
@@ -1616,134 +1531,6 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       );
     }
-  }
-
-  /// 搜索公众号（公众号平台方式）
-  Future<void> _searchWxmpMp() async {
-    final keyword = _wxmpSearchController.text.trim();
-    if (keyword.isEmpty) return;
-
-    setState(() {
-      _wxmpSearching = true;
-      _wxmpSearchResults = [];
-    });
-
-    try {
-      final results = await _wxmpService.searchMp(keyword);
-      if (mounted) {
-        setState(() {
-          _wxmpSearchResults = results;
-          _wxmpSearching = false;
-        });
-        if (results.isEmpty) {
-          displayInfoBar(
-            context,
-            builder: (ctx, close) {
-              return InfoBar(
-                title: const Text('未找到匹配的公众号'),
-                severity: InfoBarSeverity.warning,
-                action: IconButton(
-                  icon: const Icon(FluentIcons.clear),
-                  onPressed: close,
-                ),
-              );
-            },
-          );
-        }
-      }
-    } on WxmpSessionExpiredException {
-      if (mounted) {
-        setState(() {
-          _wxmpSearching = false;
-          _wxmpAuthenticated = false;
-        });
-        displayInfoBar(
-          context,
-          builder: (ctx, close) {
-            return InfoBar(
-              title: const Text('Session 已失效，请重新登录'),
-              severity: InfoBarSeverity.error,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          },
-        );
-      }
-    } on WxmpFrequencyLimitException {
-      if (mounted) {
-        setState(() => _wxmpSearching = false);
-        displayInfoBar(
-          context,
-          builder: (ctx, close) {
-            return InfoBar(
-              title: const Text('请求频率过快，请稍后再试'),
-              severity: InfoBarSeverity.warning,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _wxmpSearching = false);
-        displayInfoBar(
-          context,
-          builder: (ctx, close) {
-            return InfoBar(
-              title: Text('搜索失败：$e'),
-              severity: InfoBarSeverity.error,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          },
-        );
-      }
-    }
-  }
-
-  /// 关注公众号（公众号平台方式）
-  Future<void> _followWxmpMp(Map<String, String> mp) async {
-    final fakeid = mp['fakeid'] ?? '';
-    final name = mp['nickname'] ?? '';
-    if (fakeid.isEmpty || name.isEmpty) return;
-
-    await _wxmpService.followMp(
-      fakeid,
-      name,
-      alias: mp['alias'],
-      avatar: mp['round_head_img'],
-    );
-    await _loadWxmpFollowedMps();
-
-    if (mounted) {
-      displayInfoBar(
-        context,
-        builder: (ctx, close) {
-          return InfoBar(
-            title: Text('已关注「$name」'),
-            severity: InfoBarSeverity.success,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
-          );
-        },
-      );
-    }
-  }
-
-  /// 取消关注（公众号平台方式）
-  Future<void> _unfollowWxmpMp(String fakeid) async {
-    if (fakeid.isEmpty) return;
-    await _wxmpService.unfollowMp(fakeid);
-    await _loadWxmpFollowedMps();
   }
 
   /// 加载公众号平台已关注列表
@@ -1765,17 +1552,134 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// 关注 SSPU 微信矩阵中的单个公众号。
+  Future<void> _followSspuWxmpAccount(SspuWechatAccount account) async {
+    if (_wxmpFollowingAccountId.isNotEmpty) return;
+
+    final validation = await _wechatService.validateSource();
+    if (!validation.isValid) {
+      if (!mounted) return;
+      displayInfoBar(
+        context,
+        builder: (ctx, close) => InfoBar(
+          title: const Text('公众号平台认证不可用'),
+          content: Text(validation.message),
+          severity: InfoBarSeverity.warning,
+          action: IconButton(
+            icon: const Icon(FluentIcons.clear),
+            onPressed: close,
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _wxmpFollowingAccountId = account.wxAccount);
+    try {
+      final results = await _wxmpService.searchMp(account.name, count: 3);
+      final matched = _selectBestSspuAccountMatch(account, results);
+      if (matched == null) {
+        throw StateError('未找到匹配的公众号');
+      }
+
+      final fakeid = matched['fakeid'] ?? '';
+      if (fakeid.isEmpty) {
+        throw StateError('公众号标识为空');
+      }
+      await _wxmpService.followMp(
+        fakeid,
+        matched['nickname'] ?? account.name,
+        alias: matched['alias'],
+        avatar: matched['round_head_img'],
+      );
+      await _loadWxmpFollowedMps();
+
+      if (!mounted) return;
+      displayInfoBar(
+        context,
+        builder: (ctx, close) => InfoBar(
+          title: Text('已关注「${account.name}」'),
+          severity: InfoBarSeverity.success,
+          action: IconButton(
+            icon: const Icon(FluentIcons.clear),
+            onPressed: close,
+          ),
+        ),
+      );
+    } on WxmpSessionExpiredException {
+      if (mounted) {
+        setState(() => _wxmpAuthenticated = false);
+        displayInfoBar(
+          context,
+          builder: (ctx, close) => InfoBar(
+            title: const Text('会话已过期，请重新扫码登录'),
+            severity: InfoBarSeverity.error,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          ),
+        );
+      }
+    } on WxmpFrequencyLimitException {
+      if (mounted) {
+        displayInfoBar(
+          context,
+          builder: (ctx, close) => InfoBar(
+            title: const Text('请求频率过快，请稍后再试'),
+            severity: InfoBarSeverity.warning,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        displayInfoBar(
+          context,
+          builder: (ctx, close) => InfoBar(
+            title: Text('关注失败：$error'),
+            severity: InfoBarSeverity.warning,
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _wxmpFollowingAccountId = '');
+    }
+  }
+
+  /// 从搜索结果中选择最接近 SSPU 推荐项的公众号。
+  Map<String, String>? _selectBestSspuAccountMatch(
+    SspuWechatAccount account,
+    List<Map<String, String>> results,
+  ) {
+    for (final result in results) {
+      if ((result['alias'] ?? '') == account.wxAccount) return result;
+    }
+    for (final result in results) {
+      if ((result['nickname'] ?? '') == account.name) return result;
+    }
+    return results.isEmpty ? null : results.first;
+  }
+
   /// 一键关注所有 SSPU 推荐公众号（公众号平台方式）
   Future<void> _batchFollowSspuWxmp(BuildContext context) async {
     if (_wxmpBatchFollowing) return;
 
-    final hasAuth = await _wxmpAuth.hasAuth();
-    if (!hasAuth) {
+    final validation = await _wechatService.validateSource();
+    if (!validation.isValid) {
       if (context.mounted) {
         displayInfoBar(
           context,
           builder: (ctx, close) => InfoBar(
-            title: const Text('请先扫码登录公众号平台'),
+            title: const Text('公众号平台认证不可用'),
+            content: Text(validation.message),
             severity: InfoBarSeverity.warning,
             action: IconButton(
               icon: const Icon(FluentIcons.clear),
@@ -1814,8 +1718,11 @@ class _SettingsPageState extends State<SettingsPage> {
           continue;
         }
 
-        // 取第一个结果
-        final mp = results.first;
+        final mp = _selectBestSspuAccountMatch(account, results);
+        if (mp == null) {
+          failed++;
+          continue;
+        }
         final fakeid = mp['fakeid'] ?? '';
         if (fakeid.isEmpty) {
           failed++;
@@ -1984,93 +1891,113 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
             const SizedBox(height: FluentSpacing.m),
-            Wrap(
-              spacing: FluentSpacing.m,
-              runSpacing: FluentSpacing.s,
-              children: sspuWechatAccounts.map((account) {
-                final followed = _findFollowedSspuAccount(account);
-                final fakeid = followed?['fakeid'] ?? '';
-                final enabled = fakeid.isEmpty
-                    ? false
-                    : (_wxmpMpNotificationEnabled[fakeid] ?? true);
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final itemWidth = constraints.maxWidth < 360
+                    ? constraints.maxWidth
+                    : 340.0;
+                return Wrap(
+                  spacing: FluentSpacing.m,
+                  runSpacing: FluentSpacing.s,
+                  children: sspuWechatAccounts.map((account) {
+                    final followed = _findFollowedSspuAccount(account);
+                    final fakeid = followed?['fakeid'] ?? '';
+                    final enabled = fakeid.isEmpty
+                        ? false
+                        : (_wxmpMpNotificationEnabled[fakeid] ?? true);
+                    final following =
+                        _wxmpFollowingAccountId == account.wxAccount;
 
-                return SizedBox(
-                  width: 340,
-                  child: Container(
-                    padding: const EdgeInsets.all(FluentSpacing.s),
-                    decoration: BoxDecoration(
-                      color: theme.inactiveColor.withValues(alpha: 0.035),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            account.iconUrl,
-                            width: 36,
-                            height: 36,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              FluentIcons.chat,
-                              size: 28,
-                              color: theme.accentColor,
-                            ),
-                          ),
+                    return SizedBox(
+                      width: itemWidth,
+                      child: Container(
+                        padding: const EdgeInsets.all(FluentSpacing.s),
+                        decoration: BoxDecoration(
+                          color: theme.inactiveColor.withValues(alpha: 0.035),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(width: FluentSpacing.s),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                account.name,
-                                style: theme.typography.bodyStrong,
-                                overflow: TextOverflow.ellipsis,
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                account.iconUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(
+                                      FluentIcons.chat,
+                                      size: 28,
+                                      color: theme.accentColor,
+                                    ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                account.wxAccount,
-                                style: theme.typography.caption,
-                                overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: FluentSpacing.s),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    account.name,
+                                    style: theme.typography.bodyStrong,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    account.wxAccount,
+                                    style: theme.typography.caption,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: FluentSpacing.s),
+                            if (!_wxmpAuthenticated)
+                              Text(
+                                '未认证',
+                                style: theme.typography.caption?.copyWith(
+                                  color: theme.resources.textFillColorSecondary,
+                                ),
+                              )
+                            else if (followed == null)
+                              Button(
+                                onPressed: following
+                                    ? null
+                                    : () => _followSspuWxmpAccount(account),
+                                child: following
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: ProgressRing(strokeWidth: 2),
+                                      )
+                                    : const Text('关注'),
+                              )
+                            else
+                              Tooltip(
+                                message: '控制是否获取该公众号推文',
+                                child: ToggleSwitch(
+                                  checked: enabled,
+                                  onChanged: (value) async {
+                                    await MessageStateService.instance
+                                        .setMpNotificationEnabled(
+                                          fakeid,
+                                          value,
+                                        );
+                                    setState(() {
+                                      _wxmpMpNotificationEnabled[fakeid] =
+                                          value;
+                                    });
+                                  },
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: FluentSpacing.s),
-                        if (!_wxmpAuthenticated)
-                          Text(
-                            '未认证',
-                            style: theme.typography.caption?.copyWith(
-                              color: theme.resources.textFillColorSecondary,
-                            ),
-                          )
-                        else if (followed == null)
-                          Text(
-                            '未关注',
-                            style: theme.typography.caption?.copyWith(
-                              color: theme.resources.textFillColorSecondary,
-                            ),
-                          )
-                        else
-                          Tooltip(
-                            message: '控制是否获取该公众号推文',
-                            child: ToggleSwitch(
-                              checked: enabled,
-                              onChanged: (value) async {
-                                await MessageStateService.instance
-                                    .setMpNotificationEnabled(fakeid, value);
-                                setState(() {
-                                  _wxmpMpNotificationEnabled[fakeid] = value;
-                                });
-                              },
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ],
         ),

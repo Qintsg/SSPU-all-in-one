@@ -74,6 +74,7 @@ class WxmpAuthService {
       _keyLastUpdate,
       DateTime.now().millisecondsSinceEpoch,
     );
+    await _configService.updateAuthCredentials(cookie: cookie, token: token);
   }
 
   /// 获取 Cookie
@@ -139,6 +140,7 @@ class WxmpAuthService {
     await StorageService.remove(_keyCookie);
     await StorageService.remove(_keyToken);
     await StorageService.remove(_keyLastUpdate);
+    await _configService.clearAuthCredentials();
   }
 
   /// 获取认证最后更新时间

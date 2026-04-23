@@ -26,6 +26,20 @@ class WxmpApiError {
   static const int frequencyLimit = 200013;
 }
 
+/// 公众号平台认证有效性校验结果。
+class WxmpAuthValidationResult {
+  /// 是否通过本地字段和平台接口校验。
+  final bool isValid;
+
+  /// 面向用户展示的校验结论。
+  final String message;
+
+  const WxmpAuthValidationResult({
+    required this.isValid,
+    required this.message,
+  });
+}
+
 /// 微信公众号平台文章采集服务（单例）
 /// 通过 mp.weixin.qq.com 的 cgi-bin API 搜索公众号、获取文章列表
 class WxmpArticleService {
@@ -92,6 +106,67 @@ class WxmpArticleService {
       throw WxmpFrequencyLimitException('请求频率过快，请稍后再试');
     }
     return ret;
+  }
+
+  /// 校验当前 Cookie / Token 是否能访问公众号平台接口。
+  /// 使用轻量搜索接口探测登录态，避免刷新文章时才暴露会话失效。
+  Future<WxmpAuthValidationResult> validateAuth() async {
+    final authStatus = await _auth.getAuthStatus();
+    if (!authStatus.isUsable) {
+      return WxmpAuthValidationResult(
+        isValid: false,
+        message: authStatus.message,
+      );
+    }
+
+    try {
+      final token = await _auth.getToken();
+      final config = await _loadConfigOrDefault();
+      final queryParameters = <String, Object?>{
+        'action': 'search_biz',
+        'begin': 0,
+        'count': 1,
+        'query': '上海第二工业大学',
+        'token': token,
+        'lang': 'zh_CN',
+        'f': 'json',
+        'ajax': '1',
+      };
+      if (config.appId.trim().isNotEmpty) {
+        queryParameters['appid'] = config.appId.trim();
+      }
+
+      final response = await _dio.get(
+        'https://mp.weixin.qq.com/cgi-bin/searchbiz',
+        queryParameters: queryParameters,
+        options: Options(headers: await _buildHeaders()),
+      );
+      final data = response.data as Map<String, dynamic>;
+      final ret = _checkResponse(data);
+      if (ret == WxmpApiError.success) {
+        return const WxmpAuthValidationResult(
+          isValid: true,
+          message: '认证有效，可正常访问公众号平台接口',
+        );
+      }
+      return WxmpAuthValidationResult(
+        isValid: false,
+        message: '公众号平台返回异常状态：$ret',
+      );
+    } on WxmpSessionExpiredException {
+      return const WxmpAuthValidationResult(
+        isValid: false,
+        message: '会话已过期，请重新扫码登录',
+      );
+    } on WxmpFrequencyLimitException {
+      return const WxmpAuthValidationResult(
+        isValid: false,
+        message: '平台限制了当前请求频率，请稍后再试',
+      );
+    } catch (error) {
+      _debugLog('auth validation failed: $error');
+      return WxmpAuthValidationResult(isValid: false, message: '认证校验失败：$error');
+    }
   }
 
   // ==================== 搜索公众号 ====================
@@ -233,11 +308,19 @@ class WxmpArticleService {
   Future<List<MessageItem>> fetchArticles({
     int maxCount = 50,
     Set<String>? knownMessageIds,
+    bool validateBeforeFetch = true,
   }) async {
     final authStatus = await _auth.getAuthStatus();
     if (!authStatus.isUsable) {
       _debugLog('refresh skipped: ${authStatus.message}');
       return [];
+    }
+    if (validateBeforeFetch) {
+      final validation = await validateAuth();
+      if (!validation.isValid) {
+        _debugLog('refresh skipped: ${validation.message}');
+        return [];
+      }
     }
 
     final followedMps = await getLocalFollowedMps();

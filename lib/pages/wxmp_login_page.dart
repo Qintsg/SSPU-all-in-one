@@ -78,8 +78,7 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
       }
 
       // 拼接为标准 Cookie 字符串
-      final cookieStr =
-          cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      final cookieStr = cookies.map((c) => '${c.name}=${c.value}').join('; ');
 
       // 保存到 WxmpAuthService
       await WxmpAuthService.instance.saveAuth(cookieStr, token);
@@ -102,10 +101,7 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
       if (mounted) {
         setState(() {
           _extracting = false;
-          _result = _LoginResult(
-            success: false,
-            message: '提取失败：$error',
-          );
+          _result = _LoginResult(success: false, message: '提取失败：$error');
         });
       }
     }
@@ -151,11 +147,11 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
                       size: 16,
                       color: _result!.success
                           ? (isDark
-                              ? FluentDarkColors.statusSuccess
-                              : FluentLightColors.statusSuccess)
+                                ? FluentDarkColors.statusSuccess
+                                : FluentLightColors.statusSuccess)
                           : (isDark
-                              ? FluentDarkColors.statusError
-                              : FluentLightColors.statusError),
+                                ? FluentDarkColors.statusError
+                                : FluentLightColors.statusError),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -239,8 +235,7 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
         Expanded(
           child: InAppWebView(
             webViewEnvironment: widget.webViewEnvironment,
-            initialUrlRequest:
-                URLRequest(url: WebUri(_wxmpLoginUrl)),
+            initialUrlRequest: URLRequest(url: WebUri(_wxmpLoginUrl)),
             initialSettings: InAppWebViewSettings(
               javaScriptEnabled: true,
               isInspectable: kDebugMode,

@@ -44,11 +44,17 @@ class WechatArticleService {
     return _auth.hasAuth();
   }
 
+  /// 校验公众号平台认证是否仍可访问接口。
+  Future<WxmpAuthValidationResult> validateSource() async {
+    return _wxmpService.validateAuth();
+  }
+
   /// 获取所有已关注公众号的最新文章。
   /// 若尚未完成公众号平台认证，则直接返回空列表。
   Future<List<MessageItem>> fetchArticles({
     int maxCount = 50,
     Set<String>? knownMessageIds,
+    bool validateBeforeFetch = true,
   }) async {
     await clearLegacyWereadState();
     if (!await _auth.hasAuth()) return [];
@@ -56,6 +62,7 @@ class WechatArticleService {
     return _wxmpService.fetchArticles(
       maxCount: maxCount,
       knownMessageIds: knownMessageIds,
+      validateBeforeFetch: validateBeforeFetch,
     );
   }
 }

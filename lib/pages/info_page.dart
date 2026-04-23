@@ -312,6 +312,29 @@ class _InfoPageState extends State<InfoPage> {
       return;
     }
 
+    final validation = await WechatArticleService.instance.validateSource();
+    if (!validation.isValid) {
+      _wechatSourceConfigured = false;
+      if (mounted) {
+        displayInfoBar(
+          context,
+          builder: (ctx, close) {
+            return InfoBar(
+              title: const Text('微信公众号认证不可用'),
+              content: Text(validation.message),
+              severity: InfoBarSeverity.warning,
+              action: IconButton(
+                icon: const Icon(FluentIcons.clear),
+                onPressed: close,
+              ),
+            );
+          },
+        );
+        setState(() {});
+      }
+      return;
+    }
+
     _wechatSourceConfigured = true;
     setState(() {
       _isLoading = true;
@@ -330,6 +353,7 @@ class _InfoPageState extends State<InfoPage> {
       final articles = await WechatArticleService.instance.fetchArticles(
         maxCount: maxCount,
         knownMessageIds: persistedMessages.map((msg) => msg.id).toSet(),
+        validateBeforeFetch: false,
       );
 
       if (articles.isEmpty) {

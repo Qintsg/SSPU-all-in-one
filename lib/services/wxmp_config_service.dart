@@ -11,6 +11,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'app_data_directory_service.dart';
+
 /// 微信公众号平台抓取配置。
 class WxmpConfig {
   /// Cookie 覆盖值；为空时使用扫码登录保存的 Cookie。
@@ -39,6 +41,26 @@ class WxmpConfig {
     required this.perRequestArticleCount,
     required this.requestDelayMs,
   });
+
+  /// 复制配置并替换指定字段，便于扫码登录后保留用户的非敏感高级参数。
+  WxmpConfig copyWith({
+    String? cookie,
+    String? token,
+    String? appId,
+    String? userAgent,
+    int? perRequestArticleCount,
+    int? requestDelayMs,
+  }) {
+    return WxmpConfig(
+      cookie: cookie ?? this.cookie,
+      token: token ?? this.token,
+      appId: appId ?? this.appId,
+      userAgent: userAgent ?? this.userAgent,
+      perRequestArticleCount:
+          perRequestArticleCount ?? this.perRequestArticleCount,
+      requestDelayMs: requestDelayMs ?? this.requestDelayMs,
+    );
+  }
 
   /// 默认配置仅提供非敏感默认项，敏感字段留空由用户自行填写。
   factory WxmpConfig.defaults() {
@@ -98,6 +120,7 @@ class WxmpConfig {
     return '''
 # SSPU All-in-One 微信公众号平台配置
 # 空字符串表示使用扫码登录保存的 Cookie / Token。
+# 文件位于 ~/.sspu-all-in-one/，扫码登录成功后会自动更新 Cookie / Token。
 # 保存后可回到设置页点击“重新加载配置”立即生效。
 
 [wxmp]
@@ -183,6 +206,27 @@ class WxmpConfigService {
     return WxmpConfig.fromToml(content);
   }
 
+  /// 保存当前配置到统一配置目录。
+  Future<void> saveConfig(WxmpConfig config) async {
+    final configPath = await ensureConfigFile();
+    await File(configPath).writeAsString(config.toToml());
+  }
+
+  /// 扫码登录成功后回写 Cookie / Token，同时保留用户手动配置的高级参数。
+  Future<void> updateAuthCredentials({
+    required String cookie,
+    required String token,
+  }) async {
+    final currentConfig = await _loadConfigOrDefaults();
+    await saveConfig(currentConfig.copyWith(cookie: cookie, token: token));
+  }
+
+  /// 清除配置文件中的认证字段，避免“清除认证”后仍被文件覆盖为可用状态。
+  Future<void> clearAuthCredentials() async {
+    final currentConfig = await _loadConfigOrDefaults();
+    await saveConfig(currentConfig.copyWith(cookie: '', token: ''));
+  }
+
   /// 使用系统编辑器打开配置文件；优先尝试 VS Code。
   Future<void> openConfigFile() async {
     final configPath = await ensureConfigFile();
@@ -205,27 +249,15 @@ class WxmpConfigService {
   }
 
   Future<String> _resolveConfigDirectory() async {
-    if (kIsWeb) {
-      throw UnsupportedError('Web 平台不支持本地配置文件');
-    }
+    return AppDataDirectoryService.getRootDirectoryPath();
+  }
 
-    if (Platform.isWindows) {
-      final appData = Platform.environment['APPDATA'];
-      if (appData != null && appData.isNotEmpty) {
-        return '$appData${Platform.pathSeparator}SSPU-all-in-one';
-      }
+  /// 配置文件损坏或不可读时使用默认配置，避免登录回写失败。
+  Future<WxmpConfig> _loadConfigOrDefaults() async {
+    try {
+      return await loadConfig();
+    } catch (_) {
+      return WxmpConfig.defaults();
     }
-
-    final home =
-        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-    if (home == null || home.isEmpty) {
-      return Directory.current.path;
-    }
-    if (Platform.isMacOS) {
-      return '$home${Platform.pathSeparator}Library${Platform.pathSeparator}'
-          'Application Support${Platform.pathSeparator}SSPU-all-in-one';
-    }
-    return '$home${Platform.pathSeparator}.config${Platform.pathSeparator}'
-        'SSPU-all-in-one';
   }
 }

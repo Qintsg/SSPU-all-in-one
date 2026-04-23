@@ -328,15 +328,15 @@ flutter --version
 flutter pub deps | Select-String "fluent_ui"
 ```
 
-### 10.4 shared_preferences 平台异常
+### 10.4 本地状态文件异常
 
-Desktop 平台（Windows/macOS/Linux）需要确保平台插件已正确注册。若出现 `MissingPluginException`：
+应用会将用户设置、认证信息、消息缓存和 WebView2 运行态统一写入 `~/.sspu-all-in-one/`。若状态文件损坏或需要重建本地状态，可先退出应用，备份后删除该目录中的对应文件，再重新启动应用。
 
-```bash
-flutter clean
-flutter pub get
-flutter run
-```
+常用文件：
+
+- `app_state.json`：应用设置、消息缓存、已读状态、关注列表
+- `wxmp_config.toml`：微信公众号平台认证与高级抓取参数
+- `webview2/`：Windows WebView2 用户数据目录
 
 ---
 
@@ -346,9 +346,4 @@ flutter run
 2. **不要修改 `pubspec.lock`**：除非执行了 `flutter pub get/upgrade`
 3. **Windows 开发**：确保以管理员身份运行 Visual Studio Installer 安装 C++ 工作负载
 4. **Web 调试**：推荐使用 Chrome，其他浏览器可能存在兼容性差异
-5. **密码数据存储位置**：
-   - Android: SharedPreferences XML 文件
-   - iOS/macOS: NSUserDefaults
-   - Windows: 注册表
-   - Linux: 本地文件
-   - Web: localStorage
+5. **用户数据存储位置**：统一位于 `~/.sspu-all-in-one/`，包括密码哈希、设置项、消息缓存、微信公众号认证配置和 WebView2 运行态

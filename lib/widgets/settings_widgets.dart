@@ -149,8 +149,8 @@ Widget buildCountNumberBox({
       ? theme.typography.caption?.color
       : theme.inactiveColor.withValues(alpha: 0.4);
 
-  return SizedBox(
-    width: 220,
+  return ConstrainedBox(
+    constraints: const BoxConstraints(minWidth: 280, maxWidth: 340),
     child: Row(
       children: [
         Expanded(
@@ -162,7 +162,7 @@ Widget buildCountNumberBox({
         ),
         const SizedBox(width: 8),
         SizedBox(
-          width: 92,
+          width: 128,
           child: NumberBox(
             value: value,
             min: 1,
