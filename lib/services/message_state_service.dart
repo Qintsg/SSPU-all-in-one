@@ -166,17 +166,16 @@ class MessageStateService
     await StorageService.setBool(MessageChannelKeys.noticeEnabled, enabled);
   }
 
-  /// 获取微信公众号渠道是否启用（默认关闭 — 占位）
+  /// 获取微信公众号渠道是否启用。
+  /// 公众号平台链路现已固定启用，不再暴露独立总开关。
   Future<bool> isWechatPublicEnabled() async {
-    return await StorageService.getBool(MessageChannelKeys.wechatPublicEnabled);
+    return true;
   }
 
-  /// 设置微信公众号渠道启用状态
+  /// 设置微信公众号渠道启用状态。
+  /// 为兼容旧状态文件，始终将其纠正为启用。
   Future<void> setWechatPublicEnabled(bool enabled) async {
-    await StorageService.setBool(
-      MessageChannelKeys.wechatPublicEnabled,
-      enabled,
-    );
+    await StorageService.setBool(MessageChannelKeys.wechatPublicEnabled, true);
   }
 
   /// 获取微信服务号渠道是否启用（默认关闭 — 占位）
@@ -246,6 +245,7 @@ class MessageStateService
   /// [defaultValue] 默认值，未设置时优先使用此值，否则使用渠道配置默认值
   /// :return: 渠道启用状态
   Future<bool> isChannelEnabled(String channelId, {bool? defaultValue}) async {
+    if (channelId == 'wechat_public') return true;
     return await StorageService.getBool(
       _channelEnabledKey(channelId),
       defaultValue:
@@ -257,6 +257,10 @@ class MessageStateService
   /// [channelId] 渠道唯一标识
   /// [enabled] 是否启用
   Future<void> setChannelEnabled(String channelId, bool enabled) async {
+    if (channelId == 'wechat_public') {
+      await StorageService.setBool(_channelEnabledKey(channelId), true);
+      return;
+    }
     await StorageService.setBool(_channelEnabledKey(channelId), enabled);
   }
 

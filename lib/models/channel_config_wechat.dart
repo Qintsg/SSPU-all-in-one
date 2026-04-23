@@ -13,7 +13,7 @@ const List<ChannelConfig> wechatChannels = [
     group: ChannelGroup.wechat,
     implemented: true,
     defaultInterval: 120,
-    defaultEnabled: false,
+    defaultEnabled: true,
   ),
   ChannelConfig(
     id: 'wechat_service',

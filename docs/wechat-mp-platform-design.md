@@ -307,7 +307,9 @@ Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
   "MzI1NTQxNjY0MQ==": {
     "name": "上海第二工业大学",
     "alias": "sspu1960",
-    "avatar": "https://wx.qlogo.cn/..."
+    "avatar": "https://wx.qlogo.cn/...",
+    "recommended_name": "上海第二工业大学",
+    "recommended_wx_account": "上海第二工业大学"
   }
 }
 ```
@@ -316,22 +318,11 @@ Future<List<MessageItem>> fetchArticles({int maxCount = 50}) async {
 
 ### 3.6 Settings UI 变更
 
-在微信 Tab 顶部添加方式选择器（ComboBox 或 RadioButton）：
-```
-获取方式：
-  ○ 方式一：微信读书（通过微信读书 Web API）
-  ● 方式二：公众号平台（通过 mp.weixin.qq.com API）
-```
-
-选择方式二后显示：
+当前实现固定使用公众号平台链路，不再提供方式切换开关。微信 Tab 显示：
 - 公众号平台认证卡片（扫码登录 / 认证状态 / 清除认证）
-- 已关注公众号列表（从公众号平台方式的存储）
-- 添加公众号（搜索框 → 调用 searchMp → 选择关注）
+- SSPU 微信矩阵（未关注显示“关注”按钮，已关注显示通知开关）
 
-选择方式一时显示原有 UI（微信读书 Cookie 配置）。
-
-两种方式共享：
-- 渠道开关（ChannelListSection）
+保留的通用能力：
 - SSPU 推荐公众号列表
 
 ---

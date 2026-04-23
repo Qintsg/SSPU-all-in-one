@@ -41,7 +41,7 @@ void main() {
     expect(await stateService.isChannelEnabled('jwc'), isTrue);
     expect(await stateService.isChannelEnabled('news_center'), isTrue);
     expect(await stateService.isChannelEnabled('college_cs'), isFalse);
-    expect(await stateService.isChannelEnabled('wechat_public'), isFalse);
+    expect(await stateService.isChannelEnabled('wechat_public'), isTrue);
   });
 
   test('未写入存储时使用渠道配置中的默认刷新间隔', () async {

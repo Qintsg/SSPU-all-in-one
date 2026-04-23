@@ -16,6 +16,7 @@ import '../services/wechat_article_service.dart';
 import '../services/wxmp_article_service.dart';
 import '../services/wxmp_auth_service.dart';
 import '../services/wxmp_config_service.dart';
+import '../utils/wechat_followed_account_matcher.dart';
 
 /// 微信推文设置操作反馈。
 class SettingsWechatFeedback {
@@ -51,7 +52,6 @@ class SettingsWechatController extends ChangeNotifier {
   String _wxmpConfigPath = '';
   String _stateFilePath = '';
   String _wxmpConfigMessage = '';
-  bool _wechatChannelEnabled = false;
   bool _wechatAutoRefreshEnabled = false;
   int _wechatRefreshInterval = 120;
   int _wechatManualFetchCount = 20;
@@ -69,7 +69,6 @@ class SettingsWechatController extends ChangeNotifier {
   String get wxmpConfigPath => _wxmpConfigPath;
   String get stateFilePath => _stateFilePath;
   String get wxmpConfigMessage => _wxmpConfigMessage;
-  bool get wechatChannelEnabled => _wechatChannelEnabled;
   bool get wechatAutoRefreshEnabled => _wechatAutoRefreshEnabled;
   int get wechatRefreshInterval => _wechatRefreshInterval;
   int get wechatManualFetchCount => _wechatManualFetchCount;
@@ -106,10 +105,6 @@ class SettingsWechatController extends ChangeNotifier {
     _wxmpConfigPath = wxmpConfigPath;
     _stateFilePath = stateFilePath;
     _wxmpConfigMessage = wxmpConfigMessage;
-    _wechatChannelEnabled = await _messageState.isChannelEnabled(
-      'wechat_public',
-      defaultValue: false,
-    );
     _wechatAutoRefreshEnabled = await _messageState.isChannelAutoRefreshEnabled(
       'wechat_public',
     );
@@ -129,14 +124,6 @@ class SettingsWechatController extends ChangeNotifier {
     }
     _isLoading = false;
     notifyListeners();
-  }
-
-  /// 切换微信推文总开关。
-  Future<void> setChannelEnabled(bool enabled) async {
-    await _messageState.setChannelEnabled('wechat_public', enabled);
-    _wechatChannelEnabled = enabled;
-    notifyListeners();
-    await _autoRefresh.reloadChannel('wechat_public');
   }
 
   /// 修改手动刷新条数。
@@ -261,7 +248,6 @@ class SettingsWechatController extends ChangeNotifier {
 
   /// 一键切换微信分区全部相关开关。
   Future<SettingsWechatFeedback> setWechatPageEnabled(bool enabled) async {
-    await setChannelEnabled(enabled);
     await setAutoRefreshEnabled(enabled);
     for (final mp in _wxmpFollowedMps) {
       final fakeid = mp['fakeid'] ?? '';
@@ -319,16 +305,7 @@ class SettingsWechatController extends ChangeNotifier {
 
   /// 在已关注列表中查找推荐账号。
   Map<String, String>? findFollowedSspuAccount(SspuWechatAccount account) {
-    for (final mp in _wxmpFollowedMps) {
-      final name = mp['name'] ?? '';
-      final alias = mp['alias'] ?? '';
-      if (name == account.name ||
-          name == account.wxAccount ||
-          alias == account.wxAccount) {
-        return mp;
-      }
-    }
-    return null;
+    return findFollowedWechatAccount(account, _wxmpFollowedMps);
   }
 
   /// 关注单个 SSPU 微信矩阵账号。
@@ -369,6 +346,8 @@ class SettingsWechatController extends ChangeNotifier {
         matched['nickname'] ?? account.name,
         alias: matched['alias'],
         avatar: matched['round_head_img'],
+        recommendedName: account.name,
+        recommendedWxAccount: account.wxAccount,
       );
       await _loadWxmpFollowedMps();
       return SettingsWechatFeedback(
@@ -459,6 +438,8 @@ class SettingsWechatController extends ChangeNotifier {
           mp['nickname'] ?? account.name,
           alias: mp['alias'],
           avatar: mp['round_head_img'],
+          recommendedName: account.name,
+          recommendedWxAccount: account.wxAccount,
         );
         added++;
         if (i < sspuWechatAccounts.length - 1) {

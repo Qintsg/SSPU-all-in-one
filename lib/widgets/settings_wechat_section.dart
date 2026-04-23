@@ -148,28 +148,19 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                           context: context,
                           label: '手动刷新文章个数',
                           value: _controller.wechatManualFetchCount,
-                          enabled: _controller.wechatChannelEnabled,
+                          enabled: true,
                           onChanged: (value) =>
                               _controller.setManualFetchCount(value),
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              '启用自动刷新：',
-                              style: theme.typography.caption?.copyWith(
-                                color: _controller.wechatChannelEnabled
-                                    ? null
-                                    : disabledColor,
-                              ),
-                            ),
+                            Text('启用自动刷新：', style: theme.typography.caption),
                             const SizedBox(width: FluentSpacing.xs),
                             ToggleSwitch(
                               checked: _controller.wechatAutoRefreshEnabled,
-                              onChanged: _controller.wechatChannelEnabled
-                                  ? (value) =>
-                                        _controller.setAutoRefreshEnabled(value)
-                                  : null,
+                              onChanged: (value) =>
+                                  _controller.setAutoRefreshEnabled(value),
                             ),
                           ],
                         ),
@@ -179,9 +170,7 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                             Text(
                               '自动刷新频率：',
                               style: theme.typography.caption?.copyWith(
-                                color:
-                                    _controller.wechatChannelEnabled &&
-                                        _controller.wechatAutoRefreshEnabled
+                                color: _controller.wechatAutoRefreshEnabled
                                     ? null
                                     : disabledColor,
                               ),
@@ -203,9 +192,7 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                                     ),
                                   )
                                   .toList(),
-                              onChanged:
-                                  _controller.wechatChannelEnabled &&
-                                      _controller.wechatAutoRefreshEnabled
+                              onChanged: _controller.wechatAutoRefreshEnabled
                                   ? (value) {
                                       if (value != null) {
                                         _controller.setRefreshInterval(value);
@@ -219,9 +206,7 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                           context: context,
                           label: '自动刷新文章个数',
                           value: _controller.wechatAutoFetchCount,
-                          enabled:
-                              _controller.wechatChannelEnabled &&
-                              _controller.wechatAutoRefreshEnabled,
+                          enabled: _controller.wechatAutoRefreshEnabled,
                           onChanged: (value) =>
                               _controller.setAutoFetchCount(value),
                         ),
@@ -238,8 +223,6 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                 ),
               ),
             ),
-            const SizedBox(height: FluentSpacing.l),
-            _buildFetchMethodCard(theme),
             const SizedBox(height: FluentSpacing.l),
             SettingsWechatAuthGuide(
               onOpenOfficialSite: () =>
@@ -265,39 +248,6 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildFetchMethodCard(FluentThemeData theme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(FluentSpacing.l),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(FluentIcons.cloud_download, size: 20),
-            const SizedBox(width: FluentSpacing.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('获取方式：微信公众平台', style: theme.typography.bodyStrong),
-                  const SizedBox(height: FluentSpacing.xs),
-                  Text(
-                    '通过微信公众平台 API 获取推文，需要先注册并登录公众号平台账号。应用不再提供微信读书接入方式。',
-                    style: theme.typography.caption,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: FluentSpacing.m),
-            ToggleSwitch(
-              checked: _controller.wechatChannelEnabled,
-              onChanged: (value) => _controller.setChannelEnabled(value),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

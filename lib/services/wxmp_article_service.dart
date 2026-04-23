@@ -500,9 +500,17 @@ class WxmpArticleService {
     String name, {
     String? alias,
     String? avatar,
+    String? recommendedName,
+    String? recommendedWxAccount,
   }) async {
     final mps = await getLocalFollowedMps();
-    mps[fakeid] = {'name': name, 'alias': alias ?? '', 'avatar': avatar ?? ''};
+    mps[fakeid] = {
+      'name': name,
+      'alias': alias ?? '',
+      'avatar': avatar ?? '',
+      'recommended_name': recommendedName ?? '',
+      'recommended_wx_account': recommendedWxAccount ?? '',
+    };
     await StorageService.setString(_keyFollowedMps, jsonEncode(mps));
   }
 

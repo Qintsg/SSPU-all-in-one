@@ -10,6 +10,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 
 import '../models/sspu_wechat_accounts.dart';
 import '../theme/fluent_tokens.dart';
+import '../utils/wechat_followed_account_matcher.dart';
 
 /// SSPU 微信矩阵卡片。
 class SettingsWechatMatrixCard extends StatelessWidget {
@@ -56,6 +57,10 @@ class SettingsWechatMatrixCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final allAccountsFollowed = sspuWechatAccounts.every(
+      (account) => findFollowedWechatAccount(account, followedMps) != null,
+    );
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(FluentSpacing.l),
@@ -63,53 +68,73 @@ class SettingsWechatMatrixCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SSPU 微信矩阵', style: theme.typography.bodyStrong),
-                const SizedBox(width: FluentSpacing.s),
-                Text(
-                  '来源：校园+微信矩阵·共 ${sspuWechatAccounts.length} 个',
-                  style: theme.typography.caption,
-                ),
-              ],
-            ),
-            const SizedBox(height: FluentSpacing.s),
-            Text('以下为上海第二工业大学官方认可的微信公众号', style: theme.typography.caption),
-            const SizedBox(height: FluentSpacing.s),
-            Text(
-              '已关注的公众号可在此直接控制是否获取推文；未关注项仅展示状态。',
-              style: theme.typography.caption,
-            ),
-            const SizedBox(height: FluentSpacing.s),
-            Row(
-              children: [
-                FilledButton(
-                  onPressed: !authenticated || batchFollowing
-                      ? null
-                      : onBatchFollow,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (batchFollowing)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 6),
-                          child: SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: ProgressRing(strokeWidth: 2),
+                      Row(
+                        children: [
+                          Text('SSPU 微信矩阵', style: theme.typography.bodyStrong),
+                          const SizedBox(width: FluentSpacing.s),
+                          Text(
+                            '来源：校园+微信矩阵·共 ${sspuWechatAccounts.length} 个',
+                            style: theme.typography.caption,
                           ),
-                        ),
-                      const Text('一键全部关注'),
+                        ],
+                      ),
+                      const SizedBox(height: FluentSpacing.s),
+                      Text(
+                        '以下为上海第二工业大学官方认可的微信公众号',
+                        style: theme.typography.caption,
+                      ),
+                      const SizedBox(height: FluentSpacing.s),
+                      Text(
+                        '已关注的公众号可在此直接控制是否获取推文；未关注项仅展示状态。',
+                        style: theme.typography.caption,
+                      ),
                     ],
                   ),
                 ),
-                if (batchFollowing && batchProgress.isNotEmpty) ...[
+                if (!allAccountsFollowed) ...[
                   const SizedBox(width: FluentSpacing.m),
-                  Flexible(
-                    child: Text(
-                      batchProgress,
-                      style: theme.typography.caption,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      FilledButton(
+                        onPressed: !authenticated || batchFollowing
+                            ? null
+                            : onBatchFollow,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (batchFollowing)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 6),
+                                child: SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: ProgressRing(strokeWidth: 2),
+                                ),
+                              ),
+                            const Text('一键全部关注'),
+                          ],
+                        ),
+                      ),
+                      if (batchFollowing && batchProgress.isNotEmpty) ...[
+                        const SizedBox(height: FluentSpacing.xs),
+                        SizedBox(
+                          width: 220,
+                          child: Text(
+                            batchProgress,
+                            style: theme.typography.caption,
+                            textAlign: TextAlign.right,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ],
@@ -124,7 +149,10 @@ class SettingsWechatMatrixCard extends StatelessWidget {
                   spacing: FluentSpacing.m,
                   runSpacing: FluentSpacing.s,
                   children: sspuWechatAccounts.map((account) {
-                    final followed = _findFollowedSspuAccount(account);
+                    final followed = findFollowedWechatAccount(
+                      account,
+                      followedMps,
+                    );
                     final fakeid = followed?['fakeid'] ?? '';
                     final enabled = fakeid.isEmpty
                         ? false
@@ -217,18 +245,5 @@ class SettingsWechatMatrixCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Map<String, String>? _findFollowedSspuAccount(SspuWechatAccount account) {
-    for (final mp in followedMps) {
-      final name = mp['name'] ?? '';
-      final alias = mp['alias'] ?? '';
-      if (name == account.name ||
-          name == account.wxAccount ||
-          alias == account.wxAccount) {
-        return mp;
-      }
-    }
-    return null;
   }
 }

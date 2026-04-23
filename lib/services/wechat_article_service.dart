@@ -53,12 +53,6 @@ class WechatArticleService {
 
   /// 是否存在启用中的微信推文抓取项。
   Future<bool> hasEnabledRefreshTarget() async {
-    final channelEnabled = await _stateService.isChannelEnabled(
-      'wechat_public',
-      defaultValue: false,
-    );
-    if (!channelEnabled) return false;
-
     final followedMps = await _wxmpService.getLocalFollowedMps();
     for (final entry in followedMps.entries) {
       if (await _stateService.isMpNotificationEnabled(entry.key)) {
