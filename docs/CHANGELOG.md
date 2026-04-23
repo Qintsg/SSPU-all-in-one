@@ -18,7 +18,10 @@
 - 消息推送设置页新增一键全开、一键全关操作，支持职能部门、教学单位和微信推文分区快速切换
 - README 与使用文档补充各平台 Release 产物位置、分发方式与 Android 本地签名说明
 - Release 工作流新增 Windows arm64 安装器与 Linux x64/arm64 的 `.deb` 安装包产物
-- Windows arm64 / Linux arm64 发布链路调整为实验性手动 job，默认 release 流程保持稳定的 x64 产物输出
+- Windows arm64 / Linux arm64 公开发布矩阵提升为与 x64 同级，自动进入正式 Release 资产清单
+- 新增 `docs/RELEASE.md`，统一版本来源、Tag 规则、资产命名、平台矩阵、Release Notes 模板与发布门槛
+- 新增发布说明提取与元数据生成脚本，自动产出 `release-notes.md`、`manifest.json` 与 `SHA256SUMS.txt`
+- 新增 Release 申请 Issue 模板与复合 action，统一发布版本解析和 Release 元数据生成
 
 ### 变更
 
@@ -76,6 +79,7 @@
 - 为 Linux Release 显式补齐并校验主程序可执行权限，同时补充压缩包解压与 `chmod +x` 使用说明
 - 收窄“刷新官网消息”的手动刷新范围，避免微信公众号抓取串入官网刷新链路导致信息中心长时间卡在加载状态
 - 为 macOS Debug / Release entitlements 补充 `com.apple.security.network.client`，修复官网刷新与内嵌 WebView 页面统一空白的问题
+- 修复 Release 版本解析会丢失 `+BUILD`、Tag 与资产命名不一致、Web / Linux / Android 公开产物不符合发布规则的问题
 
 ## [0.1.5-alpha] - 2026-04-21
 
@@ -95,9 +99,13 @@
 - 删除 CodeQL PR 安全扫描工作流
 - 移除 PR 阶段跨平台 build check，平台构建集中到 Release 工作流
 - PR 模板补充风险、回滚、验证记录、发布说明与回合并检查项
+- PR 模板补充标准 Release Notes 章节，带 `release` 标签的 PR merge 后直接作为 GitHub Release 正文来源
 - Labeler 标签拆分为 `ci`、`release`、`governance`、`dependencies` 等更细粒度规则
 - Dependabot 默认向 `develop` 提交分组升级 PR，减少依赖更新噪音并贴合分支流转
 - Issue 配置关闭空白提单入口，并补充文档导向链接
+- CI 恢复 `flutter test` 质量门槛，并对带 `release` 标签的 PR 追加发布分支与发布说明模板校验
+- Release 工作流改为从 `pubspec.yaml` 读取完整版本号，统一生成 Android/Windows/macOS/Linux/Web 公开资产与校验文件
+- Release 工作流新增 Windows arm64、Linux arm64 正式构建与打包步骤，删除独立实验性架构发布分叉
 
 ### 修复
 

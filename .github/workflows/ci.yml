@@ -1,11 +1,10 @@
-# CI 工作流 — PR 静态分析
-# 仅在 PR 非草稿状态时执行；草稿 PR 只保留自动标签工作流。
+# CI 工作流
+# 普通 PR 负责 analyze / test；带 release 标签的 PR 额外校验发布分支与发布说明模板。
 name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, edited, labeled, unlabeled]
 
 env:
   FLUTTER_VERSION: '3.41.7'
@@ -14,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  flutter-analyze:
+  quality-gate:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
@@ -31,3 +30,50 @@ jobs:
 
       - name: Flutter Analyze
         run: flutter analyze --no-fatal-infos
+
+      - name: Flutter Test
+        run: flutter test
+
+  release-policy:
+    if: >
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - id: release
+        uses: ./.github/actions/release-context
+
+      - name: 校验 Release PR 目标分支
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_ref='${{ github.event.pull_request.base.ref }}'
+          channel='${{ steps.release.outputs.channel }}'
+
+          if [[ "$channel" == "stable" ]]; then
+            [[ "$base_ref" == "main" ]] || {
+              echo "正式版 Release 只能从 main 发出，当前目标分支为 $base_ref。" >&2
+              exit 1
+            }
+            exit 0
+          fi
+
+          if [[ "$base_ref" != "main" && ! "$base_ref" =~ ^release/ ]]; then
+            echo "预发布 Release 仅允许合并到 main 或 release/*，当前目标分支为 $base_ref。" >&2
+            exit 1
+          fi
+
+      - name: 校验 Release PR 正文模板
+        shell: bash
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$PR_BODY" > pr-body.md
+          python scripts/release/render_release_notes.py \
+            --body-file pr-body.md \
+            --output release-notes.md \
+            --validate-only

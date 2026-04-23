@@ -1,42 +1,127 @@
-# 全平台 Release 工作流
-# PR 合并且带 release 标签时发布，也支持手动发版。
+# Release 工作流
+# 公开 Release 只在带 release 标签的 PR merge 后触发，版本、Tag 与资产命名统一来自 pubspec.yaml。
 name: Build & Release
 
 on:
   pull_request:
     types: [closed]
-    branches: [main, develop]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: '版本号 (如 0.1.5-alpha)'
-        required: true
-        default: '0.1.5-alpha'
-      experimental_arm64:
-        description: '是否尝试实验性的 Windows/Linux arm64 发布构建'
-        required: false
-        default: false
-        type: boolean
+    branches:
+      - main
+      - release/**
 
 env:
   FLUTTER_VERSION: '3.41.7'
 
+permissions:
+  contents: read
+
 jobs:
-  build-windows:
+  prepare:
     if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            runner: windows-latest
-            installer_script: .github\installer\windows-x64.iss
-            bundle_path: build\windows\x64\runner\Release
-            output_file: sspu-all-in-one-windows-x64-setup.exe
-            artifact_name: windows-x64-installer
-    runs-on: ${{ matrix.runner }}
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      version_core: ${{ steps.release.outputs.version_core }}
+      channel: ${{ steps.release.outputs.channel }}
+      build_number: ${{ steps.release.outputs.build_number }}
+      tag: ${{ steps.release.outputs.tag }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      release_title: ${{ steps.release.outputs.release_title }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - id: release
+        uses: ./.github/actions/release-context
+
+      - name: 校验触发分支
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_ref='${{ github.event.pull_request.base.ref }}'
+          channel='${{ steps.release.outputs.channel }}'
+
+          if [[ "$channel" == "stable" ]]; then
+            [[ "$base_ref" == "main" ]] || {
+              echo "正式 Release 必须由 main 分支上的 release PR merge 触发。" >&2
+              exit 1
+            }
+            exit 0
+          fi
+
+          if [[ "$base_ref" != "main" && ! "$base_ref" =~ ^release/ ]]; then
+            echo "预发布 Release 仅允许从 main 或 release/* 触发，当前目标分支为 $base_ref。" >&2
+            exit 1
+          fi
+
+  build-android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: actions/setup-java@v5.2.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 准备 Android Release 签名
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" && \
+                -n "${ANDROID_KEYSTORE_PASSWORD:-}" && \
+                -n "${ANDROID_KEY_ALIAS:-}" && \
+                -n "${ANDROID_KEY_PASSWORD:-}" ]]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ci-release.jks
+            {
+              printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+              printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+              printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+              printf 'storeFile=%s\n' 'app/ci-release.jks'
+            } > android/key.properties
+          else
+            echo "未配置 Android Release 签名 Secrets，当前将退回到仓库中的 debug 签名策略。"
+          fi
+
+      - name: 构建 Android Universal APK
+        run: flutter build apk --release
+
+      - name: 整理 Android 产物
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-android-universal.apk"
+
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: android-universal
+          path: dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-android-universal.apk
+
+  build-windows:
+    needs: prepare
+    runs-on: windows-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -44,23 +129,12 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
-          cache: false
-
-      - name: 准备版本号
-        shell: pwsh
-        run: |
-          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
-            $releaseVersion = '${{ github.event.inputs.version }}'
-          } else {
-            $versionLine = Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$'
-            $releaseVersion = $versionLine.Matches[0].Groups[1].Value.Split('+')[0]
-          }
-          "APP_VERSION=$releaseVersion" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          cache: true
 
       - name: 安装依赖
         run: flutter pub get
 
-      - name: 构建 Windows ${{ matrix.arch }}
+      - name: 构建 Windows x64
         run: flutter build windows --release
 
       - name: 安装 Inno Setup
@@ -70,121 +144,243 @@ jobs:
       - name: 生成 Windows 安装器
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          if (-not (Test-Path '${{ matrix.bundle_path }}')) {
-            throw 'Windows bundle path not found: ${{ matrix.bundle_path }}'
+          $installerCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $installerCompiler)) {
+            throw "未找到 Inno Setup 编译器：$installerCompiler"
           }
-          $innoCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
-          & $innoCompiler '${{ matrix.installer_script }}'
+
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          & $installerCompiler '.github\installer\windows-x64.iss'
+
+      - name: 生成 Windows Portable ZIP
+        shell: pwsh
+        run: |
+          $portableRoot = Join-Path $env:RUNNER_TEMP 'SSPU-All-in-One'
+          $portableFile = "dist\SSPU-All-in-One-v${env:APP_VERSION}-windows-x64-portable.zip"
+
+          if (Test-Path $portableRoot) {
+            Remove-Item -LiteralPath $portableRoot -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path $portableRoot | Out-Null
+          Copy-Item -Path 'build\windows\x64\runner\Release\*' -Destination $portableRoot -Recurse
+
+          if (Test-Path $portableFile) {
+            Remove-Item -LiteralPath $portableFile -Force
+          }
+
+          Compress-Archive -Path $portableRoot -DestinationPath $portableFile
 
       - uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.output_file }}
+          name: windows-assets
+          path: |
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-windows-x64-installer.exe
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-windows-x64-portable.zip
 
   build-windows-arm64:
-    if: >
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.experimental_arm64 == 'true'
+    needs: prepare
     runs-on: windows-11-arm
-    continue-on-error: true
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - uses: actions/checkout@v6.0.2
-
-      - name: 说明
-        shell: pwsh
-        run: |
-          Write-Host 'Flutter 3.41.7 当前未提供 GitHub Hosted Windows arm64 可直接消费的稳定 SDK 分发链路。'
-          Write-Host '该实验性 job 预留给后续官方 arm64 SDK 或自建缓存接入，当前不纳入正式 release 成败。'
-
-  build-linux:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            runner: ubuntu-latest
-            target_platform: linux-x64
-            bundle_path: build/linux/x64/release/bundle
-            tar_output_file: sspu-all-in-one-linux-x64.tar.gz
-            deb_output_file: sspu-all-in-one-linux-x64.deb
-            tar_artifact_name: linux-x64-bundle
-            deb_artifact_name: linux-x64-deb
-            deb_arch: amd64
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v6.0.2
-
-      - name: 安装 Linux 依赖
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev libnotify-dev libayatana-appindicator3-dev
 
       - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
-          cache: false
-
-      - name: 准备版本号
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "APP_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            release_version=$(grep '^version:' pubspec.yaml | sed 's/version: //;s/+.*//')
-            echo "APP_VERSION=$release_version" >> "$GITHUB_ENV"
-          fi
+          cache: true
 
       - name: 安装依赖
         run: flutter pub get
 
-      - name: 构建 Linux ${{ matrix.arch }}
-        run: flutter build linux --release --target-platform ${{ matrix.target_platform }}
+      - name: 构建 Windows arm64
+        run: flutter build windows --release
 
-      - name: 校验 Linux 主程序可执行权限
+      - name: 安装 Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: 生成 Windows arm64 安装器
+        shell: pwsh
         run: |
-          linux_executable="${{ matrix.bundle_path }}/sspu_all_in_one"
-          if [ ! -f "$linux_executable" ]; then
-            echo "未找到 Linux 主程序: $linux_executable" >&2
-            exit 1
-          fi
+          $installerCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          $bundlePath = 'build\windows\arm64\runner\Release'
 
+          if (-not (Test-Path $installerCompiler)) {
+            throw "未找到 Inno Setup 编译器：$installerCompiler"
+          }
+
+          if (-not (Test-Path $bundlePath)) {
+            throw "未找到 Windows arm64 构建目录：$bundlePath"
+          }
+
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          & $installerCompiler '.github\installer\windows-arm64.iss'
+
+      - name: 生成 Windows arm64 Portable ZIP
+        shell: pwsh
+        run: |
+          $bundlePath = 'build\windows\arm64\runner\Release'
+          $portableRoot = Join-Path $env:RUNNER_TEMP 'SSPU-All-in-One'
+          $portableFile = "dist\SSPU-All-in-One-v${env:APP_VERSION}-windows-arm64-portable.zip"
+
+          if (Test-Path $portableRoot) {
+            Remove-Item -LiteralPath $portableRoot -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path $portableRoot | Out-Null
+          Copy-Item -Path "$bundlePath\*" -Destination $portableRoot -Recurse
+
+          if (Test-Path $portableFile) {
+            Remove-Item -LiteralPath $portableFile -Force
+          }
+
+          Compress-Archive -Path $portableRoot -DestinationPath $portableFile
+
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: windows-arm64-assets
+          path: |
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-windows-arm64-installer.exe
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-windows-arm64-portable.zip
+
+  build-macos:
+    needs: prepare
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 macOS universal
+        run: flutter build macos --release
+
+      - name: 生成 macOS DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          macos_app_bundle="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          [[ -n "$macos_app_bundle" ]] || {
+            echo "未找到 macOS .app 产物。" >&2
+            exit 1
+          }
+
+          hdiutil create \
+            -volname "SSPU All-in-One" \
+            -srcfolder "$macos_app_bundle" \
+            -ov \
+            -format UDZO \
+            "dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-macos-universal-unsigned.dmg"
+
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: macos-dmg
+          path: dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-macos-universal-unsigned.dmg
+
+  build-linux:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+      RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: 安装 Linux 打包依赖
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            ninja-build \
+            libgtk-3-dev \
+            libnotify-dev \
+            libayatana-appindicator3-dev \
+            desktop-file-utils \
+            fakeroot \
+            file \
+            patchelf \
+            rpm \
+            ruby \
+            ruby-dev \
+            wget
+          sudo gem install --no-document fpm
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Linux x64
+        run: flutter build linux --release --target-platform linux-x64
+
+      - name: 校验 Linux 主程序
+        shell: bash
+        run: |
+          set -euo pipefail
+          linux_executable='build/linux/x64/release/bundle/sspu_all_in_one'
+          [[ -f "$linux_executable" ]] || {
+            echo "未找到 Linux 主程序：$linux_executable" >&2
+            exit 1
+          }
           chmod +x "$linux_executable"
-          stat -c '%A %n' "$linux_executable"
-
-          if [ ! -x "$linux_executable" ]; then
-            echo "Linux 主程序缺少可执行权限" >&2
+          [[ -x "$linux_executable" ]] || {
+            echo "Linux 主程序缺少可执行权限。" >&2
             exit 1
+          }
+
+      - name: 生成 Linux Release 产物
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bundle_dir='build/linux/x64/release/bundle'
+          stage_dir="$GITHUB_WORKSPACE/dist/stage"
+          package_name='sspu-all-in-one'
+          numeric_version="$(printf '%s' "$RELEASE_VERSION" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+          rpm_release="$RELEASE_BUILD_NUMBER"
+
+          if [[ "$RELEASE_CHANNEL" != "stable" ]]; then
+            rpm_release="0.${RELEASE_CHANNEL}.${RELEASE_BUILD_NUMBER}"
           fi
 
-      - name: 打包 Linux 运行目录
-        run: |
-          cd "${{ matrix.bundle_path }}"
-          tar -czf "$GITHUB_WORKSPACE/${{ matrix.tar_output_file }}" .
+          rm -rf "$stage_dir"
+          mkdir -p "$stage_dir" "$GITHUB_WORKSPACE/dist"
 
-      - name: 校验 Linux 压缩包中的可执行权限
-        run: |
-          tar -tvzf "$GITHUB_WORKSPACE/${{ matrix.tar_output_file }}" | grep '^-rwxr-xr-x .* ./sspu_all_in_one$'
+          # 便携包根目录固定为应用目录，避免用户解压后得到多层临时目录。
+          portable_root="$stage_dir/portable/SSPU-All-in-One"
+          mkdir -p "$portable_root"
+          cp -a "$bundle_dir/." "$portable_root/"
+          tar -C "$stage_dir/portable" \
+            -czf "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-x64-portable.tar.gz" \
+            SSPU-All-in-One
 
-      - name: 构建 Linux ${{ matrix.arch }} DEB 安装包
-        run: |
-          package_root="$GITHUB_WORKSPACE/dist/deb-${{ matrix.arch }}"
-          install_root="$package_root/usr/lib/sspu-all-in-one"
-          desktop_root="$package_root/usr/share/applications"
-          icon_root="$package_root/usr/share/icons/hicolor/256x256/apps"
-          bin_root="$package_root/usr/bin"
-          control_root="$package_root/DEBIAN"
+          deb_root="$stage_dir/deb"
+          install_root="$deb_root/usr/lib/sspu-all-in-one"
+          desktop_root="$deb_root/usr/share/applications"
+          icon_root="$deb_root/usr/share/icons/hicolor/256x256/apps"
+          bin_root="$deb_root/usr/bin"
+          control_root="$deb_root/DEBIAN"
 
-          rm -rf "$package_root"
           mkdir -p "$install_root" "$desktop_root" "$icon_root" "$bin_root" "$control_root"
+          cp -a "$bundle_dir/." "$install_root/"
+          install -Dm644 assets/images/app_icon.png "$icon_root/sspu-all-in-one.png"
 
-          cp -a "${{ matrix.bundle_path }}/." "$install_root/"
-          cp assets/images/app_icon.png "$icon_root/sspu-all-in-one.png"
-
-          cat > "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" <<EOF
+          cat > "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" <<'EOF'
           [Desktop Entry]
           Version=1.0
           Type=Application
@@ -201,191 +397,259 @@ jobs:
 
           cat > "$control_root/control" <<EOF
           Package: sspu-all-in-one
-          Version: ${{ env.APP_VERSION }}
+          Version: ${RELEASE_VERSION}
           Section: education
           Priority: optional
-          Architecture: ${{ matrix.deb_arch }}
+          Architecture: amd64
           Maintainer: Qintsg
           Depends: libgtk-3-0, libblkid1, liblzma5
           Description: 上海第二工业大学校园综合服务应用
            聚合学校官网、教学单位、职能部门与微信公众号信息的 Flutter 客户端。
           EOF
 
-          dpkg-deb --build --root-owner-group "$package_root" "$GITHUB_WORKSPACE/${{ matrix.deb_output_file }}"
+          dpkg-deb --build --root-owner-group \
+            "$deb_root" \
+            "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-x64-deb.deb"
+
+          rpm_root="$stage_dir/rpm"
+          rpm_install_root="$rpm_root/usr/lib/sspu-all-in-one"
+          rpm_desktop_root="$rpm_root/usr/share/applications"
+          rpm_icon_root="$rpm_root/usr/share/icons/hicolor/256x256/apps"
+          rpm_bin_root="$rpm_root/usr/bin"
+
+          mkdir -p "$rpm_install_root" "$rpm_desktop_root" "$rpm_icon_root" "$rpm_bin_root"
+          cp -a "$bundle_dir/." "$rpm_install_root/"
+          install -Dm644 assets/images/app_icon.png "$rpm_icon_root/sspu-all-in-one.png"
+          cp "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" "$rpm_desktop_root/cn.qintsg.sspu_all_in_one.desktop"
+          ln -sf ../lib/sspu-all-in-one/sspu_all_in_one "$rpm_bin_root/sspu-all-in-one"
+
+          fpm -s dir -t rpm \
+            -n "$package_name" \
+            -v "$numeric_version" \
+            --iteration "$rpm_release" \
+            --architecture x86_64 \
+            --description '上海第二工业大学校园综合服务应用' \
+            --url 'https://github.com/Qintsg/SSPU-all-in-one' \
+            --package "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-x64-rpm.rpm" \
+            -C "$rpm_root" .
+
+          appdir_root="$stage_dir/AppDir"
+          mkdir -p \
+            "$appdir_root/usr/lib/sspu-all-in-one" \
+            "$appdir_root/usr/share/applications" \
+            "$appdir_root/usr/share/icons/hicolor/256x256/apps"
+          cp -a "$bundle_dir/." "$appdir_root/usr/lib/sspu-all-in-one/"
+          cp "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" \
+            "$appdir_root/usr/share/applications/cn.qintsg.sspu_all_in_one.desktop"
+          cp assets/images/app_icon.png \
+            "$appdir_root/usr/share/icons/hicolor/256x256/apps/sspu-all-in-one.png"
+
+          cat > "$appdir_root/AppRun" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          APPDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          export LD_LIBRARY_PATH="$APPDIR/usr/lib/sspu-all-in-one:${LD_LIBRARY_PATH:-}"
+          exec "$APPDIR/usr/lib/sspu-all-in-one/sspu_all_in_one" "$@"
+          EOF
+
+          chmod +x "$appdir_root/AppRun"
+          ln -sf usr/share/applications/cn.qintsg.sspu_all_in_one.desktop "$appdir_root/sspu-all-in-one.desktop"
+          ln -sf usr/share/icons/hicolor/256x256/apps/sspu-all-in-one.png "$appdir_root/sspu-all-in-one.png"
+
+          wget -q \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+            -O "$stage_dir/appimagetool.AppImage"
+          chmod +x "$stage_dir/appimagetool.AppImage"
+          ARCH=x86_64 "$stage_dir/appimagetool.AppImage" --appimage-extract-and-run \
+            "$appdir_root" \
+            "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-x64-appimage.AppImage"
 
       - uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ matrix.tar_artifact_name }}
-          path: ${{ matrix.tar_output_file }}
-
-      - uses: actions/upload-artifact@v7.0.1
-        with:
-          name: ${{ matrix.deb_artifact_name }}
-          path: ${{ matrix.deb_output_file }}
+          name: linux-assets
+          path: |
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-x64-appimage.AppImage
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-x64-deb.deb
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-x64-rpm.rpm
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-x64-portable.tar.gz
 
   build-linux-arm64:
-    if: >
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.experimental_arm64 == 'true'
+    needs: prepare
     runs-on: ubuntu-24.04-arm
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v6.0.2
-
-      - name: 说明
-        run: |
-          echo "Flutter 3.41.7 当前未提供 GitHub Hosted Linux arm64 可直接消费的稳定 SDK 分发链路。"
-          echo "该实验性 job 预留给后续官方 arm64 SDK 或自建缓存接入，当前不纳入正式 release 成败。"
-
-  build-macos:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6.0.2
-
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: false
-
-      - name: 安装依赖
-        run: flutter pub get
-
-      - name: 构建 macOS universal
-        run: flutter build macos --release
-
-      - name: 生成 macOS DMG
-        run: |
-          macos_app_bundle="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
-          if [ -z "$macos_app_bundle" ]; then
-            echo "未找到 macOS .app 产物" >&2
-            exit 1
-          fi
-          hdiutil create \
-            -volname "SSPU All-in-One" \
-            -srcfolder "$macos_app_bundle" \
-            -ov \
-            -format UDZO \
-            "$GITHUB_WORKSPACE/sspu-all-in-one-macos-universal.dmg"
-
-      - uses: actions/upload-artifact@v7.0.1
-        with:
-          name: macos-universal-dmg
-          path: sspu-all-in-one-macos-universal.dmg
-
-  build-ios:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6.0.2
-
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: false
-
-      - name: 安装依赖
-        run: flutter pub get
-
-      - name: 构建 iOS arm64 未签名应用
-        run: flutter build ios --release --no-codesign
-
-      - name: 打包 iOS 未签名应用
-        run: |
-          tar -czf "$GITHUB_WORKSPACE/sspu-all-in-one-ios-arm64-unsigned-app.tar.gz" -C build/ios/iphoneos Runner.app
-
-      - uses: actions/upload-artifact@v7.0.1
-        with:
-          name: ios-arm64-unsigned-app
-          path: sspu-all-in-one-ios-arm64-unsigned-app.tar.gz
-
-  build-android:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    runs-on: ubuntu-latest
     env:
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+      RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-java@v5.2.0
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      - name: 安装 Linux arm64 打包依赖
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            ninja-build \
+            libgtk-3-dev \
+            libnotify-dev \
+            libayatana-appindicator3-dev \
+            desktop-file-utils \
+            fakeroot \
+            file \
+            patchelf \
+            rpm \
+            ruby \
+            ruby-dev \
+            wget
+          sudo gem install --no-document fpm
 
       - uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
-          cache: false
+          cache: true
 
       - name: 安装依赖
         run: flutter pub get
 
-      - name: 准备 Android release 签名
+      - name: 构建 Linux arm64
+        run: flutter build linux --release --target-platform linux-arm64
+
+      - name: 生成 Linux arm64 Release 产物
         shell: bash
         run: |
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && \
-             [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && \
-             [ -n "$ANDROID_KEY_ALIAS" ] && \
-             [ -n "$ANDROID_KEY_PASSWORD" ]; then
-            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ci-release.jks
-            {
-              printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
-              printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
-              printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
-              printf 'storeFile=%s\n' 'app/ci-release.jks'
-            } > android/key.properties
-          else
-            echo "Android release signing secrets are not configured; fallback signing will be used."
+          set -euo pipefail
+
+          bundle_dir='build/linux/arm64/release/bundle'
+          stage_dir="$GITHUB_WORKSPACE/dist/stage"
+          package_name='sspu-all-in-one'
+          numeric_version="$(printf '%s' "$RELEASE_VERSION" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+          rpm_release="$RELEASE_BUILD_NUMBER"
+
+          if [[ "$RELEASE_CHANNEL" != "stable" ]]; then
+            rpm_release="0.${RELEASE_CHANNEL}.${RELEASE_BUILD_NUMBER}"
           fi
 
-      - name: 构建 Android arm32 / arm64 / x64 APK
-        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi
+          [[ -f "$bundle_dir/sspu_all_in_one" ]] || {
+            echo "未找到 Linux arm64 主程序：$bundle_dir/sspu_all_in_one" >&2
+            exit 1
+          }
 
-      - name: 整理 APK 产物
-        run: |
-          mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist/sspu-all-in-one-android-arm32.apk
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist/sspu-all-in-one-android-arm64.apk
-          cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist/sspu-all-in-one-android-x64.apk
+          chmod +x "$bundle_dir/sspu_all_in_one"
+          rm -rf "$stage_dir"
+          mkdir -p "$stage_dir" "$GITHUB_WORKSPACE/dist"
+
+          portable_root="$stage_dir/portable/SSPU-All-in-One"
+          mkdir -p "$portable_root"
+          cp -a "$bundle_dir/." "$portable_root/"
+          tar -C "$stage_dir/portable" \
+            -czf "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-arm64-portable.tar.gz" \
+            SSPU-All-in-One
+
+          deb_root="$stage_dir/deb"
+          install_root="$deb_root/usr/lib/sspu-all-in-one"
+          desktop_root="$deb_root/usr/share/applications"
+          icon_root="$deb_root/usr/share/icons/hicolor/256x256/apps"
+          bin_root="$deb_root/usr/bin"
+          control_root="$deb_root/DEBIAN"
+
+          mkdir -p "$install_root" "$desktop_root" "$icon_root" "$bin_root" "$control_root"
+          cp -a "$bundle_dir/." "$install_root/"
+          install -Dm644 assets/images/app_icon.png "$icon_root/sspu-all-in-one.png"
+
+          cat > "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" <<'EOF'
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=SSPU All-in-One
+          Comment=上海第二工业大学校园综合服务应用
+          Exec=/usr/lib/sspu-all-in-one/sspu_all_in_one
+          Icon=sspu-all-in-one
+          Terminal=false
+          Categories=Education;Utility;
+          StartupNotify=true
+          EOF
+
+          ln -sf ../lib/sspu-all-in-one/sspu_all_in_one "$bin_root/sspu-all-in-one"
+
+          cat > "$control_root/control" <<EOF
+          Package: sspu-all-in-one
+          Version: ${RELEASE_VERSION}
+          Section: education
+          Priority: optional
+          Architecture: arm64
+          Maintainer: Qintsg
+          Depends: libgtk-3-0, libblkid1, liblzma5
+          Description: 上海第二工业大学校园综合服务应用
+           聚合学校官网、教学单位、职能部门与微信公众号信息的 Flutter 客户端。
+          EOF
+
+          dpkg-deb --build --root-owner-group \
+            "$deb_root" \
+            "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-arm64-deb.deb"
+
+          rpm_root="$stage_dir/rpm"
+          rpm_install_root="$rpm_root/usr/lib/sspu-all-in-one"
+          rpm_desktop_root="$rpm_root/usr/share/applications"
+          rpm_icon_root="$rpm_root/usr/share/icons/hicolor/256x256/apps"
+          rpm_bin_root="$rpm_root/usr/bin"
+
+          mkdir -p "$rpm_install_root" "$rpm_desktop_root" "$rpm_icon_root" "$rpm_bin_root"
+          cp -a "$bundle_dir/." "$rpm_install_root/"
+          install -Dm644 assets/images/app_icon.png "$rpm_icon_root/sspu-all-in-one.png"
+          cp "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" "$rpm_desktop_root/cn.qintsg.sspu_all_in_one.desktop"
+          ln -sf ../lib/sspu-all-in-one/sspu_all_in_one "$rpm_bin_root/sspu-all-in-one"
+
+          fpm -s dir -t rpm \
+            -n "$package_name" \
+            -v "$numeric_version" \
+            --iteration "$rpm_release" \
+            --architecture aarch64 \
+            --description '上海第二工业大学校园综合服务应用' \
+            --url 'https://github.com/Qintsg/SSPU-all-in-one' \
+            --package "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-arm64-rpm.rpm" \
+            -C "$rpm_root" .
+
+          appdir_root="$stage_dir/AppDir"
+          mkdir -p \
+            "$appdir_root/usr/lib/sspu-all-in-one" \
+            "$appdir_root/usr/share/applications" \
+            "$appdir_root/usr/share/icons/hicolor/256x256/apps"
+          cp -a "$bundle_dir/." "$appdir_root/usr/lib/sspu-all-in-one/"
+          cp "$desktop_root/cn.qintsg.sspu_all_in_one.desktop" \
+            "$appdir_root/usr/share/applications/cn.qintsg.sspu_all_in_one.desktop"
+          cp assets/images/app_icon.png \
+            "$appdir_root/usr/share/icons/hicolor/256x256/apps/sspu-all-in-one.png"
+
+          cat > "$appdir_root/AppRun" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          APPDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          export LD_LIBRARY_PATH="$APPDIR/usr/lib/sspu-all-in-one:${LD_LIBRARY_PATH:-}"
+          exec "$APPDIR/usr/lib/sspu-all-in-one/sspu_all_in_one" "$@"
+          EOF
+
+          chmod +x "$appdir_root/AppRun"
+          ln -sf usr/share/applications/cn.qintsg.sspu_all_in_one.desktop "$appdir_root/sspu-all-in-one.desktop"
+          ln -sf usr/share/icons/hicolor/256x256/apps/sspu-all-in-one.png "$appdir_root/sspu-all-in-one.png"
+
+          wget -q \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage \
+            -O "$stage_dir/appimagetool.AppImage"
+          chmod +x "$stage_dir/appimagetool.AppImage"
+          ARCH=aarch64 "$stage_dir/appimagetool.AppImage" --appimage-extract-and-run \
+            "$appdir_root" \
+            "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${RELEASE_VERSION}-linux-arm64-appimage.AppImage"
 
       - uses: actions/upload-artifact@v7.0.1
         with:
-          name: android-apk
+          name: linux-arm64-assets
           path: |
-            dist/sspu-all-in-one-android-arm32.apk
-            dist/sspu-all-in-one-android-arm64.apk
-            dist/sspu-all-in-one-android-x64.apk
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-arm64-appimage.AppImage
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-arm64-deb.deb
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-arm64-rpm.rpm
+            dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-linux-arm64-portable.tar.gz
 
   build-web:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - mode: js
-            build_args: ''
-            output_dir: build/web-js
-            output_file: sspu-all-in-one-web-js.tar.gz
-            artifact_name: web-js-bundle
-          - mode: wasm
-            build_args: '--wasm'
-            output_dir: build/web-wasm
-            output_file: sspu-all-in-one-web-wasm.tar.gz
-            artifact_name: web-wasm-bundle
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
@@ -394,90 +658,101 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
-          cache: false
+          cache: true
 
       - name: 安装依赖
         run: flutter pub get
 
-      - name: 构建 Web ${{ matrix.mode }}
-        run: flutter build web --release ${{ matrix.build_args }} --output ${{ matrix.output_dir }}
+      - name: 构建 Web
+        run: flutter build web --release
 
-      - name: 打包 Web ${{ matrix.mode }} 产物
+      - name: 打包 Web 静态站点
+        shell: bash
         run: |
-          cd "${{ matrix.output_dir }}"
-          tar -czf "$GITHUB_WORKSPACE/${{ matrix.output_file }}" .
+          set -euo pipefail
+          mkdir -p dist
+          cd build/web
+          zip -r \
+            "$GITHUB_WORKSPACE/dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-web-universal-static.zip" \
+            .
 
       - uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.output_file }}
+          name: web-static
+          path: dist/SSPU-All-in-One-v${{ needs.prepare.outputs.version }}-web-universal-static.zip
 
-  create-release:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))
-    needs: [build-windows, build-linux, build-macos, build-ios, build-android, build-web]
+  publish:
+    if: needs.prepare.result == 'success'
+    needs:
+      [
+        prepare,
+        build-android,
+        build-windows,
+        build-windows-arm64,
+        build-macos,
+        build-linux,
+        build-linux-arm64,
+        build-web,
+      ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - name: 提取版本号
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            release_version=$(grep '^version:' pubspec.yaml | sed 's/version: //;s/+.*//')
-            echo "version=$release_version" >> "$GITHUB_OUTPUT"
-          fi
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
 
       - uses: actions/download-artifact@v8.0.1
         with:
-          path: artifacts
+          path: dist
+          merge-multiple: true
 
-      - name: 创建 Release
+      - name: 生成 Release Notes
+        shell: bash
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$PR_BODY" > pr-body.md
+          python scripts/release/render_release_notes.py \
+            --body-file pr-body.md \
+            --output dist/release-notes.md
+
+      - name: 收集工具链版本
+        id: toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter_version="$(flutter --version --machine | python -c "import json,sys; print(json.load(sys.stdin)['frameworkVersion'])")"
+          dart_version="$(dart --version 2>&1 | awk '{print $4}')"
+          release_date="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          {
+            echo "flutter_version=$flutter_version"
+            echo "dart_version=$dart_version"
+            echo "release_date=$release_date"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/generate-release-metadata
+        with:
+          asset-dir: dist
+          version: ${{ needs.prepare.outputs.version }}
+          channel: ${{ needs.prepare.outputs.channel }}
+          build-number: ${{ needs.prepare.outputs.build_number }}
+          tag: ${{ needs.prepare.outputs.tag }}
+          release-date: ${{ steps.toolchain.outputs.release_date }}
+          flutter-version: ${{ steps.toolchain.outputs.flutter_version }}
+          dart-version: ${{ steps.toolchain.outputs.dart_version }}
+
+      - name: 发布 GitHub Release
         uses: softprops/action-gh-release@v3.0.0
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
-          body: |
-            ## SSPU All-in-One v${{ steps.version.outputs.version }}
-
-            上海第二工业大学校园综合服务应用。
-
-            ### Release 产物
-            | 平台 | 文件 | 说明 |
-            |------|------|------|
-            | Windows x64 | `sspu-all-in-one-windows-x64-setup.exe` | 安装器 |
-            | Android arm32 | `sspu-all-in-one-android-arm32.apk` | APK 安装包 |
-            | Android arm64 | `sspu-all-in-one-android-arm64.apk` | APK 安装包 |
-            | Android x64 | `sspu-all-in-one-android-x64.apk` | APK 安装包 |
-            | iOS arm64 | `sspu-all-in-one-ios-arm64-unsigned-app.tar.gz` | 未签名应用包，需签名后安装 |
-            | macOS universal | `sspu-all-in-one-macos-universal.dmg` | 同时支持 x64 与 arm64，未签名 |
-            | Linux x64 | `sspu-all-in-one-linux-x64.tar.gz` | 运行目录压缩包 |
-            | Linux x64 DEB | `sspu-all-in-one-linux-x64.deb` | Debian/Ubuntu 安装包 |
-            | Web JavaScript | `sspu-all-in-one-web-js.tar.gz` | 静态站点压缩包 |
-            | Web WebAssembly | `sspu-all-in-one-web-wasm.tar.gz` | 静态站点压缩包 |
-
-            ### 平台说明
-            - Android 产物按 arm32、arm64、x64 拆分，减少单个安装包体积。
-            - 当前仓库 Release 工作流默认构建 Windows x64 与 Linux x64 产物。
-            - Windows arm64 / Linux arm64 作为实验性 job 保留，仅在手动触发时按需尝试，不纳入正式 release 成败。
-            - iOS 没有仓库签名证书，Release 提供未签名应用压缩包。
-            - Linux 同时提供 `tar.gz` 运行目录和 `.deb` 安装包；`.deb` 面向 Debian / Ubuntu 及其衍生发行版。
-            - Linux 压缩包建议使用 `tar -xzf` 解压；若使用不保留 Unix 权限的图形工具解压后无法直接运行，请执行 `chmod +x sspu_all_in_one` 后再启动。
-          draft: false
-          prerelease: true
-          files: |
-            artifacts/windows-x64-installer/sspu-all-in-one-windows-x64-setup.exe
-            artifacts/android-apk/sspu-all-in-one-android-arm32.apk
-            artifacts/android-apk/sspu-all-in-one-android-arm64.apk
-            artifacts/android-apk/sspu-all-in-one-android-x64.apk
-            artifacts/ios-arm64-unsigned-app/sspu-all-in-one-ios-arm64-unsigned-app.tar.gz
-            artifacts/macos-universal-dmg/sspu-all-in-one-macos-universal.dmg
-            artifacts/linux-x64-bundle/sspu-all-in-one-linux-x64.tar.gz
-            artifacts/linux-x64-deb/sspu-all-in-one-linux-x64.deb
-            artifacts/web-js-bundle/sspu-all-in-one-web-js.tar.gz
-            artifacts/web-wasm-bundle/sspu-all-in-one-web-wasm.tar.gz
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: ${{ needs.prepare.outputs.release_title }}
+          body_path: dist/release-notes.md
+          prerelease: ${{ needs.prepare.outputs.prerelease }}
+          files: dist/*

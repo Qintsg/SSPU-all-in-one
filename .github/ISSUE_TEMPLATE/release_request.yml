@@ -1,0 +1,99 @@
+name: Release 申请
+description: 为预发布或正式发布准备版本、平台清单与发布说明
+title: "[Release] "
+labels: ["release"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        公开 Release 由带 `release` 标签的 PR merge 自动触发。
+        请先确认 `pubspec.yaml` 版本、`docs/CHANGELOG.md` 与发布说明已经准备完成。
+  - type: input
+    id: version
+    attributes:
+      label: 目标版本
+      description: 必须与 `pubspec.yaml` 中的 version 完全一致。
+      placeholder: 例如：0.2.0-beta+1
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: 发布通道
+      options:
+        - stable
+        - alpha
+        - beta
+        - rc
+    validations:
+      required: true
+  - type: input
+    id: target_branch
+    attributes:
+      label: 目标分支
+      description: 正式版必须为 `main`；预发布可为 `main` 或 `release/*`。
+      placeholder: main
+    validations:
+      required: true
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: 本次计划发布平台
+      multiple: true
+      options:
+        - Android universal APK
+        - Windows x64 installer
+        - Windows x64 portable
+        - Windows arm64 installer
+        - Windows arm64 portable
+        - macOS universal DMG
+        - Linux x64 AppImage
+        - Linux x64 deb
+        - Linux x64 rpm
+        - Linux x64 portable tar.gz
+        - Linux arm64 AppImage
+        - Linux arm64 deb
+        - Linux arm64 rpm
+        - Linux arm64 portable tar.gz
+        - Web static.zip
+    validations:
+      required: true
+  - type: textarea
+    id: highlights
+    attributes:
+      label: 发布亮点
+      description: 简述本次发布的主要新增、修复和优化。
+      placeholder: |
+        - 新增 ...
+        - 修复 ...
+        - 优化 ...
+    validations:
+      required: true
+  - type: textarea
+    id: missing_platforms
+    attributes:
+      label: 缺失或异常平台说明
+      description: 若某些平台本次不发布或存在限制，请写明原因。
+      placeholder: 例如：macOS 当前未完成签名，仅提供 unsigned DMG。
+  - type: textarea
+    id: known_issues
+    attributes:
+      label: 已知问题
+      description: 发布后仍存在但可接受的问题。
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 发布前检查
+      options:
+        - label: 我已确认 `flutter analyze` 通过
+          required: true
+        - label: 我已确认 `flutter test` 通过
+          required: true
+        - label: 我已确认 `pubspec.yaml`、Tag 规则、Release 标题和资产命名保持一致
+          required: true
+        - label: 我已确认 PR 正文将按发布说明模板填写
+          required: true
+        - label: 我已确认 `docs/CHANGELOG.md` 和 `docs/RELEASE.md` 已同步
+          required: true

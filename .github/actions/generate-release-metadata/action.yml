@@ -1,0 +1,44 @@
+name: generate-release-metadata
+description: 为 Release 资产生成 manifest.json 与 SHA256SUMS.txt
+
+inputs:
+  asset-dir:
+    description: Release 资产目录
+    required: true
+  version:
+    description: 完整版本号
+    required: true
+  channel:
+    description: 发布通道
+    required: true
+  build-number:
+    description: 构建号
+    required: true
+  tag:
+    description: Git Tag
+    required: true
+  release-date:
+    description: 发布日期，ISO 8601 UTC
+    required: true
+  flutter-version:
+    description: Flutter 版本
+    required: true
+  dart-version:
+    description: Dart 版本
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        python scripts/release/generate_release_metadata.py \
+          --asset-dir '${{ inputs.asset-dir }}' \
+          --version '${{ inputs.version }}' \
+          --channel '${{ inputs.channel }}' \
+          --build-number '${{ inputs.build-number }}' \
+          --tag '${{ inputs.tag }}' \
+          --release-date '${{ inputs.release-date }}' \
+          --flutter-version '${{ inputs.flutter-version }}' \
+          --dart-version '${{ inputs.dart-version }}'
