@@ -7,6 +7,7 @@ on:
     types: [closed]
     branches:
       - main
+      - develop
       - release/**
 
 env:
@@ -51,8 +52,8 @@ jobs:
             exit 0
           fi
 
-          if [[ "$base_ref" != "main" && ! "$base_ref" =~ ^release/ ]]; then
-            echo "预发布 Release 仅允许从 main 或 release/* 触发，当前目标分支为 $base_ref。" >&2
+          if [[ "$base_ref" != "main" && "$base_ref" != "develop" && ! "$base_ref" =~ ^release/ ]]; then
+            echo "预发布 Release 仅允许从 main、develop 或 release/* 触发，当前目标分支为 $base_ref。" >&2
             exit 1
           fi
 

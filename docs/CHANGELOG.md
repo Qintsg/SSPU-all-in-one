@@ -106,6 +106,7 @@
 - CI 恢复 `flutter test` 质量门槛，并对带 `release` 标签的 PR 追加发布分支与发布说明模板校验
 - Release 工作流改为从 `pubspec.yaml` 读取完整版本号，统一生成 Android/Windows/macOS/Linux/Web 公开资产与校验文件
 - Release 工作流新增 Windows arm64、Linux arm64 正式构建与打包步骤，删除独立实验性架构发布分叉
+- 预发布 Release 的目标分支约束调整为允许 `main`、`develop` 与 `release/*`，并同步到 CI、Release workflow 与仓库模板
 
 ### 修复
 

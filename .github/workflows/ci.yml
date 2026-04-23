@@ -61,8 +61,8 @@ jobs:
             exit 0
           fi
 
-          if [[ "$base_ref" != "main" && ! "$base_ref" =~ ^release/ ]]; then
-            echo "预发布 Release 仅允许合并到 main 或 release/*，当前目标分支为 $base_ref。" >&2
+          if [[ "$base_ref" != "main" && "$base_ref" != "develop" && ! "$base_ref" =~ ^release/ ]]; then
+            echo "预发布 Release 仅允许合并到 main、develop 或 release/*，当前目标分支为 $base_ref。" >&2
             exit 1
           fi
 

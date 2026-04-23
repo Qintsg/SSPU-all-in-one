@@ -31,7 +31,7 @@ body:
     id: target_branch
     attributes:
       label: 目标分支
-      description: 正式版必须为 `main`；预发布可为 `main` 或 `release/*`。
+      description: 正式版必须为 `main`；预发布可为 `main`、`develop` 或 `release/*`。
       placeholder: main
     validations:
       required: true

@@ -44,7 +44,7 @@ Closes #
 - [ ] 本 PR 不触发公开 Release
 - [ ] 本 PR 需要在 merge 后触发公开 Release，并已人工添加 `release` 标签
 - [ ] 如为正式发布，目标分支为 `main`
-- [ ] 如为预发布，目标分支为 `main` 或 `release/*`
+- [ ] 如为预发布，目标分支为 `main`、`develop` 或 `release/*`
 
 ## 截图 / 录屏（如涉及 UI）
 <!-- 若无，可写“无” -->

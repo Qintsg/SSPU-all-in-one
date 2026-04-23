@@ -2,7 +2,7 @@
 
 > 适用范围：本规则基于仓库当前代码结构制定，忽略历史 workflow 与既有 release 实现。
 > 目标：统一版本、命名、打包、发布矩阵、校验与说明，确保产物可追踪、可下载、可验证。
-> 当前自动化约定：公开 Release 仍然通过带 `release` 标签的 PR merge 触发；正式版要求合并到 `main`，预发布版允许合并到 `main` 或 `release/*`。
+> 当前自动化约定：公开 Release 仍然通过带 `release` 标签的 PR merge 触发；正式版要求合并到 `main`，预发布版允许合并到 `main`、`develop` 或 `release/*`。
 
 ---
 
@@ -66,7 +66,7 @@ version: MAJOR.MINOR.PATCH[-CHANNEL]+BUILD
 ### 3.2 发版约定
 
 1. 正式 Release 只能从 `main` 发出
-2. 预发布版本可从 `main` 或 `release/*` 预发布稳定分支生成，但最终必须回到 `main`
+2. 预发布版本可从 `main`、`develop` 或 `release/*` 预发布稳定分支生成，但最终必须回到 `main`
 3. 不允许直接从 `feature/*` 创建正式 Release
 4. 紧急修复优先使用 `hotfix/*`，修复完成后同时回合到 `main` 与 `develop`
 5. 公开 Release 由目标分支满足上述规则、且带 `release` 标签的 PR merge 自动触发
