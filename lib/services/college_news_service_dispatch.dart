@@ -3,112 +3,232 @@ part of 'college_news_service.dart';
 Future<List<MessageItem>> _fetchCollegeNews(
   CollegeNewsService service,
   String channelId, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   if (channelId == 'college_cs') {
-    return _fetchCollegeCsNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeCsNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_im') {
-    return _fetchCollegeImNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeImNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_re') {
-    return _fetchCollegeReNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeReNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_em') {
-    return _fetchCollegeEmNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeEmNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_ic') {
-    return _fetchCollegeIcNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeIcNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_imhe') {
-    return _fetchCollegeImheNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeImheNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_econ') {
-    return _fetchCollegeEconNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeEconNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_lang') {
-    return _fetchCollegeLangNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeLangNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_math') {
-    return _fetchCollegeMathNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeMathNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_art') {
-    return _fetchCollegeArtNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeArtNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_vte') {
-    return _fetchCollegeVteNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeVteNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_vt') {
-    return _fetchCollegeVtNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeVtNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_marx') {
-    return _fetchCollegeMarxNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeMarxNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'college_ce') {
-    return _fetchCollegeCeNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCollegeCeNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'center_art_edu') {
-    return _fetchCenterArtEduNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCenterArtEduNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'center_intl') {
-    return _fetchCenterIntlNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCenterIntlNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'center_innov') {
-    return _fetchCenterInnovNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCenterInnovNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'center_training') {
-    return _fetchCenterTrainingNews(service, knownMessageIds: knownMessageIds);
+    return _fetchCenterTrainingNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'logistics_center') {
-    return _fetchLogisticsCenterNews(service, knownMessageIds: knownMessageIds);
+    return _fetchLogisticsCenterNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'foreign_student_office') {
     return _fetchForeignStudentOfficeNews(
       service,
+      maxCount: maxCount,
       knownMessageIds: knownMessageIds,
     );
   }
   if (channelId == 'intl_exchange_office') {
     return _fetchIntlExchangeOfficeNews(
       service,
+      maxCount: maxCount,
       knownMessageIds: knownMessageIds,
     );
   }
   if (channelId == 'graduate') {
-    return _fetchGraduateNews(service, knownMessageIds: knownMessageIds);
+    return _fetchGraduateNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'lib_center') {
-    return _fetchLibCenterNews(service, knownMessageIds: knownMessageIds);
+    return _fetchLibCenterNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'admissions_office') {
     return _fetchAdmissionsOfficeNews(
       service,
+      maxCount: maxCount,
       knownMessageIds: knownMessageIds,
     );
   }
   if (channelId == 'hr_office') {
-    return _fetchHrOfficeNews(service, knownMessageIds: knownMessageIds);
+    return _fetchHrOfficeNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'research_office') {
-    return _fetchResearchOfficeNews(service, knownMessageIds: knownMessageIds);
+    return _fetchResearchOfficeNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'union') {
-    return _fetchUnionNews(service, knownMessageIds: knownMessageIds);
+    return _fetchUnionNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'party_org_dept') {
-    return _fetchPartyOrgDeptNews(service, knownMessageIds: knownMessageIds);
+    return _fetchPartyOrgDeptNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'united_front_dept') {
-    return _fetchUnitedFrontDeptNews(service, knownMessageIds: knownMessageIds);
+    return _fetchUnitedFrontDeptNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'party_office') {
-    return _fetchPartyOfficeNews(service, knownMessageIds: knownMessageIds);
+    return _fetchPartyOfficeNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'youth_league') {
-    return _fetchYouthLeagueNews(service, knownMessageIds: knownMessageIds);
+    return _fetchYouthLeagueNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
   if (channelId == 'assets_lab_office') {
-    return _fetchAssetsLabOfficeNews(service, knownMessageIds: knownMessageIds);
+    return _fetchAssetsLabOfficeNews(
+      service,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
   }
 
   final config = configs[channelId];
@@ -118,29 +238,29 @@ Future<List<MessageItem>> _fetchCollegeNews(
     final htmlText = await service._http.fetchText(config.baseUrl);
     final document = html_parser.parse(htmlText);
 
-    // 根据模板类型分派解析
-    switch (config.template) {
-      case CollegeTemplate.listA:
-        return _parseListA(document, config, knownMessageIds: knownMessageIds);
-      case CollegeTemplate.newsListB:
-        return _parseNewsListB(
-          document,
-          config,
-          knownMessageIds: knownMessageIds,
-        );
-      case CollegeTemplate.swiperC:
-        return _parseSwiperC(
-          document,
-          config,
-          knownMessageIds: knownMessageIds,
-        );
-      case CollegeTemplate.customD:
-        return _parseCustomD(
-          document,
-          config,
-          knownMessageIds: knownMessageIds,
-        );
-    }
+    final messages = switch (config.template) {
+      CollegeTemplate.listA => _parseListA(
+        document,
+        config,
+        knownMessageIds: knownMessageIds,
+      ),
+      CollegeTemplate.newsListB => _parseNewsListB(
+        document,
+        config,
+        knownMessageIds: knownMessageIds,
+      ),
+      CollegeTemplate.swiperC => _parseSwiperC(
+        document,
+        config,
+        knownMessageIds: knownMessageIds,
+      ),
+      CollegeTemplate.customD => _parseCustomD(
+        document,
+        config,
+        knownMessageIds: knownMessageIds,
+      ),
+    };
+    return messages.take(maxCount).toList();
   } catch (_) {
     // 网络异常或解析失败，静默返回空列表
     return [];

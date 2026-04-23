@@ -157,8 +157,14 @@ class CollegeNewsService {
   /// [channelId] 对应 channel_config.dart 中的 id（如 'college_cs'）
   Future<List<MessageItem>> fetchNews(
     String channelId, {
+    int maxCount = 20,
     Set<String>? knownMessageIds,
-  }) => _fetchCollegeNews(this, channelId, knownMessageIds: knownMessageIds);
+  }) => _fetchCollegeNews(
+    this,
+    channelId,
+    maxCount: maxCount,
+    knownMessageIds: knownMessageIds,
+  );
 }
 
 /// 文章页发布时间解析结果。

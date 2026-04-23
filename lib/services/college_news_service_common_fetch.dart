@@ -8,6 +8,7 @@ Future<List<MessageItem>> _fetchMergedCategoryPages(
     Set<String> knownMessageIds,
   )
   fetchPage, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -19,9 +20,12 @@ Future<List<MessageItem>> _fetchMergedCategoryPages(
       for (final message in pageMessages) {
         if (seenIds.add(message.id)) {
           messages.add(message);
+          if (messages.length >= maxCount) break;
         }
       }
+      if (messages.length >= maxCount) break;
     }
+    if (messages.length >= maxCount) break;
   }
 
   messages.sort((a, b) {
@@ -29,7 +33,7 @@ Future<List<MessageItem>> _fetchMergedCategoryPages(
     final right = b.timestamp ?? MessageItem.computeTimestamp(b.date);
     return right.compareTo(left);
   });
-  return messages;
+  return messages.take(maxCount).toList();
 }
 
 /// 使用临时配置抓取指定列表页，复用现有模板解析逻辑。

@@ -156,12 +156,10 @@ class AutoRefreshService {
   /// 立即抓取所有已启用官网/信息中心渠道的消息并返回合并结果
   /// 用于“刷新官网消息”按钮，不包含微信公众号渠道
   Future<List<MessageItem>> fetchEnabledSchoolWebsiteMessages({
-    int maxCount = 20,
     Future<void> Function(List<MessageItem> messages, int completed, int total)?
     onBatchCompleted,
   }) => _fetchEnabledSchoolWebsiteMessages(
     this,
-    maxCount: maxCount,
     onBatchCompleted: onBatchCompleted,
   );
 

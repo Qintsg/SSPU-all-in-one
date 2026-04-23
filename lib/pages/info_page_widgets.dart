@@ -339,3 +339,53 @@ Widget _buildInfoPagination(_InfoPageState state, FluentThemeData theme) {
     ],
   );
 }
+
+Future<void> _showInfoPageJumpDialog(_InfoPageState state) async {
+  final controller = TextEditingController();
+  final result = await showDialog<int>(
+    context: state.context,
+    builder: (ctx) => ContentDialog(
+      title: const Text('跳转到指定页'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('当前第 ${state._currentPage + 1} 页，共 ${state._totalPages} 页'),
+          const SizedBox(height: FluentSpacing.s),
+          TextBox(
+            controller: controller,
+            placeholder: '输入页码 (1-${state._totalPages})',
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            onSubmitted: (_) {
+              final page = int.tryParse(controller.text);
+              if (page != null && page >= 1 && page <= state._totalPages) {
+                Navigator.of(ctx).pop(page - 1);
+              }
+            },
+          ),
+        ],
+      ),
+      actions: [
+        Button(
+          child: const Text('取消'),
+          onPressed: () => Navigator.of(ctx).pop(),
+        ),
+        FilledButton(
+          child: const Text('跳转'),
+          onPressed: () {
+            final page = int.tryParse(controller.text);
+            if (page != null && page >= 1 && page <= state._totalPages) {
+              Navigator.of(ctx).pop(page - 1);
+            }
+          },
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+
+  if (result != null && state.mounted) {
+    state._setCurrentPage(result);
+  }
+}

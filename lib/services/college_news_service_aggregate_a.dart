@@ -2,6 +2,7 @@ part of 'college_news_service.dart';
 
 Future<List<MessageItem>> _fetchCollegeCsNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -35,6 +36,7 @@ Future<List<MessageItem>> _fetchCollegeCsNews(
 /// 智控学院使用三个列表页聚合成三个分类。
 Future<List<MessageItem>> _fetchCollegeImNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -68,6 +70,7 @@ Future<List<MessageItem>> _fetchCollegeImNews(
 /// 资环学院使用四个列表页聚合成四个分类。
 Future<List<MessageItem>> _fetchCollegeReNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -101,6 +104,7 @@ Future<List<MessageItem>> _fetchCollegeReNews(
 /// 能材学院使用四个列表页聚合成四个分类。
 Future<List<MessageItem>> _fetchCollegeEmNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -134,6 +138,7 @@ Future<List<MessageItem>> _fetchCollegeEmNews(
 /// 经管学院使用四个列表页聚合成四个分类。
 Future<List<MessageItem>> _fetchCollegeEconNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -167,6 +172,7 @@ Future<List<MessageItem>> _fetchCollegeEconNews(
 /// 文传学院使用四个列表页聚合成四个分类。
 Future<List<MessageItem>> _fetchCollegeLangNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -200,6 +206,7 @@ Future<List<MessageItem>> _fetchCollegeLangNews(
 /// 数统学院使用四个列表页聚合成四个分类，并进入文章页读取精确时间。
 Future<List<MessageItem>> _fetchCollegeMathNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -233,6 +240,7 @@ Future<List<MessageItem>> _fetchCollegeMathNews(
 /// 职师学院使用两个列表页聚合成两个分类。
 Future<List<MessageItem>> _fetchCollegeVteNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -266,6 +274,7 @@ Future<List<MessageItem>> _fetchCollegeVteNews(
 /// 国教中心使用两个列表页聚合成两个分类。
 Future<List<MessageItem>> _fetchCenterIntlNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -299,6 +308,7 @@ Future<List<MessageItem>> _fetchCenterIntlNews(
 /// 继续教育学院使用两个列表页聚合成两个分类。
 Future<List<MessageItem>> _fetchCollegeCeNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -332,6 +342,7 @@ Future<List<MessageItem>> _fetchCollegeCeNews(
 /// 职业技术学院使用两个列表页聚合成两个分类。
 Future<List<MessageItem>> _fetchCollegeVtNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];
@@ -365,6 +376,7 @@ Future<List<MessageItem>> _fetchCollegeVtNews(
 /// 马克思主义学院使用四个列表页聚合成四个分类。
 Future<List<MessageItem>> _fetchCollegeMarxNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   final messages = <MessageItem>[];

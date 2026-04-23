@@ -2,7 +2,6 @@ part of 'auto_refresh_service.dart';
 
 Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
   AutoRefreshService service, {
-  int maxCount = 20,
   Future<void> Function(List<MessageItem> messages, int completed, int total)?
   onBatchCompleted,
 }) async {
@@ -12,6 +11,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
 
   // 信息公开网
   if (await service._stateService.isLatestInfoEnabled()) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'latest_info',
+    );
     futures.add(
       service._newsService.fetchLatestInfo(
         maxCount: maxCount,
@@ -20,6 +22,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isNoticeEnabled()) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'notice',
+    );
     futures.add(
       service._newsService.fetchNotices(
         maxCount: maxCount,
@@ -30,6 +35,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
 
   // 职能部门
   if (await service._stateService.isChannelEnabled('jwc')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'jwc',
+    );
     futures.add(
       service._jwcService.fetchTeachingNews(
         maxCount: maxCount,
@@ -50,6 +58,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('itc')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'itc',
+    );
     futures.add(
       service._itcService.fetchNews(
         maxCount: maxCount,
@@ -58,6 +69,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('sspu_notice')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'sspu_notice',
+    );
     futures.add(
       service._officialService.fetchNotices(
         maxCount: maxCount,
@@ -66,6 +80,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('sspu_news')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'sspu_news',
+    );
     futures.add(
       service._officialService.fetchNews(
         maxCount: maxCount,
@@ -74,6 +91,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('sspu_activity')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'sspu_activity',
+    );
     futures.add(
       service._officialService.fetchActivities(
         maxCount: maxCount,
@@ -82,6 +102,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('sports')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'sports',
+    );
     futures.add(
       service._sportsService.fetchNotices(
         maxCount: maxCount,
@@ -96,6 +119,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('security_dept')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'security_dept',
+    );
     futures.add(
       service._securityService.fetchNews(
         maxCount: maxCount,
@@ -110,6 +136,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('construction')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'construction',
+    );
     futures.add(
       service._constructionService.fetchNews(
         maxCount: maxCount,
@@ -124,6 +153,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('news_center')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'news_center',
+    );
     futures.add(
       service._campusService.fetchCampusNews(
         maxCount: maxCount,
@@ -132,6 +164,9 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
     );
   }
   if (await service._stateService.isChannelEnabled('student_affairs')) {
+    final maxCount = await service._stateService.getChannelManualFetchCount(
+      'student_affairs',
+    );
     futures.add(
       service._studentService.fetchNews(
         maxCount: maxCount,
@@ -183,8 +218,15 @@ Future<List<MessageItem>> _fetchEnabledSchoolWebsiteMessages(
   ];
   for (final id in siteChannelIds) {
     if (await service._stateService.isChannelEnabled(id)) {
+      final maxCount = await service._stateService.getChannelManualFetchCount(
+        id,
+      );
       futures.add(
-        service._collegeService.fetchNews(id, knownMessageIds: knownMessageIds),
+        service._collegeService.fetchNews(
+          id,
+          maxCount: maxCount,
+          knownMessageIds: knownMessageIds,
+        ),
       );
     }
   }

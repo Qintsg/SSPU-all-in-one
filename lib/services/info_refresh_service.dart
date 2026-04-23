@@ -59,9 +59,9 @@ class InfoRefreshService extends ChangeNotifier {
   bool get isRefreshingWechat =>
       _snapshot.kind == InfoRefreshKind.wechat && _snapshot.isRefreshing;
 
-  Future<bool> startSchoolWebsiteRefresh({required int maxCount}) async {
+  Future<bool> startSchoolWebsiteRefresh() async {
     if (_runningTask != null) return false;
-    _runningTask = _runSchoolWebsiteRefresh(maxCount);
+    _runningTask = _runSchoolWebsiteRefresh();
     notifyListeners();
     await _runningTask;
     return true;
@@ -75,7 +75,7 @@ class InfoRefreshService extends ChangeNotifier {
     return true;
   }
 
-  Future<void> _runSchoolWebsiteRefresh(int maxCount) async {
+  Future<void> _runSchoolWebsiteRefresh() async {
     _update(
       const InfoRefreshSnapshot(
         isRefreshing: true,
@@ -89,7 +89,6 @@ class InfoRefreshService extends ChangeNotifier {
     try {
       final fetched = await _autoRefreshService
           .fetchEnabledSchoolWebsiteMessages(
-            maxCount: maxCount,
             onBatchCompleted: (messages, completed, total) async {
               await _mergeAndPersist(messages);
               _update(

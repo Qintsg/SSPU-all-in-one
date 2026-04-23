@@ -2,6 +2,7 @@ part of 'college_news_service.dart';
 
 Future<List<MessageItem>> _fetchGraduateNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -29,6 +30,7 @@ Future<List<MessageItem>> _fetchGraduateNews(
 /// 招生办使用指定列表页聚合成招生动态分类。
 Future<List<MessageItem>> _fetchAdmissionsOfficeNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -55,6 +57,7 @@ Future<List<MessageItem>> _fetchAdmissionsOfficeNews(
 /// 人事处使用三个列表页聚合成三个分类。
 Future<List<MessageItem>> _fetchHrOfficeNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -81,6 +84,7 @@ Future<List<MessageItem>> _fetchHrOfficeNews(
 /// 科研处使用三个列表页聚合成三个分类。
 Future<List<MessageItem>> _fetchResearchOfficeNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -107,6 +111,7 @@ Future<List<MessageItem>> _fetchResearchOfficeNews(
 /// 校工会使用三个列表页聚合成三个分类。
 Future<List<MessageItem>> _fetchUnionNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -133,6 +138,7 @@ Future<List<MessageItem>> _fetchUnionNews(
 /// 党委组织部使用两个列表页聚合成两个分类。
 Future<List<MessageItem>> _fetchPartyOrgDeptNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -159,6 +165,7 @@ Future<List<MessageItem>> _fetchPartyOrgDeptNews(
 /// 党委统战部使用三个列表页聚合成三个分类。
 Future<List<MessageItem>> _fetchUnitedFrontDeptNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -185,6 +192,7 @@ Future<List<MessageItem>> _fetchUnitedFrontDeptNews(
 /// 党委办公室使用指定列表页聚合成工作动态分类。
 Future<List<MessageItem>> _fetchPartyOfficeNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -211,6 +219,7 @@ Future<List<MessageItem>> _fetchPartyOfficeNews(
 /// 校团委使用三个列表页聚合成三个分类。
 Future<List<MessageItem>> _fetchYouthLeagueNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(
@@ -237,6 +246,7 @@ Future<List<MessageItem>> _fetchYouthLeagueNews(
 /// 资产与实验管理处使用两个列表页聚合成两个分类。
 Future<List<MessageItem>> _fetchAssetsLabOfficeNews(
   CollegeNewsService service, {
+  int maxCount = 20,
   Set<String>? knownMessageIds,
 }) async {
   return _fetchMergedCategoryPages(

@@ -22,7 +22,6 @@ import '../services/message_state_service.dart';
 import '../utils/webview_env.dart';
 import 'webview_page.dart';
 
-part 'info_page_dialogs.dart';
 part 'info_page_filters.dart';
 part 'info_page_widgets.dart';
 
@@ -116,15 +115,8 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   /// 刷新官网消息：抓取所有已启用渠道的新数据并与已有数据合并持久化
-  /// [maxCount] 每个栏目获取的条数，null 则弹出输入框
-  Future<void> _refreshSchoolWebsite({int? maxCount}) async {
-    // 弹出条数选择对话框
-    final count = maxCount ?? await _showFetchCountDialog();
-    if (count == null) return;
-
-    final started = await _refreshService.startSchoolWebsiteRefresh(
-      maxCount: count,
-    );
+  Future<void> _refreshSchoolWebsite() async {
+    final started = await _refreshService.startSchoolWebsiteRefresh();
     if (!started && mounted) {
       displayInfoBar(
         context,
@@ -190,10 +182,6 @@ class _InfoPageState extends State<InfoPage> {
   Future<void> _filterByEnabledChannels() async {
     await _filterInfoPageByEnabledChannels(this);
   }
-
-  /// 弹出获取条数输入对话框
-  /// 返回用户输入的条数，取消返回 null
-  Future<int?> _showFetchCountDialog() => _showInfoFetchCountDialog(this);
 
   /// 全部标为已读
   Future<void> _markAllRead() async {
