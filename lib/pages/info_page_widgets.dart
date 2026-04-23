@@ -3,6 +3,7 @@ part of 'info_page.dart';
 Widget _buildInfoPageView(_InfoPageState state, BuildContext context) {
   final theme = FluentTheme.of(context);
   final isDark = theme.brightness == Brightness.dark;
+  final refreshSnapshot = state._refreshService.snapshot;
 
   return ScaffoldPage(
     header: const PageHeader(title: Text('信息中心')),
@@ -12,7 +13,7 @@ Widget _buildInfoPageView(_InfoPageState state, BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           state._buildActionBar(theme),
-          if (state._isLoading) ...[
+          if (refreshSnapshot.isRefreshing) ...[
             const SizedBox(height: FluentSpacing.s),
             state._buildRefreshProgress(theme),
           ],
@@ -28,7 +29,8 @@ Widget _buildInfoPageView(_InfoPageState state, BuildContext context) {
               ),
           const SizedBox(height: FluentSpacing.m),
           Expanded(
-            child: state._isLoading && state._filteredMessages.isEmpty
+            child:
+                refreshSnapshot.isRefreshing && state._filteredMessages.isEmpty
                 ? const Center(child: ProgressRing())
                 : state._filteredMessages.isEmpty
                 ? Center(
@@ -91,13 +93,13 @@ Widget _buildInfoActionBar(_InfoPageState state, FluentThemeData theme) {
         ),
       ),
       Button(
-        onPressed: state._isLoading
+        onPressed: state._refreshService.isRefreshing
             ? null
             : () => state._refreshSchoolWebsite(),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (state._isRefreshingSchoolWebsite)
+            if (state._refreshService.isRefreshingSchoolWebsite)
               const SizedBox(
                 width: 14,
                 height: 14,
@@ -111,13 +113,14 @@ Widget _buildInfoActionBar(_InfoPageState state, FluentThemeData theme) {
         ),
       ),
       Button(
-        onPressed: state._isLoading || !state._wechatSourceConfigured
+        onPressed:
+            state._refreshService.isRefreshing || !state._wechatSourceConfigured
             ? null
             : state._refreshWechatArticles,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (state._isRefreshingWechat)
+            if (state._refreshService.isRefreshingWechat)
               const SizedBox(
                 width: 14,
                 height: 14,
@@ -126,7 +129,7 @@ Widget _buildInfoActionBar(_InfoPageState state, FluentThemeData theme) {
             else
               const Icon(FluentIcons.refresh, size: 14),
             const SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
-            const Text('刷新微信公众号消息'),
+            const Text('刷新最新微信推文'),
           ],
         ),
       ),
@@ -135,9 +138,10 @@ Widget _buildInfoActionBar(_InfoPageState state, FluentThemeData theme) {
 }
 
 Widget _buildInfoRefreshProgress(_InfoPageState state, FluentThemeData theme) {
-  final progressValue = state._refreshTotal <= 0
+  final snapshot = state._refreshService.snapshot;
+  final progressValue = snapshot.total <= 0
       ? null
-      : (state._refreshCompleted / state._refreshTotal * 100).clamp(0.0, 100.0);
+      : (snapshot.completed / snapshot.total * 100).clamp(0.0, 100.0);
 
   return Container(
     width: double.infinity,
@@ -152,9 +156,7 @@ Widget _buildInfoRefreshProgress(_InfoPageState state, FluentThemeData theme) {
         ProgressBar(value: progressValue),
         const SizedBox(height: FluentSpacing.xs),
         Text(
-          state._refreshProgressText.isEmpty
-              ? '正在刷新...'
-              : state._refreshProgressText,
+          snapshot.text.isEmpty ? '正在刷新...' : snapshot.text,
           style: theme.typography.caption,
         ),
       ],

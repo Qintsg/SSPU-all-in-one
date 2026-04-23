@@ -14,7 +14,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/message_item.dart';
 import '../models/channel_config.dart';
-import '../services/auto_refresh_service.dart';
+import '../services/info_refresh_service.dart';
 import '../services/wechat_article_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
@@ -41,24 +41,6 @@ class _InfoPageState extends State<InfoPage> {
 
   /// 经过搜索和筛选后的消息
   List<MessageItem> _filteredMessages = [];
-
-  /// 是否正在加载
-  bool _isLoading = false;
-
-  /// 是否正在刷新官网消息。
-  bool _isRefreshingSchoolWebsite = false;
-
-  /// 是否正在刷新微信公众号消息。
-  bool _isRefreshingWechat = false;
-
-  /// 刷新进度提示文本。
-  String _refreshProgressText = '';
-
-  /// 已完成的刷新任务数。
-  int _refreshCompleted = 0;
-
-  /// 总刷新任务数。
-  int _refreshTotal = 0;
 
   /// 微信公众号来源是否已完成公众号平台认证。
   bool _wechatSourceConfigured = false;
@@ -91,7 +73,7 @@ class _InfoPageState extends State<InfoPage> {
   final MessageStateService _stateService = MessageStateService.instance;
 
   /// 自动刷新服务（用于手动全渠道刷新）
-  final AutoRefreshService _autoRefreshService = AutoRefreshService.instance;
+  final InfoRefreshService _refreshService = InfoRefreshService.instance;
 
   void _debugWechatRefreshLog(String message) {
     if (kDebugMode) {
@@ -102,13 +84,27 @@ class _InfoPageState extends State<InfoPage> {
   @override
   void initState() {
     super.initState();
+    _refreshService.addListener(_onRefreshServiceChanged);
     _initAndLoad();
   }
 
   @override
   void dispose() {
+    _refreshService.removeListener(_onRefreshServiceChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onRefreshServiceChanged() {
+    _loadPersistedMessages();
+  }
+
+  Future<void> _loadPersistedMessages() async {
+    final persisted = await _stateService.loadMessages();
+    _allMessages
+      ..clear()
+      ..addAll(persisted);
+    await _filterByEnabledChannels();
   }
 
   /// 初始化状态服务，从本地存储加载消息并根据渠道开关过滤显示
@@ -116,13 +112,7 @@ class _InfoPageState extends State<InfoPage> {
     await _stateService.init();
     _wechatSourceConfigured = await WechatArticleService.instance
         .hasConfiguredSource();
-    // 从本地存储加载已有消息，不弹刷新对话框
-    final persisted = await _stateService.loadMessages();
-    _allMessages
-      ..clear()
-      ..addAll(persisted);
-    // 根据渠道开关过滤并排序
-    await _filterByEnabledChannels();
+    await _loadPersistedMessages();
   }
 
   /// 刷新官网消息：抓取所有已启用渠道的新数据并与已有数据合并持久化
@@ -132,62 +122,21 @@ class _InfoPageState extends State<InfoPage> {
     final count = maxCount ?? await _showFetchCountDialog();
     if (count == null) return;
 
-    setState(() {
-      _isLoading = true;
-      _isRefreshingSchoolWebsite = true;
-      _refreshProgressText = '正在准备刷新官网消息...';
-      _refreshCompleted = 0;
-      _refreshTotal = 0;
-    });
-
-    try {
-      // 仅抓取官网/信息中心渠道，避免将微信公众号刷新串进官网刷新链路。
-      final allFetched = await _autoRefreshService
-          .fetchEnabledSchoolWebsiteMessages(
-            maxCount: count,
-            onBatchCompleted: (messages, completed, total) async {
-              final merged = _stateService.mergeMessages(
-                _allMessages,
-                messages,
-              );
-              _allMessages
-                ..clear()
-                ..addAll(merged);
-              await _stateService.saveMessages(_allMessages);
-              await _filterByEnabledChannels();
-              if (!mounted) return;
-              setState(() {
-                _refreshCompleted = completed;
-                _refreshTotal = total;
-                _refreshProgressText =
-                    '已完成 $completed / $total 个渠道，新增 ${messages.length} 条';
-              });
-            },
-          );
-
-      if (mounted) {
-        displayInfoBar(
-          context,
-          builder: (ctx, close) => InfoBar(
-            title: Text('官网消息刷新完成，获取 ${allFetched.length} 条候选消息'),
-            severity: InfoBarSeverity.success,
-            action: IconButton(
-              icon: const Icon(FluentIcons.clear),
-              onPressed: close,
-            ),
+    final started = await _refreshService.startSchoolWebsiteRefresh(
+      maxCount: count,
+    );
+    if (!started && mounted) {
+      displayInfoBar(
+        context,
+        builder: (ctx, close) => InfoBar(
+          title: const Text('已有刷新任务正在进行'),
+          severity: InfoBarSeverity.info,
+          action: IconButton(
+            icon: const Icon(FluentIcons.clear),
+            onPressed: close,
           ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isRefreshingSchoolWebsite = false;
-          _refreshProgressText = '';
-          _refreshCompleted = 0;
-          _refreshTotal = 0;
-        });
-      }
+        ),
+      );
     }
   }
 
@@ -219,138 +168,20 @@ class _InfoPageState extends State<InfoPage> {
       return;
     }
 
-    final validation = await WechatArticleService.instance.validateSource();
-    _debugWechatRefreshLog(
-      'validation valid=${validation.isValid} message=${validation.message}',
-    );
-    if (!validation.isValid) {
-      _wechatSourceConfigured = false;
-      if (mounted) {
-        displayInfoBar(
-          context,
-          builder: (ctx, close) {
-            return InfoBar(
-              title: const Text('微信公众号认证不可用'),
-              content: Text(validation.message),
-              severity: InfoBarSeverity.warning,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          },
-        );
-        setState(() {});
-      }
-      return;
-    }
-
     _wechatSourceConfigured = true;
-    setState(() {
-      _isLoading = true;
-      _isRefreshingWechat = true;
-      _refreshProgressText = '正在刷新微信公众号文章...';
-      _refreshCompleted = 0;
-      _refreshTotal = 0;
-    });
-
-    try {
-      final persistedMessages = await _stateService.loadMessages();
-      final maxCount = await _stateService.getChannelManualFetchCount(
-        'wechat_public',
-        defaultValue: 50,
+    final started = await _refreshService.startWechatRefresh();
+    if (!started && mounted) {
+      displayInfoBar(
+        context,
+        builder: (ctx, close) => InfoBar(
+          title: const Text('已有刷新任务正在进行'),
+          severity: InfoBarSeverity.info,
+          action: IconButton(
+            icon: const Icon(FluentIcons.clear),
+            onPressed: close,
+          ),
+        ),
       );
-      _debugWechatRefreshLog(
-        'fetch request maxCount=$maxCount persisted=${persistedMessages.length}',
-      );
-      final articles = await WechatArticleService.instance.fetchArticles(
-        maxCount: maxCount,
-        knownMessageIds: persistedMessages.map((msg) => msg.id).toSet(),
-        validateBeforeFetch: false,
-      );
-      _debugWechatRefreshLog('fetch returned articles=${articles.length}');
-
-      if (articles.isEmpty) {
-        if (mounted) {
-          displayInfoBar(
-            context,
-            builder: (ctx, close) {
-              return InfoBar(
-                title: const Text('未获取到微信公众号文章'),
-                content: const Text('请确认已在设置中完成公众号平台认证并关注公众号'),
-                severity: InfoBarSeverity.warning,
-                action: IconButton(
-                  icon: const Icon(FluentIcons.clear),
-                  onPressed: close,
-                ),
-              );
-            },
-          );
-        }
-        return;
-      }
-
-      // 与已有消息合并
-      final merged = _stateService.mergeMessages(_allMessages, articles);
-      _debugWechatRefreshLog(
-        'merge old=${_allMessages.length} fetched=${articles.length} merged=${merged.length}',
-      );
-      _allMessages
-        ..clear()
-        ..addAll(merged);
-
-      // 持久化
-      await _stateService.saveMessages(_allMessages);
-
-      // 过滤并排序
-      await _filterByEnabledChannels();
-      _debugWechatRefreshLog(
-        'filter completed visible=${_filteredMessages.length}',
-      );
-
-      if (mounted) {
-        displayInfoBar(
-          context,
-          builder: (ctx, close) {
-            return InfoBar(
-              title: Text('已获取 ${articles.length} 篇微信公众号文章'),
-              severity: InfoBarSeverity.success,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          },
-        );
-      }
-    } catch (e) {
-      _debugWechatRefreshLog('refresh failed: $e');
-      if (mounted) {
-        displayInfoBar(
-          context,
-          builder: (ctx, close) {
-            return InfoBar(
-              title: const Text('刷新微信公众号文章失败'),
-              content: Text(e.toString()),
-              severity: InfoBarSeverity.error,
-              action: IconButton(
-                icon: const Icon(FluentIcons.clear),
-                onPressed: close,
-              ),
-            );
-          },
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isRefreshingWechat = false;
-          _refreshProgressText = '';
-          _refreshCompleted = 0;
-          _refreshTotal = 0;
-        });
-      }
     }
   }
 

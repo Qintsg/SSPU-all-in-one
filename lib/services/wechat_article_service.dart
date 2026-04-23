@@ -62,6 +62,7 @@ class WechatArticleService {
     int maxCount = 50,
     Set<String>? knownMessageIds,
     bool validateBeforeFetch = true,
+    WxmpFetchProgressCallback? onAccountCompleted,
   }) async {
     _debugLog(
       'fetch articles start maxCount=$maxCount known=${knownMessageIds?.length ?? -1} validate=$validateBeforeFetch',
@@ -76,6 +77,7 @@ class WechatArticleService {
       maxCount: maxCount,
       knownMessageIds: knownMessageIds,
       validateBeforeFetch: validateBeforeFetch,
+      onAccountCompleted: onAccountCompleted,
     );
     _debugLog('fetch articles done count=${articles.length}');
     return articles;

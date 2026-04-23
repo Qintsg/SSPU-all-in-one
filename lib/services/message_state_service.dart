@@ -360,10 +360,11 @@ class MessageStateService
     String channelId, {
     int defaultValue = 20,
   }) async {
+    final effectiveDefault = channelId == 'wechat_public' ? 10 : defaultValue;
     final stored = await StorageService.getInt(
       _channelManualFetchCountKey(channelId),
     );
-    return (stored ?? defaultValue).clamp(1, 200);
+    return (stored ?? effectiveDefault).clamp(1, 200);
   }
 
   /// 设置指定渠道的手动刷新条数。
@@ -379,10 +380,11 @@ class MessageStateService
     String channelId, {
     int defaultValue = 20,
   }) async {
+    final effectiveDefault = channelId == 'wechat_public' ? 10 : defaultValue;
     final stored = await StorageService.getInt(
       _channelAutoFetchCountKey(channelId),
     );
-    return (stored ?? defaultValue).clamp(1, 200);
+    return (stored ?? effectiveDefault).clamp(1, 200);
   }
 
   /// 设置指定渠道的自动刷新条数。

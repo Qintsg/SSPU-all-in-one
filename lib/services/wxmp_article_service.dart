@@ -19,6 +19,14 @@ import 'storage_service.dart';
 import 'wxmp_auth_service.dart';
 import 'wxmp_config_service.dart';
 
+typedef WxmpFetchProgressCallback =
+    Future<void> Function(
+      List<MessageItem> messages,
+      int completed,
+      int total,
+      String accountName,
+    );
+
 /// 公众号平台 API 错误码
 class WxmpApiError {
   static const int success = 0;
@@ -443,6 +451,7 @@ class WxmpArticleService {
     int maxCount = 50,
     Set<String>? knownMessageIds,
     bool validateBeforeFetch = true,
+    WxmpFetchProgressCallback? onAccountCompleted,
   }) async {
     _debugLog(
       'refresh start maxCount=$maxCount known=${knownMessageIds?.length ?? -1} validate=$validateBeforeFetch',
@@ -470,6 +479,22 @@ class WxmpArticleService {
       return [];
     }
 
+    final enabledEntries = <MapEntry<String, Map<String, String>>>[];
+    for (final entry in followedMps.entries) {
+      if (await _stateService.isMpNotificationEnabled(entry.key)) {
+        enabledEntries.add(entry);
+      } else {
+        _debugLog(
+          'refresh skip disabled account name="${entry.value['name'] ?? entry.key}" fakeid=${_maskFakeid(entry.key)}',
+        );
+      }
+    }
+    _debugLog('refresh enabled account count=${enabledEntries.length}');
+    if (enabledEntries.isEmpty) {
+      _debugLog('refresh skipped: all followed mp accounts disabled');
+      return [];
+    }
+
     final storedMessageIds =
         knownMessageIds ??
         (await _stateService.loadMessages()).map((msg) => msg.id).toSet();
@@ -480,10 +505,12 @@ class WxmpArticleService {
     _debugLog(
       'refresh config perRequestLimit=$perRequestLimit requestDelayMs=$requestDelayMs',
     );
-    for (final entry in followedMps.entries) {
+    var completedAccounts = 0;
+    for (final entry in enabledEntries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
       final mpName = mpInfo['name'] ?? fakeid;
+      final accountMessages = <MessageItem>[];
       final perRequestCount = maxCount > 0 && maxCount < perRequestLimit
           ? maxCount
           : perRequestLimit;
@@ -517,6 +544,7 @@ class WxmpArticleService {
               break;
             }
             allMessages.add(msgItem);
+            accountMessages.add(msgItem);
             fetchedForMp++;
             if (fetchedForMp >= maxCount) break;
           }
@@ -532,11 +560,6 @@ class WxmpArticleService {
         _debugLog(
           'refresh account done name="$mpName" fetched=$fetchedForMp reachedKnown=$reachedKnownMessage',
         );
-
-        // 请求间隔，避免频率限制
-        if (followedMps.length > 1 && requestDelayMs > 0) {
-          await Future.delayed(Duration(milliseconds: requestDelayMs));
-        }
       } on WxmpSessionExpiredException {
         _debugLog('refresh stopped: session expired');
         // Session 过期，停止后续请求
@@ -551,7 +574,14 @@ class WxmpArticleService {
       } catch (error) {
         _debugLog('refresh skipped one account "$mpName": $error');
         // 单个公众号失败不影响其他
-        continue;
+      } finally {
+        completedAccounts++;
+        await onAccountCompleted?.call(
+          accountMessages,
+          completedAccounts,
+          enabledEntries.length,
+          mpName,
+        );
       }
     }
 
