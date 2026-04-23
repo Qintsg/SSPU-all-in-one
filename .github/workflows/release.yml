@@ -12,6 +12,7 @@ on:
 
 env:
   FLUTTER_VERSION: '3.41.7'
+  FLUTTER_GIT_URL: 'https://github.com/flutter/flutter.git'
 
 permissions:
   contents: read
@@ -187,11 +188,21 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
+      - name: 安装 Flutter arm64 SDK
+        shell: pwsh
+        run: |
+          $flutterRoot = Join-Path $env:RUNNER_TEMP 'flutter-sdk'
+          if (Test-Path $flutterRoot) {
+            Remove-Item -LiteralPath $flutterRoot -Recurse -Force
+          }
+
+          git clone --filter=blob:none --branch stable $env:FLUTTER_GIT_URL $flutterRoot
+          git -C $flutterRoot fetch --depth 1 origin "refs/tags/$env:FLUTTER_VERSION:refs/tags/$env:FLUTTER_VERSION"
+          git -C $flutterRoot checkout "tags/$env:FLUTTER_VERSION"
+
+          "$($flutterRoot)\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          & "$flutterRoot\bin\flutter.bat" config --enable-windows-desktop
+          & "$flutterRoot\bin\flutter.bat" precache --windows
 
       - name: 安装依赖
         run: flutter pub get
@@ -502,11 +513,21 @@ jobs:
             wget
           sudo gem install --no-document fpm
 
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
+      - name: 安装 Flutter arm64 SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          flutter_root="$RUNNER_TEMP/flutter-sdk"
+          rm -rf "$flutter_root"
+
+          git clone --filter=blob:none --branch stable "$FLUTTER_GIT_URL" "$flutter_root"
+          git -C "$flutter_root" fetch --depth 1 origin "refs/tags/$FLUTTER_VERSION:refs/tags/$FLUTTER_VERSION"
+          git -C "$flutter_root" checkout "tags/$FLUTTER_VERSION"
+
+          echo "$flutter_root/bin" >> "$GITHUB_PATH"
+          "$flutter_root/bin/flutter" config --enable-linux-desktop
+          "$flutter_root/bin/flutter" precache --linux
 
       - name: 安装依赖
         run: flutter pub get
