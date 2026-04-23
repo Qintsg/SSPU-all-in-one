@@ -4,7 +4,7 @@
  * @Project : SSPU-all-in-one
  * @File : wxmp_auth_service.dart
  * @Author : Qintsg
- * @Date : 2026-07-22
+ * @Date : 2026-04-22
  */
 
 import 'storage_service.dart';
@@ -74,6 +74,7 @@ class WxmpAuthService {
       _keyLastUpdate,
       DateTime.now().millisecondsSinceEpoch,
     );
+    await _configService.updateAuthCredentials(cookie: cookie, token: token);
   }
 
   /// 获取 Cookie
@@ -139,6 +140,7 @@ class WxmpAuthService {
     await StorageService.remove(_keyCookie);
     await StorageService.remove(_keyToken);
     await StorageService.remove(_keyLastUpdate);
+    await _configService.clearAuthCredentials();
   }
 
   /// 获取认证最后更新时间

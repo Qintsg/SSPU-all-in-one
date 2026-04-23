@@ -16,6 +16,7 @@ import 'app.dart';
 import 'pages/lock_page.dart';
 import 'pages/agreement_page.dart';
 import 'services/app_exit_service.dart';
+import 'services/app_data_directory_service.dart';
 import 'services/password_service.dart';
 import 'services/storage_service.dart';
 import 'services/tray_service.dart';
@@ -44,13 +45,11 @@ void main() async {
   if (_supportsWindowsServices) {
     final availableVersion = await WebViewEnvironment.getAvailableVersion();
     if (availableVersion != null) {
-      // 使用 LOCALAPPDATA 下的专属目录，避免安装到只读路径时崩溃
-      final localAppData =
-          Platform.environment['LOCALAPPDATA'] ?? Platform.localeName;
+      // WebView2 运行态同样放入统一应用数据目录，便于用户定位和清理。
+      final webViewDataFolder =
+          await AppDataDirectoryService.ensureDirectoryPath('webview2');
       globalWebViewEnvironment = await WebViewEnvironment.create(
-        settings: WebViewEnvironmentSettings(
-          userDataFolder: '$localAppData\\sspu_all_in_one\\WebView2',
-        ),
+        settings: WebViewEnvironmentSettings(userDataFolder: webViewDataFolder),
       );
     }
   }

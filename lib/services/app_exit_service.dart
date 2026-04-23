@@ -6,7 +6,7 @@
  * @Date : 2026-04-21
  */
 
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +17,8 @@ import 'tray_service.dart';
 
 /// 仅桌面平台具备窗口与托盘资源，移动端 / Web 走系统退出。
 bool get _supportsDesktopShell =>
-    !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
+    !kIsWeb &&
+    (io.Platform.isWindows || io.Platform.isLinux || io.Platform.isMacOS);
 
 /// 统一应用退出入口。
 ///
@@ -30,7 +31,7 @@ class AppExitService {
 
   bool _isExiting = false;
 
-  static const Duration _desktopExitStepTimeout = Duration(milliseconds: 800);
+  static const Duration _desktopExitStepTimeout = Duration(milliseconds: 200);
 
   /// 当前是否处于退出流程中，用于避免重复触发。
   bool get isExiting => _isExiting;
@@ -67,7 +68,7 @@ class AppExitService {
         AutoRefreshService.instance.dispose();
         await _runDesktopExitStep(() => TrayService.instance.destroy());
         await _runDesktopExitStep(() => windowManager.destroy());
-        return;
+        io.exit(0);
       }
 
       await SystemNavigator.pop();

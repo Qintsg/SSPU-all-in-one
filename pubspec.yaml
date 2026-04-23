@@ -59,6 +59,9 @@ dependencies:
   # Windows 内嵌 WebView（基于 Edge WebView2）
   flutter_inappwebview: ^6.1.5
 
+  # 读取应用版本号与包信息，避免关于页手写版本常量
+  package_info_plus: ^8.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

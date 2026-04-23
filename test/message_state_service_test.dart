@@ -6,12 +6,32 @@
  * @Date : 2026-04-22
  */
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/services/message_state_service.dart';
 import 'package:sspu_all_in_one/services/storage_service.dart';
 
 void main() {
+  late Directory storageDirectory;
+
+  setUp(() async {
+    storageDirectory = await Directory.systemTemp.createTemp(
+      'message_state_storage_',
+    );
+    StorageService.debugSetStateFilePathForTesting(
+      '${storageDirectory.path}${Platform.pathSeparator}app_state.json',
+    );
+  });
+
+  tearDown(() async {
+    StorageService.debugSetStateFilePathForTesting(null);
+    if (await storageDirectory.exists()) {
+      await storageDirectory.delete(recursive: true);
+    }
+  });
+
   test('未写入存储时使用渠道配置中的默认启用状态', () async {
     SharedPreferences.setMockInitialValues({});
     await StorageService.init();
@@ -21,7 +41,7 @@ void main() {
     expect(await stateService.isChannelEnabled('jwc'), isTrue);
     expect(await stateService.isChannelEnabled('news_center'), isTrue);
     expect(await stateService.isChannelEnabled('college_cs'), isFalse);
-    expect(await stateService.isChannelEnabled('wechat_public'), isFalse);
+    expect(await stateService.isChannelEnabled('wechat_public'), isTrue);
   });
 
   test('未写入存储时使用渠道配置中的默认刷新间隔', () async {

@@ -4,10 +4,11 @@
  * @Project : SSPU-all-in-one
  * @File : wechat_article_service.dart
  * @Author : Qintsg
- * @Date : 2026-07-20
+ * @Date : 2026-04-20
  */
 
 import '../models/message_item.dart';
+import 'message_state_service.dart';
 import 'storage_service.dart';
 import 'wxmp_article_service.dart';
 import 'wxmp_auth_service.dart';
@@ -21,6 +22,7 @@ class WechatArticleService {
 
   final WxmpAuthService _auth = WxmpAuthService.instance;
   final WxmpArticleService _wxmpService = WxmpArticleService.instance;
+  final MessageStateService _stateService = MessageStateService.instance;
 
   /// 历史微信读书方案遗留的存储键。
   static const List<String> _legacyWereadKeys = [
@@ -44,11 +46,29 @@ class WechatArticleService {
     return _auth.hasAuth();
   }
 
+  /// 校验公众号平台认证是否仍可访问接口。
+  Future<WxmpAuthValidationResult> validateSource() async {
+    return _wxmpService.validateAuth();
+  }
+
+  /// 是否存在启用中的微信推文抓取项。
+  Future<bool> hasEnabledRefreshTarget() async {
+    final followedMps = await _wxmpService.getLocalFollowedMps();
+    for (final entry in followedMps.entries) {
+      if (await _stateService.isMpNotificationEnabled(entry.key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// 获取所有已关注公众号的最新文章。
   /// 若尚未完成公众号平台认证，则直接返回空列表。
   Future<List<MessageItem>> fetchArticles({
     int maxCount = 50,
     Set<String>? knownMessageIds,
+    bool validateBeforeFetch = true,
+    WxmpFetchProgressCallback? onAccountCompleted,
   }) async {
     await clearLegacyWereadState();
     if (!await _auth.hasAuth()) return [];
@@ -56,6 +76,8 @@ class WechatArticleService {
     return _wxmpService.fetchArticles(
       maxCount: maxCount,
       knownMessageIds: knownMessageIds,
+      validateBeforeFetch: validateBeforeFetch,
+      onAccountCompleted: onAccountCompleted,
     );
   }
 }

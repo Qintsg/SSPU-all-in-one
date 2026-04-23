@@ -176,7 +176,23 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-输出路径：`build/app/outputs/flutter-apk/`
+签名说明：
+
+- 仓库通过 `android/key.properties` 读取本地 Android release 签名配置
+- 可参考 `android/key.properties.example` 填写签名信息
+- 当前工作区已生成本机自签名 keystore：`android/app/sspu-release.jks`
+- `key.properties` 与 `.jks` 默认被 `.gitignore` 忽略，不会进入仓库
+- GitHub Actions 可通过 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 四个 Secrets 在运行时写入签名配置
+
+输出路径：
+
+- `build/app/outputs/flutter-apk/app-release.apk`
+- `build/app/outputs/bundle/release/app-release.aab`
+
+发布后使用：
+
+- `app-release.apk` 可直接安装到 Android 设备
+- `app-release.aab` 用于应用商店上传，不适合本地直接安装
 
 ### 7.2 iOS
 
@@ -209,6 +225,11 @@ flutter build windows --release
 
 输出路径：`build/windows/x64/runner/Release/`
 
+发布后使用：
+
+- 需要连同整个 `Release/` 目录一起分发，不能只拷贝单个 `.exe`
+- 启动入口为 `sspu_all_in_one.exe`
+
 ### 7.5 macOS 桌面
 
 ```bash
@@ -217,6 +238,11 @@ flutter build macos --release
 ```
 
 输出路径：`build/macos/Build/Products/Release/`
+
+发布后使用：
+
+- 分发生成的 `.app` 包
+- 若未做 Apple 签名与公证，首次运行可能需要在系统安全设置中手动允许
 
 ### 7.6 Linux 桌面
 
@@ -328,15 +354,23 @@ flutter --version
 flutter pub deps | Select-String "fluent_ui"
 ```
 
-### 10.4 shared_preferences 平台异常
+### 10.5 Android release 构建失败
 
-Desktop 平台（Windows/macOS/Linux）需要确保平台插件已正确注册。若出现 `MissingPluginException`：
+若 `flutter build apk --release` 提示缺少签名配置，请检查：
 
-```bash
-flutter clean
-flutter pub get
-flutter run
-```
+- `android/key.properties` 是否存在
+- `storeFile` 是否指向实际存在的 keystore 文件
+- `storePassword` / `keyPassword` / `keyAlias` 是否与 keystore 一致
+
+### 10.4 本地状态文件异常
+
+应用会将用户设置、认证信息、消息缓存和 WebView2 运行态统一写入 `~/.sspu-all-in-one/`。若状态文件损坏或需要重建本地状态，可先退出应用，备份后删除该目录中的对应文件，再重新启动应用。
+
+常用文件：
+
+- `app_state.json`：应用设置、消息缓存、已读状态、关注列表
+- `wxmp_config.toml`：微信公众号平台认证与高级抓取参数
+- `webview2/`：Windows WebView2 用户数据目录
 
 ---
 
@@ -346,9 +380,4 @@ flutter run
 2. **不要修改 `pubspec.lock`**：除非执行了 `flutter pub get/upgrade`
 3. **Windows 开发**：确保以管理员身份运行 Visual Studio Installer 安装 C++ 工作负载
 4. **Web 调试**：推荐使用 Chrome，其他浏览器可能存在兼容性差异
-5. **密码数据存储位置**：
-   - Android: SharedPreferences XML 文件
-   - iOS/macOS: NSUserDefaults
-   - Windows: 注册表
-   - Linux: 本地文件
-   - Web: localStorage
+5. **用户数据存储位置**：统一位于 `~/.sspu-all-in-one/`，包括密码哈希、设置项、消息缓存、微信公众号认证配置和 WebView2 运行态

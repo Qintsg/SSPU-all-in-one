@@ -5,7 +5,7 @@
  * @Project : SSPU-all-in-one
  * @File : wxmp_article_service.dart
  * @Author : Qintsg
- * @Date : 2026-07-22
+ * @Date : 2026-04-22
  */
 
 import 'dart:convert';
@@ -19,11 +19,39 @@ import 'storage_service.dart';
 import 'wxmp_auth_service.dart';
 import 'wxmp_config_service.dart';
 
+typedef WxmpFetchProgressCallback =
+    Future<void> Function(
+      List<MessageItem> messages,
+      int completed,
+      int total,
+      String accountName,
+    );
+
 /// 公众号平台 API 错误码
 class WxmpApiError {
   static const int success = 0;
   static const int sessionExpired = 200003;
   static const int frequencyLimit = 200013;
+  static const int invalidCsrfToken = 200040;
+}
+
+/// 公众号平台认证有效性校验结果。
+class WxmpAuthValidationResult {
+  /// 是否通过本地字段和平台接口校验。
+  final bool isValid;
+
+  /// 面向用户展示的校验结论。
+  final String message;
+
+  const WxmpAuthValidationResult({
+    required this.isValid,
+    required this.message,
+  });
+}
+
+@visibleForTesting
+WxmpAuthValidationResult debugValidationResultForRet(int ret) {
+  return WxmpArticleService.validationResultForRet(ret);
 }
 
 /// 微信公众号平台文章采集服务（单例）
@@ -45,12 +73,57 @@ class WxmpArticleService {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
 
-  // ==================== HTTP 请求 ====================
+  /// 使用当前 Cookie 打开公众平台首页并提取最新 token。
+  /// 公众号平台 token 会变化；Cookie 仍有效时可从首页恢复新的 token。
+  Future<String> _refreshTokenFromCookie() async {
+    final cookie = await _auth.getCookie();
+    if (cookie == null || cookie.trim().isEmpty) {
+      throw WxmpInvalidCsrfException('缺少 Cookie，无法刷新 Token');
+    }
 
-  /// 输出脱敏调试日志；Release 构建不输出。
-  void _debugLog(String message) {
-    if (kDebugMode) {
-      debugPrint('[WxmpArticleService] $message');
+    final config = await _loadConfigOrDefault();
+    final response = await _dio.get(
+      'https://mp.weixin.qq.com/',
+      options: Options(
+        responseType: ResponseType.plain,
+        headers: {
+          'Cookie': cookie,
+          'User-Agent': config.userAgent.isEmpty
+              ? _userAgent
+              : config.userAgent,
+          'Accept':
+              'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+      ),
+    );
+
+    final htmlText = response.data?.toString() ?? '';
+    final urlTokenMatch = RegExp(r'token=(\d+)').firstMatch(htmlText);
+    final jsonTokenMatch = RegExp(
+      r'"token"\s*:\s*"?(\d+)"?',
+    ).firstMatch(htmlText);
+    final freshToken = urlTokenMatch?.group(1) ?? jsonTokenMatch?.group(1);
+    if (freshToken == null || freshToken.isEmpty) {
+      throw WxmpInvalidCsrfException('Cookie 有效性不足，无法从首页提取 Token');
+    }
+
+    await _auth.saveAuth(cookie, freshToken);
+    return freshToken;
+  }
+
+  /// 当前 token 失效时自动刷新 token 并重试一次。
+  Future<T> _withTokenRefreshRetry<T>(
+    String operationName,
+    Future<T> Function(String token) request,
+  ) async {
+    assert(operationName.isNotEmpty, 'operationName must not be empty');
+    final currentToken = await _auth.getToken();
+    try {
+      return await request(currentToken ?? '');
+    } on WxmpInvalidCsrfException {
+      final freshToken = await _refreshTokenFromCookie();
+      return request(freshToken);
     }
   }
 
@@ -59,7 +132,6 @@ class WxmpArticleService {
     try {
       return await _configService.loadConfig();
     } catch (error) {
-      _debugLog('config fallback to defaults: $error');
       return WxmpConfig.defaults();
     }
   }
@@ -80,7 +152,7 @@ class WxmpArticleService {
 
   /// 检查 API 响应的错误码
   /// 返回 ret 值；成功返回 0
-  /// 如果 session 过期（200003）或频率限制（200013），抛出特定异常
+  /// 如果 session 过期（200003）、频率限制（200013）或 CSRF 失效（200040），抛出特定异常
   int _checkResponse(Map<String, dynamic> data) {
     final baseResp = data['base_resp'] as Map<String, dynamic>?;
     if (baseResp == null) return -1;
@@ -91,7 +163,88 @@ class WxmpArticleService {
     if (ret == WxmpApiError.frequencyLimit) {
       throw WxmpFrequencyLimitException('请求频率过快，请稍后再试');
     }
+    if (ret == WxmpApiError.invalidCsrfToken) {
+      throw WxmpInvalidCsrfException('CSRF Token 无效，请重新扫码登录');
+    }
     return ret;
+  }
+
+  /// 将公众号平台业务错误码转换为认证校验结果。
+  /// 200040 表示 Cookie 与 Token 不匹配，通常是扫码页提取的路径 Cookie 不完整。
+  @visibleForTesting
+  static WxmpAuthValidationResult validationResultForRet(int ret) {
+    if (ret == WxmpApiError.success) {
+      return const WxmpAuthValidationResult(
+        isValid: true,
+        message: '认证有效，可正常访问公众号平台接口',
+      );
+    }
+    if (ret == WxmpApiError.invalidCsrfToken) {
+      return const WxmpAuthValidationResult(
+        isValid: false,
+        message: '公众号平台 CSRF 校验失败，请重新扫码登录以刷新完整 Cookie',
+      );
+    }
+    return WxmpAuthValidationResult(
+      isValid: false,
+      message: '公众号平台返回异常状态：$ret',
+    );
+  }
+
+  /// 校验当前 Cookie / Token 是否能访问公众号平台接口。
+  /// 使用轻量搜索接口探测登录态，避免刷新文章时才暴露会话失效。
+  Future<WxmpAuthValidationResult> validateAuth() async {
+    final authStatus = await _auth.getAuthStatus();
+    if (!authStatus.isUsable) {
+      return WxmpAuthValidationResult(
+        isValid: false,
+        message: authStatus.message,
+      );
+    }
+
+    try {
+      final config = await _loadConfigOrDefault();
+      final ret = await _withTokenRefreshRetry('validate/searchbiz', (
+        token,
+      ) async {
+        final queryParameters = <String, Object?>{
+          'action': 'search_biz',
+          'begin': 0,
+          'count': 1,
+          'query': '上海第二工业大学',
+          'token': token,
+          'lang': 'zh_CN',
+          'f': 'json',
+          'ajax': '1',
+        };
+        if (config.appId.trim().isNotEmpty) {
+          queryParameters['appid'] = config.appId.trim();
+        }
+
+        final response = await _dio.get(
+          'https://mp.weixin.qq.com/cgi-bin/searchbiz',
+          queryParameters: queryParameters,
+          options: Options(headers: await _buildHeaders()),
+        );
+        final data = response.data as Map<String, dynamic>;
+        return _checkResponse(data);
+      });
+      return validationResultForRet(ret);
+    } on WxmpSessionExpiredException {
+      return const WxmpAuthValidationResult(
+        isValid: false,
+        message: '会话已过期，请重新扫码登录',
+      );
+    } on WxmpFrequencyLimitException {
+      return const WxmpAuthValidationResult(
+        isValid: false,
+        message: '平台限制了当前请求频率，请稍后再试',
+      );
+    } on WxmpInvalidCsrfException {
+      return validationResultForRet(WxmpApiError.invalidCsrfToken);
+    } catch (error) {
+      return WxmpAuthValidationResult(isValid: false, message: '认证校验失败：$error');
+    }
   }
 
   // ==================== 搜索公众号 ====================
@@ -107,35 +260,33 @@ class WxmpArticleService {
     int count = 5,
   }) async {
     final authStatus = await _auth.getAuthStatus();
-    if (!authStatus.isUsable) {
-      _debugLog('search skipped: ${authStatus.message}');
-      return [];
-    }
+    if (!authStatus.isUsable) return [];
 
-    final token = await _auth.getToken();
     final config = await _loadConfigOrDefault();
-    final headers = await _buildHeaders();
-    final queryParameters = <String, Object?>{
-      'action': 'search_biz',
-      'begin': begin,
-      'count': count,
-      'query': keyword,
-      'token': token,
-      'lang': 'zh_CN',
-      'f': 'json',
-      'ajax': '1',
-    };
-    if (config.appId.trim().isNotEmpty) {
-      queryParameters['appid'] = config.appId.trim();
-    }
+    final data = await _withTokenRefreshRetry('searchbiz', (token) async {
+      final headers = await _buildHeaders();
+      final queryParameters = <String, Object?>{
+        'action': 'search_biz',
+        'begin': begin,
+        'count': count,
+        'query': keyword,
+        'token': token,
+        'lang': 'zh_CN',
+        'f': 'json',
+        'ajax': '1',
+      };
+      if (config.appId.trim().isNotEmpty) {
+        queryParameters['appid'] = config.appId.trim();
+      }
 
-    final response = await _dio.get(
-      'https://mp.weixin.qq.com/cgi-bin/searchbiz',
-      queryParameters: queryParameters,
-      options: Options(headers: headers),
-    );
+      final response = await _dio.get(
+        'https://mp.weixin.qq.com/cgi-bin/searchbiz',
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
+      return response.data as Map<String, dynamic>;
+    });
 
-    final data = response.data as Map<String, dynamic>;
     final ret = _checkResponse(data);
     if (ret != WxmpApiError.success) return [];
 
@@ -164,36 +315,34 @@ class WxmpArticleService {
     int count = 5,
   }) async {
     final authStatus = await _auth.getAuthStatus();
-    if (!authStatus.isUsable) {
-      _debugLog('article list skipped: ${authStatus.message}');
-      return [];
-    }
+    if (!authStatus.isUsable) return [];
 
-    final token = await _auth.getToken();
     final config = await _loadConfigOrDefault();
-    final headers = await _buildHeaders();
-    final queryParameters = <String, Object?>{
-      'sub': 'list',
-      'sub_action': 'list_ex',
-      'begin': page * count,
-      'count': count,
-      'fakeid': fakeid,
-      'token': token,
-      'lang': 'zh_CN',
-      'f': 'json',
-      'ajax': 1,
-    };
-    if (config.appId.trim().isNotEmpty) {
-      queryParameters['appid'] = config.appId.trim();
-    }
+    final data = await _withTokenRefreshRetry('appmsgpublish', (token) async {
+      final headers = await _buildHeaders();
+      final queryParameters = <String, Object?>{
+        'sub': 'list',
+        'sub_action': 'list_ex',
+        'begin': page * count,
+        'count': count,
+        'fakeid': fakeid,
+        'token': token,
+        'lang': 'zh_CN',
+        'f': 'json',
+        'ajax': 1,
+      };
+      if (config.appId.trim().isNotEmpty) {
+        queryParameters['appid'] = config.appId.trim();
+      }
 
-    final response = await _dio.get(
-      'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
-      queryParameters: queryParameters,
-      options: Options(headers: headers),
-    );
+      final response = await _dio.get(
+        'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
+      return response.data as Map<String, dynamic>;
+    });
 
-    final data = response.data as Map<String, dynamic>;
     final ret = _checkResponse(data);
     if (ret != WxmpApiError.success) return [];
 
@@ -221,7 +370,6 @@ class WxmpArticleService {
         articles.add(artMap);
       }
     }
-
     return articles;
   }
 
@@ -233,15 +381,26 @@ class WxmpArticleService {
   Future<List<MessageItem>> fetchArticles({
     int maxCount = 50,
     Set<String>? knownMessageIds,
+    bool validateBeforeFetch = true,
+    WxmpFetchProgressCallback? onAccountCompleted,
   }) async {
     final authStatus = await _auth.getAuthStatus();
-    if (!authStatus.isUsable) {
-      _debugLog('refresh skipped: ${authStatus.message}');
-      return [];
+    if (!authStatus.isUsable) return [];
+    if (validateBeforeFetch) {
+      final validation = await validateAuth();
+      if (!validation.isValid) return [];
     }
 
     final followedMps = await getLocalFollowedMps();
     if (followedMps.isEmpty) return [];
+
+    final enabledEntries = <MapEntry<String, Map<String, String>>>[];
+    for (final entry in followedMps.entries) {
+      if (await _stateService.isMpNotificationEnabled(entry.key)) {
+        enabledEntries.add(entry);
+      }
+    }
+    if (enabledEntries.isEmpty) return [];
 
     final storedMessageIds =
         knownMessageIds ??
@@ -250,10 +409,12 @@ class WxmpArticleService {
     final config = await _loadConfigOrDefault();
     final perRequestLimit = config.perRequestArticleCount;
     final requestDelayMs = config.requestDelayMs;
-    for (final entry in followedMps.entries) {
+    var completedAccounts = 0;
+    for (final entry in enabledEntries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
       final mpName = mpInfo['name'] ?? fakeid;
+      final accountMessages = <MessageItem>[];
       final perRequestCount = maxCount > 0 && maxCount < perRequestLimit
           ? maxCount
           : perRequestLimit;
@@ -278,6 +439,7 @@ class WxmpArticleService {
               break;
             }
             allMessages.add(msgItem);
+            accountMessages.add(msgItem);
             fetchedForMp++;
             if (fetchedForMp >= maxCount) break;
           }
@@ -290,23 +452,24 @@ class WxmpArticleService {
             await Future.delayed(Duration(milliseconds: requestDelayMs));
           }
         }
-
-        // 请求间隔，避免频率限制
-        if (followedMps.length > 1 && requestDelayMs > 0) {
-          await Future.delayed(Duration(milliseconds: requestDelayMs));
-        }
       } on WxmpSessionExpiredException {
-        _debugLog('refresh stopped: session expired');
         // Session 过期，停止后续请求
         break;
       } on WxmpFrequencyLimitException {
-        _debugLog('refresh stopped: frequency limited');
         // 频率限制，停止后续请求
         break;
-      } catch (error) {
-        _debugLog('refresh skipped one account "$mpName": $error');
+      } on WxmpInvalidCsrfException {
+        break;
+      } catch (_) {
         // 单个公众号失败不影响其他
-        continue;
+      } finally {
+        completedAccounts++;
+        await onAccountCompleted?.call(
+          accountMessages,
+          completedAccounts,
+          enabledEntries.length,
+          mpName,
+        );
       }
     }
 
@@ -337,9 +500,17 @@ class WxmpArticleService {
     String name, {
     String? alias,
     String? avatar,
+    String? recommendedName,
+    String? recommendedWxAccount,
   }) async {
     final mps = await getLocalFollowedMps();
-    mps[fakeid] = {'name': name, 'alias': alias ?? '', 'avatar': avatar ?? ''};
+    mps[fakeid] = {
+      'name': name,
+      'alias': alias ?? '',
+      'avatar': avatar ?? '',
+      'recommended_name': recommendedName ?? '',
+      'recommended_wx_account': recommendedWxAccount ?? '',
+    };
     await StorageService.setString(_keyFollowedMps, jsonEncode(mps));
   }
 
@@ -431,6 +602,14 @@ class WxmpSessionExpiredException implements Exception {
 class WxmpFrequencyLimitException implements Exception {
   final String message;
   WxmpFrequencyLimitException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// CSRF Token 无效异常
+class WxmpInvalidCsrfException implements Exception {
+  final String message;
+  WxmpInvalidCsrfException(this.message);
   @override
   String toString() => message;
 }

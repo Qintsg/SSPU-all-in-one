@@ -9,6 +9,14 @@ set(BINARY_NAME "sspu_all_in_one")
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
+# flutter_inappwebview_windows 当前仍会触发 CMake 开发者级警告；
+# 插件子工程会重置 policy，因此这里同时关闭 dev warning 输出，避免构建日志噪声。
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "Suppress CMake developer warnings")
+if(POLICY CMP0175)
+  # flutter_inappwebview_windows 仍使用 TARGET 形式的 add_custom_command +
+  # DEPENDS 组合；这里显式保持旧策略，避免新版本 CMake 输出开发者警告。
+  cmake_policy(SET CMP0175 OLD)
+endif()
 
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)

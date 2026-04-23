@@ -22,10 +22,14 @@ void main() {
     WxmpConfigService.instance.debugSetConfigPathForTesting(
       '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml',
     );
+    StorageService.debugSetStateFilePathForTesting(
+      '${configDirectory.path}${Platform.pathSeparator}app_state.json',
+    );
   });
 
   tearDown(() async {
     WxmpConfigService.instance.debugSetConfigPathForTesting(null);
+    StorageService.debugSetStateFilePathForTesting(null);
     if (await configDirectory.exists()) {
       await configDirectory.delete(recursive: true);
     }

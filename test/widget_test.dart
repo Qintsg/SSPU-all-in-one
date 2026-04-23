@@ -21,6 +21,19 @@ import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
 
 void main() {
   testWidgets('应用启动冒烟测试', (WidgetTester tester) async {
+    final storageDirectory = await Directory.systemTemp.createTemp(
+      'app_smoke_storage_',
+    );
+    StorageService.debugSetStateFilePathForTesting(
+      '${storageDirectory.path}${Platform.pathSeparator}app_state.json',
+    );
+    addTearDown(() async {
+      StorageService.debugSetStateFilePathForTesting(null);
+      if (await storageDirectory.exists()) {
+        await storageDirectory.delete(recursive: true);
+      }
+    });
+
     // 构建应用并渲染首帧
     await tester.pumpWidget(const SSPUApp());
     // 首屏包含持续动画的 ProgressRing，固定推进一帧即可验证启动。
@@ -77,6 +90,9 @@ void main() {
       '${Directory.systemTemp.path}${Platform.pathSeparator}'
       'settings_page_config_${DateTime.now().microsecondsSinceEpoch}',
     );
+    StorageService.debugSetStateFilePathForTesting(
+      '${configDirectory.path}${Platform.pathSeparator}app_state.json',
+    );
     WxmpConfigService.instance.debugSetConfigPathForTesting(
       '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml',
     );
@@ -98,6 +114,10 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 300));
       WxmpConfigService.instance.debugSetConfigPathForTesting(null);
+      StorageService.debugSetStateFilePathForTesting(null);
+      if (await configDirectory.exists()) {
+        await configDirectory.delete(recursive: true);
+      }
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
       await tester.binding.setSurfaceSize(null);
