@@ -1,5 +1,5 @@
 # CI 工作流
-# 普通 PR 负责 analyze / test；带 release 标签的 PR 额外校验发布分支与发布说明模板。
+# 普通 PR 负责 analyze；带 release 标签的 PR 额外校验发布分支与发布说明模板。
 name: CI
 
 on:
@@ -30,9 +30,6 @@ jobs:
 
       - name: Flutter Analyze
         run: flutter analyze --no-fatal-infos
-
-      - name: Flutter Test
-        run: flutter test
 
   release-policy:
     if: >

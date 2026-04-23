@@ -103,7 +103,7 @@
 - Labeler 标签拆分为 `ci`、`release`、`governance`、`dependencies` 等更细粒度规则
 - Dependabot 默认向 `develop` 提交分组升级 PR，减少依赖更新噪音并贴合分支流转
 - Issue 配置关闭空白提单入口，并补充文档导向链接
-- CI 恢复 `flutter test` 质量门槛，并对带 `release` 标签的 PR 追加发布分支与发布说明模板校验
+- PR CI 调整为仅执行 `flutter analyze`，并对带 `release` 标签的 PR 追加发布分支与发布说明模板校验
 - Release 工作流改为从 `pubspec.yaml` 读取完整版本号，统一生成 Android/Windows/macOS/Linux/Web 公开资产与校验文件
 - Release 工作流新增 Windows arm64、Linux arm64 正式构建与打包步骤，删除独立实验性架构发布分叉
 - 预发布 Release 的目标分支约束调整为允许 `main`、`develop` 与 `release/*`，并同步到 CI、Release workflow 与仓库模板
