@@ -1,5 +1,5 @@
 /*
- * 主页 — 应用首屏，展示欢迎信息与核心功能入口
+ * 主页 — 应用首屏，展示欢迎信息与最新消息摘要
  * @Project : SSPU-all-in-one
  * @File : home_page.dart
  * @Author : Qintsg
@@ -16,7 +16,7 @@ import '../widgets/responsive_layout.dart';
 import 'webview_page.dart';
 
 /// 主页
-/// 展示校园信息摘要、快捷入口、最新消息等内容
+/// 展示欢迎信息与最新消息列表
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -56,11 +56,6 @@ class _HomePageState extends State<HomePage> {
           DeviceType.phone => FluentSpacing.m,
           DeviceType.tablet => FluentSpacing.xl,
           DeviceType.desktop => FluentSpacing.xxl,
-        };
-        final tileWidth = switch (deviceType) {
-          DeviceType.phone => 110.0,
-          DeviceType.tablet => 130.0,
-          DeviceType.desktop => 140.0,
         };
 
         return ScaffoldPage.scrollable(
@@ -119,46 +114,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )
                 .animate()
-                .fadeIn(
-                  duration: FluentDuration.slow,
-                  curve: FluentEasing.decelerate,
-                )
-                .slideY(begin: 0.05, end: 0),
-
-            const SizedBox(height: FluentSpacing.l),
-            Text('快捷功能', style: theme.typography.bodyStrong),
-            const SizedBox(height: FluentSpacing.s),
-            Wrap(
-                  spacing: FluentSpacing.m,
-                  runSpacing: FluentSpacing.m,
-                  children: [
-                    _FeatureTile(
-                      icon: FluentIcons.education,
-                      label: '课表查询',
-                      color: Colors.blue,
-                      width: tileWidth,
-                    ),
-                    _FeatureTile(
-                      icon: FluentIcons.certificate,
-                      label: '成绩查询',
-                      color: Colors.teal,
-                      width: tileWidth,
-                    ),
-                    _FeatureTile(
-                      icon: FluentIcons.calendar,
-                      label: '考试安排',
-                      color: Colors.orange,
-                      width: tileWidth,
-                    ),
-                    _FeatureTile(
-                      icon: FluentIcons.news,
-                      label: '校园公告',
-                      color: Colors.purple,
-                      width: tileWidth,
-                    ),
-                  ],
-                )
-                .animate(delay: 100.ms)
                 .fadeIn(
                   duration: FluentDuration.slow,
                   curve: FluentEasing.decelerate,
@@ -261,70 +216,6 @@ class _HomePageState extends State<HomePage> {
                 style: theme.typography.caption?.copyWith(
                   color: theme.resources.textFillColorSecondary,
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 功能快捷入口砖块
-class _FeatureTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final AccentColor color;
-
-  /// 磁贴宽度（响应式调整）
-  final double width;
-
-  const _FeatureTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.width = 140,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return HoverButton(
-      onPressed: () {},
-      builder: (context, states) {
-        final isHovered = states.isHovered;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          width: width,
-          padding: const EdgeInsets.all(FluentSpacing.l),
-          decoration: BoxDecoration(
-            color: isHovered
-                ? color.withValues(alpha: isDark ? 0.15 : 0.08)
-                : isDark
-                ? FluentDarkColors.hoverFill
-                : Colors.white,
-            borderRadius: BorderRadius.circular(FluentRadius.xLarge),
-            border: Border.all(
-              color: isHovered
-                  ? color.withValues(alpha: 0.3)
-                  : isDark
-                  ? FluentDarkColors.borderSubtle
-                  : FluentLightColors.borderSubtle,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 28, color: color),
-              const SizedBox(height: FluentSpacing.s),
-              Text(
-                label,
-                style: theme.typography.body?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),

@@ -73,29 +73,6 @@ class WxmpArticleService {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
 
-  // ==================== HTTP 请求 ====================
-
-  /// 输出脱敏调试日志；Release 构建不输出。
-  void _debugLog(String message) {
-    if (kDebugMode) {
-      debugPrint('[WxmpArticleService] $message');
-    }
-  }
-
-  /// 对 fakeid 做脱敏，日志只保留排查所需的定位能力。
-  String _maskFakeid(String fakeid) {
-    if (fakeid.length <= 8) return '***';
-    return '${fakeid.substring(0, 4)}***${fakeid.substring(fakeid.length - 4)}';
-  }
-
-  /// 记录公众号平台响应状态，不输出 Cookie / Token 等敏感字段。
-  void _logApiRet(String endpoint, Map<String, dynamic> data) {
-    final baseResp = data['base_resp'] as Map<String, dynamic>?;
-    final ret = baseResp?['ret'];
-    final errMsg = baseResp?['err_msg'];
-    _debugLog('$endpoint response ret=$ret err_msg=$errMsg');
-  }
-
   /// 使用当前 Cookie 打开公众平台首页并提取最新 token。
   /// 公众号平台 token 会变化；Cookie 仍有效时可从首页恢复新的 token。
   Future<String> _refreshTokenFromCookie() async {
@@ -132,7 +109,6 @@ class WxmpArticleService {
     }
 
     await _auth.saveAuth(cookie, freshToken);
-    _debugLog('token refreshed from mp home page');
     return freshToken;
   }
 
@@ -141,11 +117,11 @@ class WxmpArticleService {
     String operationName,
     Future<T> Function(String token) request,
   ) async {
+    assert(operationName.isNotEmpty, 'operationName must not be empty');
     final currentToken = await _auth.getToken();
     try {
       return await request(currentToken ?? '');
     } on WxmpInvalidCsrfException {
-      _debugLog('$operationName invalid csrf; refreshing token and retrying');
       final freshToken = await _refreshTokenFromCookie();
       return request(freshToken);
     }
@@ -156,7 +132,6 @@ class WxmpArticleService {
     try {
       return await _configService.loadConfig();
     } catch (error) {
-      _debugLog('config fallback to defaults: $error');
       return WxmpConfig.defaults();
     }
   }
@@ -219,10 +194,8 @@ class WxmpArticleService {
   /// 校验当前 Cookie / Token 是否能访问公众号平台接口。
   /// 使用轻量搜索接口探测登录态，避免刷新文章时才暴露会话失效。
   Future<WxmpAuthValidationResult> validateAuth() async {
-    _debugLog('validate auth start');
     final authStatus = await _auth.getAuthStatus();
     if (!authStatus.isUsable) {
-      _debugLog('validate auth skipped: ${authStatus.message}');
       return WxmpAuthValidationResult(
         isValid: false,
         message: authStatus.message,
@@ -254,31 +227,22 @@ class WxmpArticleService {
           options: Options(headers: await _buildHeaders()),
         );
         final data = response.data as Map<String, dynamic>;
-        _logApiRet('validate/searchbiz', data);
         return _checkResponse(data);
       });
-      final result = validationResultForRet(ret);
-      _debugLog(
-        'validate auth result valid=${result.isValid} message=${result.message}',
-      );
-      return result;
+      return validationResultForRet(ret);
     } on WxmpSessionExpiredException {
-      _debugLog('validate auth failed: session expired');
       return const WxmpAuthValidationResult(
         isValid: false,
         message: '会话已过期，请重新扫码登录',
       );
     } on WxmpFrequencyLimitException {
-      _debugLog('validate auth failed: frequency limited');
       return const WxmpAuthValidationResult(
         isValid: false,
         message: '平台限制了当前请求频率，请稍后再试',
       );
     } on WxmpInvalidCsrfException {
-      _debugLog('validate auth failed: invalid csrf token');
       return validationResultForRet(WxmpApiError.invalidCsrfToken);
     } catch (error) {
-      _debugLog('auth validation failed: $error');
       return WxmpAuthValidationResult(isValid: false, message: '认证校验失败：$error');
     }
   }
@@ -295,12 +259,8 @@ class WxmpArticleService {
     int begin = 0,
     int count = 5,
   }) async {
-    _debugLog('search mp start keyword="$keyword" begin=$begin count=$count');
     final authStatus = await _auth.getAuthStatus();
-    if (!authStatus.isUsable) {
-      _debugLog('search skipped: ${authStatus.message}');
-      return [];
-    }
+    if (!authStatus.isUsable) return [];
 
     final config = await _loadConfigOrDefault();
     final data = await _withTokenRefreshRetry('searchbiz', (token) async {
@@ -327,15 +287,10 @@ class WxmpArticleService {
       return response.data as Map<String, dynamic>;
     });
 
-    _logApiRet('searchbiz', data);
     final ret = _checkResponse(data);
-    if (ret != WxmpApiError.success) {
-      _debugLog('search mp returned non-success ret=$ret');
-      return [];
-    }
+    if (ret != WxmpApiError.success) return [];
 
     final list = data['list'] as List<dynamic>? ?? [];
-    _debugLog('search mp success result_count=${list.length}');
     return list.map<Map<String, String>>((item) {
       final map = item as Map<String, dynamic>;
       return {
@@ -359,14 +314,8 @@ class WxmpArticleService {
     int page = 0,
     int count = 5,
   }) async {
-    _debugLog(
-      'get articles start fakeid=${_maskFakeid(fakeid)} page=$page count=$count',
-    );
     final authStatus = await _auth.getAuthStatus();
-    if (!authStatus.isUsable) {
-      _debugLog('article list skipped: ${authStatus.message}');
-      return [];
-    }
+    if (!authStatus.isUsable) return [];
 
     final config = await _loadConfigOrDefault();
     final data = await _withTokenRefreshRetry('appmsgpublish', (token) async {
@@ -394,29 +343,15 @@ class WxmpArticleService {
       return response.data as Map<String, dynamic>;
     });
 
-    _logApiRet('appmsgpublish', data);
     final ret = _checkResponse(data);
-    if (ret != WxmpApiError.success) {
-      _debugLog(
-        'get articles non-success ret=$ret fakeid=${_maskFakeid(fakeid)}',
-      );
-      return [];
-    }
+    if (ret != WxmpApiError.success) return [];
 
     // publish_page 是 JSON 字符串，需二次解析
     final publishPageStr = data['publish_page'] as String?;
-    if (publishPageStr == null || publishPageStr.isEmpty) {
-      _debugLog(
-        'get articles empty publish_page fakeid=${_maskFakeid(fakeid)}',
-      );
-      return [];
-    }
+    if (publishPageStr == null || publishPageStr.isEmpty) return [];
 
     final publishPage = jsonDecode(publishPageStr) as Map<String, dynamic>;
     final publishList = publishPage['publish_list'] as List<dynamic>? ?? [];
-    _debugLog(
-      'get articles publish_list_count=${publishList.length} fakeid=${_maskFakeid(fakeid)}',
-    );
 
     final articles = <Map<String, dynamic>>[];
     for (final item in publishList) {
@@ -435,10 +370,6 @@ class WxmpArticleService {
         articles.add(artMap);
       }
     }
-
-    _debugLog(
-      'get articles parsed_count=${articles.length} fakeid=${_maskFakeid(fakeid)} page=$page',
-    );
     return articles;
   }
 
@@ -453,47 +384,23 @@ class WxmpArticleService {
     bool validateBeforeFetch = true,
     WxmpFetchProgressCallback? onAccountCompleted,
   }) async {
-    _debugLog(
-      'refresh start maxCount=$maxCount known=${knownMessageIds?.length ?? -1} validate=$validateBeforeFetch',
-    );
     final authStatus = await _auth.getAuthStatus();
-    if (!authStatus.isUsable) {
-      _debugLog('refresh skipped: ${authStatus.message}');
-      return [];
-    }
+    if (!authStatus.isUsable) return [];
     if (validateBeforeFetch) {
       final validation = await validateAuth();
-      _debugLog(
-        'refresh validation valid=${validation.isValid} message=${validation.message}',
-      );
-      if (!validation.isValid) {
-        _debugLog('refresh skipped: ${validation.message}');
-        return [];
-      }
+      if (!validation.isValid) return [];
     }
 
     final followedMps = await getLocalFollowedMps();
-    _debugLog('refresh followed account count=${followedMps.length}');
-    if (followedMps.isEmpty) {
-      _debugLog('refresh skipped: no followed mp accounts');
-      return [];
-    }
+    if (followedMps.isEmpty) return [];
 
     final enabledEntries = <MapEntry<String, Map<String, String>>>[];
     for (final entry in followedMps.entries) {
       if (await _stateService.isMpNotificationEnabled(entry.key)) {
         enabledEntries.add(entry);
-      } else {
-        _debugLog(
-          'refresh skip disabled account name="${entry.value['name'] ?? entry.key}" fakeid=${_maskFakeid(entry.key)}',
-        );
       }
     }
-    _debugLog('refresh enabled account count=${enabledEntries.length}');
-    if (enabledEntries.isEmpty) {
-      _debugLog('refresh skipped: all followed mp accounts disabled');
-      return [];
-    }
+    if (enabledEntries.isEmpty) return [];
 
     final storedMessageIds =
         knownMessageIds ??
@@ -502,9 +409,6 @@ class WxmpArticleService {
     final config = await _loadConfigOrDefault();
     final perRequestLimit = config.perRequestArticleCount;
     final requestDelayMs = config.requestDelayMs;
-    _debugLog(
-      'refresh config perRequestLimit=$perRequestLimit requestDelayMs=$requestDelayMs',
-    );
     var completedAccounts = 0;
     for (final entry in enabledEntries) {
       final fakeid = entry.key;
@@ -519,17 +423,11 @@ class WxmpArticleService {
       var reachedKnownMessage = false;
 
       try {
-        _debugLog(
-          'refresh account start name="$mpName" fakeid=${_maskFakeid(fakeid)} perRequestCount=$perRequestCount',
-        );
         while (fetchedForMp < maxCount && !reachedKnownMessage) {
           final articles = await getArticles(
             fakeid,
             page: page,
             count: perRequestCount,
-          );
-          _debugLog(
-            'refresh account page result name="$mpName" page=$page articles=${articles.length}',
           );
           if (articles.isEmpty) break;
 
@@ -537,9 +435,6 @@ class WxmpArticleService {
             final msgItem = _articleToMessageItem(article, mpName, fakeid);
             if (msgItem == null) continue;
             if (storedMessageIds.contains(msgItem.id)) {
-              _debugLog(
-                'refresh account reached known message name="$mpName" title="${msgItem.title}"',
-              );
               reachedKnownMessage = true;
               break;
             }
@@ -557,22 +452,15 @@ class WxmpArticleService {
             await Future.delayed(Duration(milliseconds: requestDelayMs));
           }
         }
-        _debugLog(
-          'refresh account done name="$mpName" fetched=$fetchedForMp reachedKnown=$reachedKnownMessage',
-        );
       } on WxmpSessionExpiredException {
-        _debugLog('refresh stopped: session expired');
         // Session 过期，停止后续请求
         break;
       } on WxmpFrequencyLimitException {
-        _debugLog('refresh stopped: frequency limited');
         // 频率限制，停止后续请求
         break;
       } on WxmpInvalidCsrfException {
-        _debugLog('refresh stopped: invalid csrf token');
         break;
-      } catch (error) {
-        _debugLog('refresh skipped one account "$mpName": $error');
+      } catch (_) {
         // 单个公众号失败不影响其他
       } finally {
         completedAccounts++;
@@ -585,7 +473,6 @@ class WxmpArticleService {
       }
     }
 
-    _debugLog('refresh done total_new=${allMessages.length}');
     return allMessages;
   }
 
@@ -595,20 +482,14 @@ class WxmpArticleService {
   /// :return: {fakeid: {name, alias, avatar}}
   Future<Map<String, Map<String, String>>> getLocalFollowedMps() async {
     final json = await StorageService.getString(_keyFollowedMps);
-    if (json == null || json.isEmpty) {
-      _debugLog('followed mp storage empty');
-      return {};
-    }
+    if (json == null || json.isEmpty) return {};
     try {
       final decoded = jsonDecode(json) as Map<String, dynamic>;
-      final result = decoded.map((k, v) {
+      return decoded.map((k, v) {
         final info = v as Map<String, dynamic>;
         return MapEntry(k, info.map((ik, iv) => MapEntry(ik, iv.toString())));
       });
-      _debugLog('followed mp storage loaded count=${result.length}');
-      return result;
-    } catch (error) {
-      _debugLog('followed mp storage parse failed: $error');
+    } catch (_) {
       return {};
     }
   }

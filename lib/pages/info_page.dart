@@ -9,7 +9,6 @@
 
 import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/message_item.dart';
@@ -74,12 +73,6 @@ class _InfoPageState extends State<InfoPage> {
   /// 自动刷新服务（用于手动全渠道刷新）
   final InfoRefreshService _refreshService = InfoRefreshService.instance;
 
-  void _debugWechatRefreshLog(String message) {
-    if (kDebugMode) {
-      debugPrint('[InfoPage][WechatRefresh] $message');
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -134,12 +127,10 @@ class _InfoPageState extends State<InfoPage> {
 
   /// 刷新微信公众号文章：通过 WechatArticleService 获取已关注公众号的推文
   Future<void> _refreshWechatArticles() async {
-    _debugWechatRefreshLog('manual refresh clicked');
     final isConfigured = await WechatArticleService.instance
         .hasConfiguredSource();
     if (!isConfigured) {
       _wechatSourceConfigured = false;
-      _debugWechatRefreshLog('source not configured');
       if (mounted) {
         displayInfoBar(
           context,

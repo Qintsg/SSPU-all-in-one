@@ -131,9 +131,7 @@ _checkPasswordProtection()
 
 **功能规划**：
 - 欢迎信息展示
-- 校园信息摘要（通知、课程、活动等）
-- 快捷功能入口卡片
-- 今日课表概览
+- 最新消息摘要
 
 **UI 结构**：
 - `ScaffoldPage.scrollable` 作为页面容器

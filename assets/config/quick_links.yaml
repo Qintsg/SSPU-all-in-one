@@ -71,7 +71,7 @@ site_groups:
         url: https://stes.sspu.edu.cn/
       - name: 职业技术学院
         url: https://cive.sspu.edu.cn/
-      - name: 马克思主义院
+      - name: 马克思主义学院
         url: https://mkszyxy.sspu.edu.cn/
       - name: 继续教育学院
         url: https://adult.sspu.edu.cn/

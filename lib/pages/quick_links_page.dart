@@ -124,15 +124,6 @@ class _QuickLinksContent extends StatelessWidget {
                 groupIndex,
                 tileWidth,
               ),
-            const SizedBox(height: FluentSpacing.l),
-            const InfoBar(
-              title: Text('提示'),
-              content: Text(
-                '点击卡片将在默认浏览器中打开对应网站。快捷入口由 assets/config/quick_links.yaml 维护。',
-              ),
-              severity: InfoBarSeverity.info,
-              isLong: true,
-            ),
           ],
         );
       },
