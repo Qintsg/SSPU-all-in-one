@@ -115,7 +115,7 @@
 
 - 修复 Release 工作流中的 macOS DMG 打包路径错误，改为自动发现真实 `.app` 产物
 - 修复 Windows 安装器编译依赖宿主机缺失中文语言文件导致的发布失败
-- 修复 Windows arm64 Release 安装器脚本中的 Inno Setup 架构标识，改用 `arm64compatible` 以匹配当前编译器支持的架构名称
+- 修复 Windows arm64 Release 安装器脚本中的 Inno Setup 架构标识，恢复为当前编译器支持的 `arm64`
 - 修复 Windows arm64 Release workflow 对 Flutter 输出目录的硬编码假设，改为构建后自动定位主程序目录并传入 Inno Setup
 - 暂时收敛未验证的 Windows arm64 / Linux arm64 桌面发布矩阵，避免 Release 因官方 Flutter SDK 架构解析失败而整体中断
 - 修复 macOS Runner 的 Xcode 配置引用错误，恢复 Flutter 生成配置与 CocoaPods 支持文件的正确加载，解决 `flutter build macos` 编译失败问题
