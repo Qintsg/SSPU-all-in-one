@@ -9,6 +9,7 @@
 
 import '../models/message_item.dart';
 import 'package:flutter/foundation.dart';
+import 'message_state_service.dart';
 import 'storage_service.dart';
 import 'wxmp_article_service.dart';
 import 'wxmp_auth_service.dart';
@@ -22,6 +23,7 @@ class WechatArticleService {
 
   final WxmpAuthService _auth = WxmpAuthService.instance;
   final WxmpArticleService _wxmpService = WxmpArticleService.instance;
+  final MessageStateService _stateService = MessageStateService.instance;
 
   void _debugLog(String message) {
     if (kDebugMode) {
@@ -54,6 +56,23 @@ class WechatArticleService {
   /// 校验公众号平台认证是否仍可访问接口。
   Future<WxmpAuthValidationResult> validateSource() async {
     return _wxmpService.validateAuth();
+  }
+
+  /// 是否存在启用中的微信推文抓取项。
+  Future<bool> hasEnabledRefreshTarget() async {
+    final channelEnabled = await _stateService.isChannelEnabled(
+      'wechat_public',
+      defaultValue: false,
+    );
+    if (!channelEnabled) return false;
+
+    final followedMps = await _wxmpService.getLocalFollowedMps();
+    for (final entry in followedMps.entries) {
+      if (await _stateService.isMpNotificationEnabled(entry.key)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// 获取所有已关注公众号的最新文章。

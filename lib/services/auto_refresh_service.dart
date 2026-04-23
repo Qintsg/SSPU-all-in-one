@@ -163,6 +163,62 @@ class AutoRefreshService {
     onBatchCompleted: onBatchCompleted,
   );
 
+  /// 是否存在已启用的官网/信息中心渠道。
+  Future<bool> hasEnabledSchoolWebsiteChannel() async {
+    if (await _stateService.isLatestInfoEnabled()) return true;
+    if (await _stateService.isNoticeEnabled()) return true;
+
+    const siteChannelIds = [
+      'jwc',
+      'itc',
+      'sspu_news',
+      'sspu_notice',
+      'sspu_activity',
+      'sports',
+      'security_dept',
+      'construction',
+      'news_center',
+      'student_affairs',
+      'logistics_center',
+      'foreign_student_office',
+      'intl_exchange_office',
+      'admissions_office',
+      'hr_office',
+      'research_office',
+      'union',
+      'party_org_dept',
+      'united_front_dept',
+      'party_office',
+      'youth_league',
+      'assets_lab_office',
+      'college_cs',
+      'college_im',
+      'college_re',
+      'college_em',
+      'college_ic',
+      'college_imhe',
+      'college_econ',
+      'college_lang',
+      'college_math',
+      'college_art',
+      'college_vte',
+      'college_vt',
+      'college_marx',
+      'college_ce',
+      'center_art_edu',
+      'center_intl',
+      'center_innov',
+      'center_training',
+      'graduate',
+      'lib_center',
+    ];
+
+    for (final channelId in siteChannelIds) {
+      if (await _stateService.isChannelEnabled(channelId)) return true;
+    }
+    return false;
+  }
+
   /// 重新加载某个渠道的定时器配置。
   /// 设置页修改间隔后调用此方法使新间隔生效。
   Future<void> reloadChannel(String channelKey) =>

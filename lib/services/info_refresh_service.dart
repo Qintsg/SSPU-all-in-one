@@ -76,6 +76,20 @@ class InfoRefreshService extends ChangeNotifier {
   }
 
   Future<void> _runSchoolWebsiteRefresh() async {
+    if (!await _autoRefreshService.hasEnabledSchoolWebsiteChannel()) {
+      _update(
+        const InfoRefreshSnapshot(
+          isRefreshing: true,
+          kind: InfoRefreshKind.schoolWebsite,
+          text: '当前未启用任何官网消息刷新渠道',
+          completed: 0,
+          total: 0,
+        ),
+      );
+      _finishSoon();
+      return;
+    }
+
     _update(
       const InfoRefreshSnapshot(
         isRefreshing: true,
@@ -127,6 +141,20 @@ class InfoRefreshService extends ChangeNotifier {
   }
 
   Future<void> _runWechatRefresh() async {
+    if (!await WechatArticleService.instance.hasEnabledRefreshTarget()) {
+      _update(
+        const InfoRefreshSnapshot(
+          isRefreshing: true,
+          kind: InfoRefreshKind.wechat,
+          text: '当前未启用任何微信推文刷新项',
+          completed: 0,
+          total: 0,
+        ),
+      );
+      _finishSoon();
+      return;
+    }
+
     _update(
       const InfoRefreshSnapshot(
         isRefreshing: true,
