@@ -50,13 +50,17 @@ Closes #
 <!-- 若无，可写“无” -->
 
 ## 发布说明（仅带 `release` 标签时必填）
-<!-- Release workflow 会直接从下列章节生成 release-notes.md 与 GitHub Release 正文 -->
+<!--
+Release workflow 会直接从下列章节生成 release-notes.md 与 GitHub Release 正文。
+带 `release` 标签时，必须把每个章节替换为真实内容，不允许保留“无”“新装用户：”这类模板占位文本。
+若本 PR 不触发公开 Release，请删除或忽略下列章节内容，不要给 PR 添加 `release` 标签。
+-->
 
 ## 亮点
-- 无
+- 请填写本次发布的新增、修复、优化亮点
 
 ## 破坏性变更
-- 无
+- 若无破坏性变更，请明确写“无破坏性变更”
 
 ## 平台清单
 - Android
@@ -77,7 +81,7 @@ Closes #
 - 无法直接安装时使用 `.tar.gz`
 
 ## 已知问题
-- 无
+- 若无已知问题，请明确写“无已知问题”
 
 ## 校验信息
 - 合并后 Release 将附带 `SHA256SUMS.txt`
