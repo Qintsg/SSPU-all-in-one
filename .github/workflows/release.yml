@@ -245,12 +245,12 @@ jobs:
              [ -n "$ANDROID_KEY_ALIAS" ] && \
              [ -n "$ANDROID_KEY_PASSWORD" ]; then
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/ci-release.jks
-            cat > android/key.properties <<EOF
-            storePassword=$ANDROID_KEYSTORE_PASSWORD
-            keyPassword=$ANDROID_KEY_PASSWORD
-            keyAlias=$ANDROID_KEY_ALIAS
-            storeFile=app/ci-release.jks
-            EOF
+            {
+              printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+              printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+              printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+              printf 'storeFile=%s\n' 'app/ci-release.jks'
+            } > android/key.properties
           else
             echo "Android release signing secrets are not configured; fallback signing will be used."
           fi
