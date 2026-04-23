@@ -210,6 +210,19 @@ jobs:
       - name: 构建 Windows arm64
         run: flutter build windows --release
 
+      - name: 定位 Windows arm64 构建目录
+        shell: pwsh
+        run: |
+          $windowsExecutables = Get-ChildItem -Path 'build\windows' -Filter 'sspu_all_in_one.exe' -Recurse
+          if ($windowsExecutables.Count -eq 0) {
+            Get-ChildItem -Path 'build\windows' -Recurse | Select-Object FullName
+            throw '未找到 Windows arm64 构建产物中的主程序。'
+          }
+
+          $bundlePath = $windowsExecutables[0].Directory.FullName
+          "WINDOWS_ARM64_BUNDLE_DIR=$bundlePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Windows arm64 bundle path: $bundlePath"
+
       - name: 安装 Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
@@ -218,14 +231,13 @@ jobs:
         shell: pwsh
         run: |
           $installerCompiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
-          $bundlePath = 'build\windows\arm64\runner\Release'
 
           if (-not (Test-Path $installerCompiler)) {
             throw "未找到 Inno Setup 编译器：$installerCompiler"
           }
 
-          if (-not (Test-Path $bundlePath)) {
-            throw "未找到 Windows arm64 构建目录：$bundlePath"
+          if (-not (Test-Path $env:WINDOWS_ARM64_BUNDLE_DIR)) {
+            throw "未找到 Windows arm64 构建目录：$env:WINDOWS_ARM64_BUNDLE_DIR"
           }
 
           New-Item -ItemType Directory -Force -Path dist | Out-Null
@@ -234,7 +246,7 @@ jobs:
       - name: 生成 Windows arm64 Portable ZIP
         shell: pwsh
         run: |
-          $bundlePath = 'build\windows\arm64\runner\Release'
+          $bundlePath = $env:WINDOWS_ARM64_BUNDLE_DIR
           $portableRoot = Join-Path $env:RUNNER_TEMP 'SSPU-All-in-One'
           $portableFile = "dist\SSPU-All-in-One-v${env:APP_VERSION}-windows-arm64-portable.zip"
 
