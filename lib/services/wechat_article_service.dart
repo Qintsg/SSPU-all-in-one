@@ -4,7 +4,7 @@
  * @Project : SSPU-all-in-one
  * @File : wechat_article_service.dart
  * @Author : Qintsg
- * @Date : 2026-07-20
+ * @Date : 2026-04-20
  */
 
 import '../models/message_item.dart';

@@ -1,7 +1,7 @@
 # 微信公众号平台方式 — 技术设计文档
 
-> 本文档为"第二种微信公众号文章获取方式"（公众号平台 API）的完整技术参考。  
-> 参照 [WeRSS / we-mp-rss](https://github.com/rachelos/we-mp-rss) 项目分析，在 Flutter/Dart 中实现。
+> 本文档为微信公众号文章获取方式（公众号平台 API）的完整技术参考。  
+> 当前实现基于微信公众平台后台接口在 Flutter/Dart 中完成。
 
 ---
 

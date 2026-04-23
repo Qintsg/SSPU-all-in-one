@@ -58,12 +58,6 @@ const List<_OpenSourceProject> _openSourceProjects = [
     url: 'https://hyperos.mi.com/font/zh',
   ),
   _OpenSourceProject(
-    name: 'WeWeRSS',
-    description: '公众号/服务号文章获取思路参考',
-    license: 'MIT',
-    url: 'https://github.com/cooderl/wewe-rss',
-  ),
-  _OpenSourceProject(
     name: 'window_manager',
     description: 'Flutter 桌面窗口管理',
     license: 'MIT',

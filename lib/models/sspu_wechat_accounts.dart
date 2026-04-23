@@ -4,7 +4,7 @@
  * @Project : SSPU-all-in-one
  * @File : sspu_wechat_accounts.dart
  * @Author : Qintsg
- * @Date : 2026-07-21
+ * @Date : 2026-04-21
  */
 
 /// SSPU 官方认可的微信公众号信息
