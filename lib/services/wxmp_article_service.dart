@@ -17,6 +17,7 @@ import '../models/message_item.dart';
 import 'message_state_service.dart';
 import 'storage_service.dart';
 import 'wxmp_auth_service.dart';
+import 'wxmp_config_service.dart';
 
 /// 公众号平台 API 错误码
 class WxmpApiError {
@@ -33,6 +34,7 @@ class WxmpArticleService {
 
   final WxmpAuthService _auth = WxmpAuthService.instance;
   final MessageStateService _stateService = MessageStateService.instance;
+  final WxmpConfigService _configService = WxmpConfigService.instance;
   final Dio _dio = Dio();
 
   /// 本地关注列表存储键（JSON：{fakeid: {name, alias, avatar}}）
@@ -43,12 +45,6 @@ class WxmpArticleService {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
 
-  /// 每个公众号默认获取的文章条数
-  static const int _perMpArticleCount = 5;
-
-  /// 请求间隔（毫秒），避免触发频率限制
-  static const int _requestDelayMs = 3000;
-
   // ==================== HTTP 请求 ====================
 
   /// 输出脱敏调试日志；Release 构建不输出。
@@ -58,12 +54,23 @@ class WxmpArticleService {
     }
   }
 
+  /// 读取配置失败时使用默认值，避免配置文件损坏影响扫码登录链路。
+  Future<WxmpConfig> _loadConfigOrDefault() async {
+    try {
+      return await _configService.loadConfig();
+    } catch (error) {
+      _debugLog('config fallback to defaults: $error');
+      return WxmpConfig.defaults();
+    }
+  }
+
   /// 构造标准请求头
   Future<Map<String, String>> _buildHeaders() async {
     final cookie = await _auth.getCookie();
+    final config = await _loadConfigOrDefault();
     return {
       'Cookie': cookie ?? '',
-      'User-Agent': _userAgent,
+      'User-Agent': config.userAgent.isEmpty ? _userAgent : config.userAgent,
       'Accept': 'application/json, text/javascript, */*; q=0.01',
       'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
       'X-Requested-With': 'XMLHttpRequest',
@@ -106,20 +113,25 @@ class WxmpArticleService {
     }
 
     final token = await _auth.getToken();
+    final config = await _loadConfigOrDefault();
     final headers = await _buildHeaders();
+    final queryParameters = <String, Object?>{
+      'action': 'search_biz',
+      'begin': begin,
+      'count': count,
+      'query': keyword,
+      'token': token,
+      'lang': 'zh_CN',
+      'f': 'json',
+      'ajax': '1',
+    };
+    if (config.appId.trim().isNotEmpty) {
+      queryParameters['appid'] = config.appId.trim();
+    }
 
     final response = await _dio.get(
       'https://mp.weixin.qq.com/cgi-bin/searchbiz',
-      queryParameters: {
-        'action': 'search_biz',
-        'begin': begin,
-        'count': count,
-        'query': keyword,
-        'token': token,
-        'lang': 'zh_CN',
-        'f': 'json',
-        'ajax': '1',
-      },
+      queryParameters: queryParameters,
       options: Options(headers: headers),
     );
 
@@ -158,21 +170,26 @@ class WxmpArticleService {
     }
 
     final token = await _auth.getToken();
+    final config = await _loadConfigOrDefault();
     final headers = await _buildHeaders();
+    final queryParameters = <String, Object?>{
+      'sub': 'list',
+      'sub_action': 'list_ex',
+      'begin': page * count,
+      'count': count,
+      'fakeid': fakeid,
+      'token': token,
+      'lang': 'zh_CN',
+      'f': 'json',
+      'ajax': 1,
+    };
+    if (config.appId.trim().isNotEmpty) {
+      queryParameters['appid'] = config.appId.trim();
+    }
 
     final response = await _dio.get(
       'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
-      queryParameters: {
-        'sub': 'list',
-        'sub_action': 'list_ex',
-        'begin': page * count,
-        'count': count,
-        'fakeid': fakeid,
-        'token': token,
-        'lang': 'zh_CN',
-        'f': 'json',
-        'ajax': 1,
-      },
+      queryParameters: queryParameters,
       options: Options(headers: headers),
     );
 
@@ -230,13 +247,16 @@ class WxmpArticleService {
         knownMessageIds ??
         (await _stateService.loadMessages()).map((msg) => msg.id).toSet();
     final allMessages = <MessageItem>[];
+    final config = await _loadConfigOrDefault();
+    final perRequestLimit = config.perRequestArticleCount;
+    final requestDelayMs = config.requestDelayMs;
     for (final entry in followedMps.entries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
       final mpName = mpInfo['name'] ?? fakeid;
-      final perRequestCount = maxCount > 0 && maxCount < _perMpArticleCount
+      final perRequestCount = maxCount > 0 && maxCount < perRequestLimit
           ? maxCount
-          : _perMpArticleCount;
+          : perRequestLimit;
       var fetchedForMp = 0;
       var page = 0;
       var reachedKnownMessage = false;
@@ -267,13 +287,13 @@ class WxmpArticleService {
 
           // 翻页请求同样需要限速，避免单个公众号连续请求触发平台限制。
           if (fetchedForMp < maxCount && !reachedKnownMessage) {
-            await Future.delayed(const Duration(milliseconds: _requestDelayMs));
+            await Future.delayed(Duration(milliseconds: requestDelayMs));
           }
         }
 
         // 请求间隔，避免频率限制
-        if (followedMps.length > 1) {
-          await Future.delayed(const Duration(milliseconds: _requestDelayMs));
+        if (followedMps.length > 1 && requestDelayMs > 0) {
+          await Future.delayed(Duration(milliseconds: requestDelayMs));
         }
       } on WxmpSessionExpiredException {
         _debugLog('refresh stopped: session expired');

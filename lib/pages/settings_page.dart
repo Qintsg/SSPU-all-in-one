@@ -25,6 +25,7 @@ import '../widgets/channel_list_section.dart';
 import '../services/wechat_article_service.dart';
 import '../services/wxmp_auth_service.dart';
 import '../services/wxmp_article_service.dart';
+import '../services/wxmp_config_service.dart';
 import '../models/sspu_wechat_accounts.dart';
 import '../theme/fluent_tokens.dart';
 import '../utils/webview_env.dart';
@@ -80,6 +81,9 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 公众号平台文章服务引用
   final WxmpArticleService _wxmpService = WxmpArticleService.instance;
 
+  /// 公众号平台配置文件服务引用
+  final WxmpConfigService _wxmpConfigService = WxmpConfigService.instance;
+
   /// 自动刷新服务引用，用于设置变更后即时重载微信公众号定时器。
   final AutoRefreshService _autoRefresh = AutoRefreshService.instance;
 
@@ -88,6 +92,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 公众号平台认证诊断状态。
   WxmpAuthStatus? _wxmpAuthStatus;
+
+  /// 公众号平台配置文件路径。
+  String _wxmpConfigPath = '';
+
+  /// 公众号平台配置文件状态提示。
+  String _wxmpConfigMessage = '';
 
   /// 微信推文获取总开关。
   bool _wechatChannelEnabled = false;
@@ -146,7 +156,22 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndSM = await _messageState.getDndStartMinute();
     final dndEH = await _messageState.getDndEndHour();
     final dndEM = await _messageState.getDndEndMinute();
-    final wxmpAuthStatus = await _wxmpAuth.getAuthStatus();
+    var wxmpConfigPath = '';
+    var wxmpConfigMessage = '配置文件已就绪';
+    try {
+      wxmpConfigPath = await _wxmpConfigService.ensureConfigFile().timeout(
+        const Duration(seconds: 2),
+      );
+    } catch (error) {
+      wxmpConfigMessage = '配置文件初始化失败：$error';
+    }
+    final wxmpAuthStatus = await _wxmpAuth.getAuthStatus().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => const WxmpAuthStatus(
+        state: WxmpAuthState.missingCookie,
+        lastUpdate: null,
+      ),
+    );
     final wxmpHasAuth = wxmpAuthStatus.isUsable;
     final wechatEnabled = await _messageState.isChannelEnabled(
       'wechat_public',
@@ -177,6 +202,8 @@ class _SettingsPageState extends State<SettingsPage> {
         _dndEndMinute = dndEM;
         _wxmpAuthenticated = wxmpHasAuth;
         _wxmpAuthStatus = wxmpAuthStatus;
+        _wxmpConfigPath = wxmpConfigPath;
+        _wxmpConfigMessage = wxmpConfigMessage;
         _wechatChannelEnabled = wechatEnabled;
         _wechatAutoRefreshEnabled = wechatAutoEnabled;
         _wechatRefreshInterval = wechatInterval;
@@ -264,6 +291,42 @@ class _SettingsPageState extends State<SettingsPage> {
     await _messageState.setChannelAutoFetchCount('wechat_public', normalized);
     setState(() => _wechatAutoFetchCount = normalized);
     await _autoRefresh.reloadChannel('wechat_public');
+  }
+
+  /// 打开微信公众号平台配置文件。
+  Future<void> _openWxmpConfigFile() async {
+    try {
+      await _wxmpConfigService.openConfigFile();
+      final configPath = await _wxmpConfigService.getConfigPath();
+      if (mounted) {
+        setState(() {
+          _wxmpConfigPath = configPath;
+          _wxmpConfigMessage = '已打开配置文件';
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _wxmpConfigMessage = '打开配置文件失败：$error');
+    }
+  }
+
+  /// 重新加载微信公众号平台配置文件。
+  Future<void> _reloadWxmpConfigFile() async {
+    try {
+      final config = await _wxmpConfigService.loadConfig();
+      final authStatus = await _wxmpAuth.getAuthStatus();
+      if (mounted) {
+        setState(() {
+          _wxmpAuthenticated = authStatus.isUsable;
+          _wxmpAuthStatus = authStatus;
+          _wxmpConfigMessage =
+              '已重新加载：单次请求 ${config.perRequestArticleCount} 条，间隔 ${config.requestDelayMs}ms';
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _wxmpConfigMessage = '重新加载配置失败：$error');
+    }
   }
 
   @override
@@ -819,6 +882,8 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: FluentSpacing.l),
         _buildWechatFetchMethodCard(context),
         const SizedBox(height: FluentSpacing.l),
+        _buildWxmpConfigCard(context),
+        const SizedBox(height: FluentSpacing.l),
         ..._buildWxmpAuthUI(context),
         _buildSspuRecommendedAccounts(context),
       ],
@@ -958,6 +1023,66 @@ class _SettingsPageState extends State<SettingsPage> {
             ToggleSwitch(
               checked: _wechatChannelEnabled,
               onChanged: _onWechatChannelToggled,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建可手动编辑的公众号平台配置文件入口。
+  Widget _buildWxmpConfigCard(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(FluentSpacing.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('高级配置文件', style: theme.typography.bodyStrong),
+            const SizedBox(height: FluentSpacing.xs),
+            Text(
+              '可手动填写 Cookie、Token、AppID、User-Agent、请求条数和请求间隔。'
+              '配置文件中的 Cookie / Token 会优先于扫码登录信息使用。',
+              style: theme.typography.caption,
+            ),
+            const SizedBox(height: FluentSpacing.s),
+            SelectableText(
+              _wxmpConfigPath.isEmpty ? '配置文件路径加载中...' : _wxmpConfigPath,
+              style: theme.typography.caption?.copyWith(
+                color: theme.resources.textFillColorSecondary,
+              ),
+            ),
+            if (_wxmpConfigMessage.isNotEmpty) ...[
+              const SizedBox(height: FluentSpacing.xs),
+              Text(
+                _wxmpConfigMessage,
+                style: theme.typography.caption?.copyWith(
+                  color: theme.resources.textFillColorSecondary,
+                ),
+              ),
+            ],
+            const SizedBox(height: FluentSpacing.m),
+            Wrap(
+              spacing: FluentSpacing.s,
+              runSpacing: FluentSpacing.s,
+              children: [
+                FilledButton(
+                  onPressed: _openWxmpConfigFile,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.open_in_new_window, size: 14),
+                      SizedBox(width: 6),
+                      Text('打开配置文件'),
+                    ],
+                  ),
+                ),
+                Button(
+                  onPressed: _reloadWxmpConfigFile,
+                  child: const Text('重新加载配置'),
+                ),
+              ],
             ),
           ],
         ),
