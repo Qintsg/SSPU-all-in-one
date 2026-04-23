@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import '../services/wxmp_article_service.dart';
 import '../services/wxmp_auth_service.dart';
 import '../theme/fluent_tokens.dart';
 
@@ -102,6 +103,23 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
 
       // 保存到 WxmpAuthService
       await WxmpAuthService.instance.saveAuth(cookieStr, token);
+      final validation = await WxmpArticleService.instance.validateAuth();
+      if (!validation.isValid) {
+        debugPrint(
+          '[WxmpLogin] 认证保存后校验失败: ${validation.message}, Cookie 数量: ${cookieMap.length}, Cookie 键名: '
+          '${cookieNames.toList()..sort()}',
+        );
+        if (mounted) {
+          setState(() {
+            _extracting = false;
+            _result = _LoginResult(
+              success: false,
+              message: '认证校验失败：${validation.message}',
+            );
+          });
+        }
+        return;
+      }
 
       debugPrint(
         '[WxmpLogin] 认证保存成功, Cookie 数量: ${cookieMap.length}, Cookie 键名: '
