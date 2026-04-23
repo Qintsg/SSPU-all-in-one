@@ -80,6 +80,7 @@
 - 收窄“刷新官网消息”的手动刷新范围，避免微信公众号抓取串入官网刷新链路导致信息中心长时间卡在加载状态
 - 为 macOS Debug / Release entitlements 补充 `com.apple.security.network.client`，修复官网刷新与内嵌 WebView 页面统一空白的问题
 - 修复 Release 版本解析会丢失 `+BUILD`、Tag 与资产命名不一致、Web / Linux / Android 公开产物不符合发布规则的问题
+- 修复最新 Release workflow 中 Windows arm64 / Linux arm64 依赖 `subosito/flutter-action` 获取不存在的 stable arm64 bundle 而失败的问题，改为从官方 `flutter/flutter` 仓库检出指定 tag 并在 runner 本机预缓存 SDK
 
 ## [0.1.5-alpha] - 2026-04-21
 
