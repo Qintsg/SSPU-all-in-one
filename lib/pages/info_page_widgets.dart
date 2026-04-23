@@ -202,7 +202,10 @@ Widget _buildInfoFilterBar(
       state._buildFilterCombo<MessageSourceType>(
         label: '来源类型',
         value: state._filterSourceType,
-        items: MessageSourceType.values,
+        items: const [
+          MessageSourceType.schoolWebsite,
+          MessageSourceType.wechatPublic,
+        ],
         itemLabel: (item) => item.label,
         onChanged: (value) {
           state._filterSourceType = value;
@@ -216,6 +219,7 @@ Widget _buildInfoFilterBar(
         value: state._filterSourceName,
         items: availableSourceNames,
         itemLabel: (item) => item.label,
+        enabled: state._filterSourceType != null,
         onChanged: (value) {
           state._filterSourceName = value;
           state._filterCategory = null;
@@ -227,6 +231,7 @@ Widget _buildInfoFilterBar(
         value: state._filterCategory,
         items: availableCategories,
         itemLabel: (item) => item.label,
+        enabled: state._filterSourceName != null,
         onChanged: (value) {
           state._filterCategory = value;
           state._applyFilters();
@@ -250,6 +255,7 @@ Widget _buildInfoFilterCombo<T>({
   required List<T> items,
   required String Function(T) itemLabel,
   required void Function(T?) onChanged,
+  bool enabled = true,
 }) {
   return ComboBox<T?>(
     value: value,
@@ -260,7 +266,7 @@ Widget _buildInfoFilterCombo<T>({
         (item) => ComboBoxItem<T?>(value: item, child: Text(itemLabel(item))),
       ),
     ],
-    onChanged: (selectedValue) => onChanged(selectedValue),
+    onChanged: enabled ? (selectedValue) => onChanged(selectedValue) : null,
   );
 }
 

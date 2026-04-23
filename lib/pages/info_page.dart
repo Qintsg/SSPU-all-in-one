@@ -419,12 +419,14 @@ class _InfoPageState extends State<InfoPage> {
     required List<T> items,
     required String Function(T) itemLabel,
     required void Function(T?) onChanged,
+    bool enabled = true,
   }) => _buildInfoFilterCombo(
     label: label,
     value: value,
     items: items,
     itemLabel: itemLabel,
     onChanged: onChanged,
+    enabled: enabled,
   );
 
   /// 构建消息列表

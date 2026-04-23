@@ -12,8 +12,8 @@ enum MessageSourceType {
   /// 学校官网
   schoolWebsite('学校官网'),
 
-  /// 微信公众号
-  wechatPublic('微信公众号'),
+  /// 微信推文
+  wechatPublic('微信推文'),
 
   /// 微信服务号
   wechatService('微信服务号');
@@ -149,8 +149,8 @@ enum MessageSourceName {
   /// 图书馆
   libCenter('图书馆'),
 
-  /// 微信公众号占位
-  wechatPublicPlaceholder('微信公众号'),
+  /// 微信推文占位
+  wechatPublicPlaceholder('微信推文'),
 
   /// 微信服务号占位
   wechatServicePlaceholder('微信服务号');

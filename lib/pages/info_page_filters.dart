@@ -221,7 +221,7 @@ int _getInfoTotalPages(_InfoPageState state) =>
     );
 
 List<MessageSourceName> _getInfoAvailableSourceNames(_InfoPageState state) {
-  if (state._filterSourceType == null) return MessageSourceName.values;
+  if (state._filterSourceType == null) return const [];
   switch (state._filterSourceType!) {
     case MessageSourceType.schoolWebsite:
       return [
@@ -275,7 +275,7 @@ List<MessageSourceName> _getInfoAvailableSourceNames(_InfoPageState state) {
 }
 
 List<MessageCategory> _getInfoAvailableCategories(_InfoPageState state) {
-  if (state._filterSourceName == null) return MessageCategory.values;
+  if (state._filterSourceName == null) return const [];
   switch (state._filterSourceName!) {
     case MessageSourceName.infoDisclosure:
       return [MessageCategory.latestInfo, MessageCategory.notice];
