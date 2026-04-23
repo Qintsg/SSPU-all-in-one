@@ -1,0 +1,155 @@
+site_groups:
+  - category: 常用入口
+    items:
+      - name: 学校官网
+        url: https://www.sspu.edu.cn/
+      - name: 超星学习通
+        url: https://i.chaoxing.com/
+      - name: OA办公
+        url: https://oa.sspu.edu.cn/
+      - name: SSPU邮箱
+        url: https://mail.sspu.edu.cn/
+      - name: 信息公开网
+        url: https://xxgk.sspu.edu.cn/
+      - name: 体育综合查询
+        url: https://tygl.sspu.edu.cn/sportscore
+      - name: 智慧图书馆
+        url: https://libraryuse.sspu.edu.cn/
+      - name: 网络教学平台（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=wljxpt
+      - name: 学工报表系统（第二课堂学分查询）（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=xgreport
+      - name: 本专科教务系统（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=bzkjw
+      - name: 研究生教务系统（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=yjsglxtsnew
+      - name: 大学生创新创业（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=dxscxcy
+      - name: 校园卡（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=xykxt
+      - name: 财务系统（OA）
+        url: https://oa.sspu.edu.cn/interface/Entrance.jsp?id=cwxt1
+
+  - category: 教学学习
+    items:
+      - name: 教务处
+        url: https://jwc.sspu.edu.cn/
+      - name: 图书馆（档案馆）
+        url: https://library.sspu.edu.cn/
+      - name: 课程思政
+        url: https://kcsz.sspu.edu.cn/
+      - name: 工创中心
+        url: https://training.sspu.edu.cn/
+      - name: 智能制造工厂
+        url: https://lsmf.sspu.edu.cn/
+
+  - category: 学院与教学单位
+    items:
+      - name: 体育部
+        url: https://pe2016.sspu.edu.cn/
+      - name: 计算机与信息工程学院
+        url: https://jxxy.sspu.edu.cn/
+      - name: 智能制造与控制工程学院
+        url: https://imce.sspu.edu.cn/
+      - name: 资源与环境工程学院
+        url: https://zihuan.sspu.edu.cn/
+      - name: 能源与材料学院
+        url: https://sem.sspu.edu.cn/
+      - name: 集成电路学院
+        url: https://sic.sspu.edu.cn/
+      - name: 智能医学与监控工程学院
+        url: https://imhe.sspu.edu.cn/
+      - name: 经济与管理学院
+        url: https://jjglxy.sspu.edu.cn/
+      - name: 语言与文化传播学院
+        url: https://wywh.sspu.edu.cn/main.htm
+      - name: 数理与统计学院
+        url: https://sltj.sspu.edu.cn/
+      - name: 艺术与设计学院
+        url: https://design.sspu.edu.cn/
+      - name: 职业技术教师教育学院
+        url: https://stes.sspu.edu.cn/
+      - name: 职业技术学院
+        url: https://cive.sspu.edu.cn/
+      - name: 马克思主义学院
+        url: https://mkszyxy.sspu.edu.cn/
+      - name: 继续教育学院
+        url: https://adult.sspu.edu.cn/
+      - name: 艺术教育中心
+        url: https://education.sspu.edu.cn/
+      - name: 创新创业教育中心
+        url: https://cxcy.sspu.edu.cn/
+
+  - category: 学生事务与招生就业
+    items:
+      - name: 学生处
+        url: https://xsc.sspu.edu.cn/main.htm
+      - name: 研究生处
+        url: https://yjs.sspu.edu.cn/
+      - name: 招生办
+        url: https://zsb.sspu.edu.cn/
+      - name: 智慧就业创业中心
+        url: https://career.sspu.edu.cn/
+      - name: 人才招聘
+        url: https://hr.sspu.edu.cn/
+
+  - category: 办事服务
+    items:
+      - name: 信息技术中心
+        url: https://itc.sspu.edu.cn/
+      - name: 后勤服务中心
+        url: https://hqgl.sspu.edu.cn/main.htm
+      - name: 保卫处
+        url: https://bwwz.sspu.edu.cn/
+      - name: 财务处
+        url: https://cwc.sspu.edu.cn/
+      - name: 资产与实验室管理处
+        url: https://zc.sspu.edu.cn/
+      - name: 基建处
+        url: https://xqjsb.sspu.edu.cn/
+      - name: 校长办公室
+        url: https://xb.sspu.edu.cn/
+      - name: 发展规划处
+        url: https://fzghc.sspu.edu.cn/
+      - name: 人事处
+        url: https://hr.sspu.edu.cn/
+      - name: 教学质量管理办公室
+        url: https://zgb.sspu.edu.cn/
+      - name: 科研处
+        url: https://kyc.sspu.edu.cn/
+      - name: 审计处
+        url: https://sjc.sspu.edu.cn/
+      - name: 产学研合作办公室
+        url: https://cxyb.sspu.edu.cn/
+      - name: 校友会办公室
+        url: https://xyh.sspu.edu.cn/
+      - name: 离退休工作处
+        url: https://ltx.sspu.edu.cn/
+
+  - category: 国际交流
+    items:
+      - name: 国际交流处
+        url: https://gjjlc.sspu.edu.cn/
+      - name: 留学生事务办
+        url: https://lxs.sspu.edu.cn/
+      - name: 国际教育中心
+        url: https://sie.sspu.edu.cn/
+
+  - category: 党群与宣传
+    items:
+      - name: 新闻网（党委宣传部）
+        url: https://xww.sspu.edu.cn/
+      - name: 纪委办公室
+        url: https://jwjc.sspu.edu.cn/
+      - name: 党委办公室
+        url: https://db.sspu.edu.cn/
+      - name: 党委组织部
+        url: https://zzb.sspu.edu.cn/
+      - name: 党委统战部
+        url: https://tzb.sspu.edu.cn/
+      - name: 团委
+        url: https://tuanwei.sspu.edu.cn/
+      - name: 工会
+        url: https://gh.sspu.edu.cn/
+      - name: 妇委会
+        url: https://fwh.sspu.edu.cn/

@@ -4,7 +4,7 @@
  * @Project : SSPU-all-in-one
  * @File : message_item.dart
  * @Author : Qintsg
- * @Date : 2026-07-19
+ * @Date : 2026-04-19
  */
 
 /// 消息来源类型（tag1）
@@ -12,8 +12,8 @@ enum MessageSourceType {
   /// 学校官网
   schoolWebsite('学校官网'),
 
-  /// 微信公众号
-  wechatPublic('微信公众号'),
+  /// 微信推文
+  wechatPublic('微信推文'),
 
   /// 微信服务号
   wechatService('微信服务号');
@@ -44,14 +44,50 @@ enum MessageSourceName {
   /// 保卫处
   securityDept('保卫处'),
 
-  /// 校区建设办
-  construction('校区建设办'),
+  /// 基建处
+  construction('基建处'),
 
   /// 新闻网
   newsCenter('新闻网'),
 
   /// 学生处
   studentAffairs('学生处'),
+
+  /// 后勤服务中心
+  logisticsCenter('后勤服务中心'),
+
+  /// 外国留学生事务办公室
+  foreignStudentOffice('外国留学生事务办公室'),
+
+  /// 国际交流处
+  intlExchangeOffice('国际交流处'),
+
+  /// 招生办
+  admissionsOffice('招生办'),
+
+  /// 人事处
+  hrOffice('人事处'),
+
+  /// 科研处
+  researchOffice('科研处'),
+
+  /// 校工会
+  union('校工会'),
+
+  /// 党委组织部
+  partyOrgDept('党委组织部'),
+
+  /// 党委统战部
+  unitedFrontDept('党委统战部'),
+
+  /// 党委办公室
+  partyOffice('党委办公室'),
+
+  /// 校团委
+  youthLeague('校团委'),
+
+  /// 资产与实验管理处
+  assetsLabOffice('资产与实验管理处'),
 
   /// 计算机与信息工程学院
   collegeCs('计算机与信息工程学院'),
@@ -104,14 +140,17 @@ enum MessageSourceName {
   /// 创新创业教育中心
   centerInnov('创新创业教育中心'),
 
+  /// 工程训练与创新教育中心
+  centerTraining('工程训练与创新教育中心'),
+
   /// 研究生处
   graduate('研究生处'),
 
   /// 图书馆
   libCenter('图书馆'),
 
-  /// 微信公众号占位
-  wechatPublicPlaceholder('微信公众号'),
+  /// 微信推文占位
+  wechatPublicPlaceholder('微信推文'),
 
   /// 微信服务号占位
   wechatServicePlaceholder('微信服务号');
@@ -124,44 +163,50 @@ enum MessageSourceName {
 
 /// 消息内容分类（tag3）
 enum MessageCategory {
-  /// 最新公开信息 (3148)
-  latestInfo('最新公开信息'),
+  /// 公开信息 (3148，对应网站“最新公开信息”)
+  latestInfo('公开信息'),
 
   /// 通知公示 (3149)
   notice('通知公示'),
 
   /// 教务处学生专栏 (897)
-  jwcStudent('教务处学生专栏'),
+  jwcStudent('学生专栏'),
 
   /// 教务处教师专栏 (898)
-  jwcTeacher('教务处教师专栏'),
+  jwcTeacher('教师专栏'),
 
-  /// 信息技术中心资讯 (zxxx)
-  itcNews('信息技术中心'),
+  /// 信息技术中心消息 (zxxx)
+  itcNews('消息'),
+
+  /// 教务处教学动态 (895)
+  jwcTeaching('教学动态'),
+
+  /// 学校官网学校新闻 (2964)
+  sspuNews('学校新闻'),
 
   /// 学校官网通知公告 (2965)
   sspuNotice('学校通知公告'),
 
-  /// 学校官网学术活动讲座 (xsjz)
-  sspuActivity('学术活动讲座'),
+  /// 学校官网校内活动 (xsjz)
+  sspuActivity('校内活动'),
 
   /// 体育部通知公告 (342)
-  sportsNotice('体育部通知'),
+  sportsNotice('通知公告'),
 
-  /// 体育部赛事通知 (343)
-  sportsEvent('体育赛事'),
+  /// 体育部部门动态 (343)
+  sportsEvent('部门动态'),
 
-  /// 保卫处平安动态 (1019)
-  securityNews('平安动态'),
+  /// 保卫处动态/通知 (1019)
+  securityNews('动态/通知'),
 
   /// 保卫处宣教专栏 (1023)
-  securityEducation('安全宣教'),
+  securityEducation('宣教专栏'),
 
-  /// 校区建设办要闻 (405)
+  /// 基建处建设要闻 (405)
   constructionNews('建设要闻'),
 
-  /// 校区建设办通知 (406)
-  constructionNotice('建设通知'),
+  /// 基建处通知公告 (406)
+  constructionNotice('通知公告'),
 
   /// 新闻网综合新闻 (1432)
   campusNews('综合新闻'),
@@ -170,64 +215,259 @@ enum MessageCategory {
   studentNews('学工要闻'),
 
   /// 学生处通知公告 (490)
-  studentNotice('学生通知'),
+  studentNotice('通知公告'),
 
-  /// 计算机与信息工程学院动态
-  collegeCsNews('计信学院动态'),
+  /// 后勤服务中心通知
+  logisticsNotice('通知'),
 
-  /// 智能制造与控制工程学院动态
-  collegeImNews('智控学院动态'),
+  /// 后勤服务中心新闻动态
+  logisticsNews('新闻动态'),
 
-  /// 资源与环境工程学院动态
-  collegeReNews('资环学院动态'),
+  /// 外国留学生事务办公室公告
+  foreignStudentNotice('公告'),
 
-  /// 能源与材料学院动态
-  collegeEmNews('能材学院动态'),
+  /// 外国留学生事务办公室新闻
+  foreignStudentNews('新闻'),
 
-  /// 集成电路学院动态
-  collegeIcNews('集成电路学院动态'),
+  /// 国际交流处各项新闻
+  intlExchangeNews('各项新闻'),
 
-  /// 智能医学与健康工程学院动态
-  collegeImheNews('智医学院动态'),
+  /// 国际交流处通知公告
+  intlExchangeNotice('通知公告'),
 
-  /// 经济与管理学院动态
-  collegeEconNews('经管学院动态'),
+  /// 招生办招生动态
+  admissionsNews('招生动态'),
 
-  /// 语言与文化传播学院动态
-  collegeLangNews('文传学院动态'),
+  /// 人事处新闻动态
+  hrNews('新闻动态'),
 
-  /// 数理与统计学院动态
-  collegeMathNews('数统学院动态'),
+  /// 人事处人才招聘
+  hrRecruitment('人才招聘'),
 
-  /// 艺术与设计学院动态
-  collegeArtNews('艺设学院动态'),
+  /// 人事处通知公告
+  hrNotice('通知公告'),
 
-  /// 职业技术教师教育学院动态
-  collegeVteNews('职师学院动态'),
+  /// 科研处科研信息
+  researchInfo('科研信息'),
+
+  /// 科研处科研公告
+  researchNotice('科研公告'),
+
+  /// 科研处科研成果喜讯
+  researchAchievement('科研成果喜讯'),
+
+  /// 校工会工会动态
+  unionNews('工会动态'),
+
+  /// 校工会党建引领
+  unionPartyLeadership('党建引领'),
+
+  /// 校工会公告通知
+  unionNotice('公告通知'),
+
+  /// 党委组织部党建动态
+  partyOrgNews('党建动态'),
+
+  /// 党委组织部通知公告
+  partyOrgNotice('通知公告'),
+
+  /// 党委统战部工作动态
+  unitedFrontNews('工作动态'),
+
+  /// 党委统战部党派之声
+  unitedFrontVoice('党派之声'),
+
+  /// 党委统战部团体风采
+  unitedFrontStyle('团体风采'),
+
+  /// 党委办公室工作动态
+  partyOfficeNews('工作动态'),
+
+  /// 校团委工作要讯
+  youthLeagueHighlights('工作要讯'),
+
+  /// 校团委通知公告
+  youthLeagueNotice('通知公告'),
+
+  /// 校团委基层动态
+  youthLeagueGrassroots('基层动态'),
+
+  /// 资产与实验管理处部门新闻
+  assetsLabNews('部门新闻'),
+
+  /// 资产与实验管理处通知公告
+  assetsLabNotice('通知公告'),
+
+  /// 计算机与信息工程学院工作动态
+  collegeCsNews('工作动态'),
+
+  /// 计算机与信息工程学院教师工作
+  collegeCsTeacherWork('教师工作'),
+
+  /// 计算机与信息工程学院学生工作
+  collegeCsStudentWork('学生工作'),
+
+  /// 智能制造与控制工程学院学院动态
+  collegeImNews('学院动态'),
+
+  /// 智能制造与控制工程学院教学科研
+  collegeImTeachingResearch('教学科研'),
+
+  /// 智能制造与控制工程学院通知公告
+  collegeImNotice('通知公告'),
+
+  /// 资源与环境工程学院新闻资讯
+  collegeReNews('新闻资讯'),
+
+  /// 资源与环境工程学院通知公告
+  collegeReNotice('通知公告'),
+
+  /// 资源与环境工程学院科研与服务
+  collegeReResearchService('科研与服务'),
+
+  /// 资源与环境工程学院党建思政
+  collegeRePartyIdeology('党建思政'),
+
+  /// 能源与材料学院新闻资讯
+  collegeEmNews('新闻资讯'),
+
+  /// 能源与材料学院通知与公告
+  collegeEmNotice('通知与公告'),
+
+  /// 能源与材料学院育人园地
+  collegeEmStudentDevelopment('育人园地'),
+
+  /// 能源与材料学院科学研究
+  collegeEmResearch('科学研究'),
+
+  /// 集成电路学院学院动态
+  collegeIcNews('学院动态'),
+
+  /// 集成电路学院通知公告
+  collegeIcNotice('通知公告'),
+
+  /// 集成电路学院学术活动
+  collegeIcAcademic('学术活动'),
+
+  /// 集成电路学院科研动态
+  collegeIcResearch('科研动态'),
+
+  /// 智能医学与健康工程学院学院新闻
+  collegeImheNews('学院新闻'),
+
+  /// 智能医学与健康工程学院通知公告
+  collegeImheNotice('通知公告'),
+
+  /// 经济与管理学院学院动态
+  collegeEconNews('学院动态'),
+
+  /// 经济与管理学院通知公告
+  collegeEconNotice('通知公告'),
+
+  /// 经济与管理学院育人园地
+  collegeEconStudentDevelopment('育人园地'),
+
+  /// 经济与管理学院党群引领
+  collegeEconPartyLeadership('党群引领'),
+
+  /// 语言与文化传播学院新闻动态
+  collegeLangNews('新闻动态'),
+
+  /// 语言与文化传播学院学院公告
+  collegeLangNotice('学院公告'),
+
+  /// 语言与文化传播学院学生活动
+  collegeLangStudentActivities('学生活动'),
+
+  /// 语言与文化传播学院讲座信息
+  collegeLangLecture('讲座信息'),
+
+  /// 数理与统计学院学院新闻
+  collegeMathNews('学院新闻'),
+
+  /// 数理与统计学院学院公告
+  collegeMathNotice('学院公告'),
+
+  /// 数理与统计学院学术动态
+  collegeMathAcademic('学术动态'),
+
+  /// 数理与统计学院育人园地
+  collegeMathStudentDevelopment('育人园地'),
+
+  /// 艺术与设计学院学院动态
+  collegeArtNews('学院动态'),
+
+  /// 职业技术教师教育学院新闻动态
+  collegeVteNews('新闻动态'),
+
+  /// 职业技术教师教育学院通知公告
+  collegeVteNotice('通知公告'),
 
   /// 职业技术学院动态
-  collegeVtNews('职技学院动态'),
+  collegeVtNews('学院新闻'),
+
+  /// 职业技术学院学院公告
+  collegeVtNotice('学院公告'),
 
   /// 马克思主义学院动态
-  collegeMarxNews('马院动态'),
+  collegeMarxNews('学院新闻'),
+
+  /// 马克思主义学院通知公告
+  collegeMarxNotice('通知公告'),
+
+  /// 马克思主义学院学术科研
+  collegeMarxResearch('学术科研'),
+
+  /// 马克思主义学院教育教学
+  collegeMarxTeaching('教育教学'),
 
   /// 继续教育学院动态
-  collegeCeNews('继教学院动态'),
+  collegeCeNews('学院新闻'),
 
-  /// 艺术教育中心动态
-  centerArtEduNews('艺教中心动态'),
+  /// 继续教育学院学院公告
+  collegeCeNotice('学院公告'),
 
-  /// 国际教育中心动态
-  centerIntlNews('国教中心动态'),
+  /// 艺术教育中心新闻动态
+  centerArtEduNews('新闻动态'),
 
-  /// 创新创业教育中心动态
-  centerInnovNews('双创中心动态'),
+  /// 艺术教育中心讲座演出
+  centerArtEduLecture('讲座演出'),
+
+  /// 国际教育中心新闻
+  centerIntlNews('新闻'),
+
+  /// 国际教育中心公告
+  centerIntlNotice('公告'),
+
+  /// 创新创业教育中心双创教育
+  centerInnovNews('双创教育'),
+
+  /// 创新创业教育中心通知公告
+  centerInnovNotice('通知公告'),
+
+  /// 创新创业教育中心实践竞赛
+  centerInnovCompetition('实践竞赛'),
+
+  /// 创新创业教育中心创业实践
+  centerInnovPractice('创业实践'),
+
+  /// 工程训练与创新教育中心中心动态
+  centerTrainingNews('中心动态'),
+
+  /// 工程训练与创新教育中心通知公告
+  centerTrainingNotice('通知公告'),
 
   /// 研究生处动态
-  graduateNews('研究生处动态'),
+  graduateNews('动态'),
 
-  /// 图书馆通知
-  libCenterNews('图书馆通知'),
+  /// 图书馆新闻动态
+  libCenterNews('新闻动态'),
+
+  /// 图书馆通知公告
+  libCenterNotice('通知公告'),
+
+  /// 图书馆讲座培训
+  libCenterLecture('讲座培训'),
 
   /// 微信推文占位
   wechatArticle('微信推文');
@@ -323,7 +563,8 @@ class MessageItem {
   /// 当天消息返回当前时间，非当天消息返回该日 00:00
   static int computeTimestamp(String date) {
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     if (date == today) {
       return now.millisecondsSinceEpoch;
     }

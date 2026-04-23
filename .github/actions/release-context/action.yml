@@ -1,0 +1,71 @@
+name: release-context
+description: 解析 pubspec.yaml 中的发布版本并输出 release 上下文
+
+inputs:
+  pubspec-path:
+    description: pubspec.yaml 文件路径
+    required: false
+    default: pubspec.yaml
+
+outputs:
+  version:
+    description: 完整版本号，保留 +BUILD
+    value: ${{ steps.parse.outputs.version }}
+  version_core:
+    description: 不含 +BUILD 的版本主体
+    value: ${{ steps.parse.outputs.version_core }}
+  channel:
+    description: 发布通道，stable / alpha / beta / rc
+    value: ${{ steps.parse.outputs.channel }}
+  build_number:
+    description: 构建号
+    value: ${{ steps.parse.outputs.build_number }}
+  tag:
+    description: Git Tag
+    value: ${{ steps.parse.outputs.tag }}
+  prerelease:
+    description: 是否为预发布
+    value: ${{ steps.parse.outputs.prerelease }}
+  release_title:
+    description: GitHub Release 标题
+    value: ${{ steps.parse.outputs.release_title }}
+
+runs:
+  using: composite
+  steps:
+    - id: parse
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        version_line="$(grep -E '^version:' '${{ inputs.pubspec-path }}' | head -n 1)"
+        if [[ -z "$version_line" ]]; then
+          echo "未在 ${{ inputs.pubspec-path }} 中找到 version 字段。" >&2
+          exit 1
+        fi
+
+        release_version="${version_line#version: }"
+        if [[ ! "$release_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-(alpha|beta|rc))?\+([1-9][0-9]*)$ ]]; then
+          echo "版本号不符合发布规范：$release_version" >&2
+          exit 1
+        fi
+
+        version_core="${release_version%%+*}"
+        build_number="${BASH_REMATCH[4]}"
+        channel="${BASH_REMATCH[3]:-stable}"
+        tag="v${version_core}"
+        prerelease=false
+
+        if [[ "$channel" != "stable" ]]; then
+          prerelease=true
+        fi
+
+        {
+          echo "version=$release_version"
+          echo "version_core=$version_core"
+          echo "build_number=$build_number"
+          echo "channel=$channel"
+          echo "tag=$tag"
+          echo "prerelease=$prerelease"
+          echo "release_title=SSPU All-in-One $tag ($release_version)"
+        } >> "$GITHUB_OUTPUT"

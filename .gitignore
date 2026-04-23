@@ -72,8 +72,6 @@ app.*.map.json
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
 **/macos/Flutter/ephemeral/
-**/macos/Flutter/Flutter-Debug.xcconfig
-**/macos/Flutter/Flutter-Release.xcconfig
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 
 # Linux

@@ -3,6 +3,7 @@
 #define AppExeName "sspu_all_in_one.exe"
 #define AppVersion GetEnv("APP_VERSION")
 #define WorkspaceDir GetEnv("GITHUB_WORKSPACE")
+#define BundleDir GetEnv("WINDOWS_ARM64_BUNDLE_DIR")
 
 [Setup]
 AppId={{2E2255D6-4905-4708-A6B7-B3F70E04F3A0}
@@ -13,7 +14,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 OutputDir={#WorkspaceDir}\dist
-OutputBaseFilename=sspu-all-in-one-windows-arm64-setup
+OutputBaseFilename=SSPU-All-in-One-v{#AppVersion}-windows-arm64-installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -29,7 +30,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#WorkspaceDir}\build\windows\arm64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"

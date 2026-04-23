@@ -163,6 +163,9 @@ flutter test --coverage
 
 ## 7. 构建发布包
 
+发布版本号、Tag、GitHub Release 资产命名、Release Notes 模板与平台清单，统一以 [docs/RELEASE.md](RELEASE.md) 为准。
+公开 Release 仍然通过带 `release` 标签的 PR merge 自动触发，版本号只读取 `pubspec.yaml`。
+
 ### 7.1 Android
 
 ```bash
@@ -176,7 +179,24 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-输出路径：`build/app/outputs/flutter-apk/`
+签名说明：
+
+- 仓库通过 `android/key.properties` 读取本地 Android release 签名配置
+- 可参考 `android/key.properties.example` 填写签名信息
+- 当前工作区已生成本机自签名 keystore：`android/app/sspu-release.jks`
+- `key.properties` 与 `.jks` 默认被 `.gitignore` 忽略，不会进入仓库
+- GitHub Actions 可通过 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 四个 Secrets 在运行时写入签名配置
+
+输出路径：
+
+- `build/app/outputs/flutter-apk/app-release.apk`
+- `build/app/outputs/bundle/release/app-release.aab`
+
+发布后使用：
+
+- `app-release.apk` 可直接安装到 Android 设备
+- `app-release.aab` 用于应用商店上传，不适合本地直接安装
+- GitHub Release 默认公开发布 `SSPU-All-in-One-v{version}-android-universal.apk`
 
 ### 7.2 iOS
 
@@ -207,7 +227,16 @@ python -m http.server 8080
 flutter build windows --release
 ```
 
-输出路径：`build/windows/x64/runner/Release/`
+输出路径：
+
+- `build/windows/x64/runner/Release/`
+- `build/windows/arm64/runner/Release/`
+
+发布后使用：
+
+- 需要连同整个 `Release/` 目录一起分发，不能只拷贝单个 `.exe`
+- 启动入口为 `sspu_all_in_one.exe`
+- GitHub Release 默认同时提供 x64 / arm64 的 installer 与 portable 产物
 
 ### 7.5 macOS 桌面
 
@@ -218,13 +247,54 @@ flutter build macos --release
 
 输出路径：`build/macos/Build/Products/Release/`
 
+发布后使用：
+
+- 分发生成的 `.app` 包
+- 若未做 Apple 签名与公证，首次运行可能需要在系统安全设置中手动允许
+- 当前 GitHub Release 默认产出未签名 DMG：`SSPU-All-in-One-v{version}-macos-universal-unsigned.dmg`
+
 ### 7.6 Linux 桌面
 
 ```bash
 flutter build linux --release
 ```
 
-输出路径：`build/linux/x64/release/bundle/`
+输出路径：
+
+- `build/linux/x64/release/bundle/`
+- `build/linux/arm64/release/bundle/`
+
+若使用 Release 压缩包运行，建议使用 `tar` 解压以保留 Unix 可执行权限：
+
+```bash
+tar -xzf sspu-all-in-one-linux-x64.tar.gz
+cd sspu-all-in-one-linux-x64
+./sspu_all_in_one
+```
+
+如果使用图形化解压工具后出现 `Permission denied`，请补一次可执行权限：
+
+```bash
+chmod +x sspu_all_in_one
+./sspu_all_in_one
+```
+
+若通过 GitHub Release 工作流发布，当前还会额外生成：
+
+- `SSPU-All-in-One-v{version}-linux-x64-appimage.AppImage`
+- `SSPU-All-in-One-v{version}-linux-x64-deb.deb`
+- `SSPU-All-in-One-v{version}-linux-x64-rpm.rpm`
+- `SSPU-All-in-One-v{version}-linux-x64-portable.tar.gz`
+- `SSPU-All-in-One-v{version}-linux-arm64-appimage.AppImage`
+- `SSPU-All-in-One-v{version}-linux-arm64-deb.deb`
+- `SSPU-All-in-One-v{version}-linux-arm64-rpm.rpm`
+- `SSPU-All-in-One-v{version}-linux-arm64-portable.tar.gz`
+
+面向 Debian / Ubuntu 及其衍生发行版，可直接使用：
+
+```bash
+sudo apt install ./SSPU-All-in-One-v{version}-linux-x64-deb.deb
+```
 
 ---
 
@@ -313,15 +383,23 @@ flutter --version
 flutter pub deps | Select-String "fluent_ui"
 ```
 
-### 10.4 shared_preferences 平台异常
+### 10.5 Android release 构建失败
 
-Desktop 平台（Windows/macOS/Linux）需要确保平台插件已正确注册。若出现 `MissingPluginException`：
+若 `flutter build apk --release` 提示缺少签名配置，请检查：
 
-```bash
-flutter clean
-flutter pub get
-flutter run
-```
+- `android/key.properties` 是否存在
+- `storeFile` 是否指向实际存在的 keystore 文件
+- `storePassword` / `keyPassword` / `keyAlias` 是否与 keystore 一致
+
+### 10.4 本地状态文件异常
+
+应用会将用户设置、认证信息、消息缓存和 WebView2 运行态统一写入 `~/.sspu-all-in-one/`。若状态文件损坏或需要重建本地状态，可先退出应用，备份后删除该目录中的对应文件，再重新启动应用。
+
+常用文件：
+
+- `app_state.json`：应用设置、消息缓存、已读状态、关注列表
+- `wxmp_config.toml`：微信公众号平台认证与高级抓取参数
+- `webview2/`：Windows WebView2 用户数据目录
 
 ---
 
@@ -331,9 +409,4 @@ flutter run
 2. **不要修改 `pubspec.lock`**：除非执行了 `flutter pub get/upgrade`
 3. **Windows 开发**：确保以管理员身份运行 Visual Studio Installer 安装 C++ 工作负载
 4. **Web 调试**：推荐使用 Chrome，其他浏览器可能存在兼容性差异
-5. **密码数据存储位置**：
-   - Android: SharedPreferences XML 文件
-   - iOS/macOS: NSUserDefaults
-   - Windows: 注册表
-   - Linux: 本地文件
-   - Web: localStorage
+5. **用户数据存储位置**：统一位于 `~/.sspu-all-in-one/`，包括密码哈希、设置项、消息缓存、微信公众号认证配置和 WebView2 运行态

@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: 发布规则文档
+    url: https://github.com/Qintsg/SSPU-all-in-one/blob/main/docs/RELEASE.md
+    about: 查看版本、Tag、资产命名、发布矩阵、Release Notes 与发布门槛。
   - name: 使用与排障文档
     url: https://github.com/Qintsg/SSPU-all-in-one/blob/main/docs/USAGE.md
     about: 先查看运行方式、环境要求与常见排障说明，再决定是否需要提交 Issue。

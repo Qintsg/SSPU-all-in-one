@@ -61,7 +61,9 @@ release-files:
   - changed-files:
       - any-glob-to-any-file:
           - '.github/workflows/release.yml'
+          - '.github/actions/**'
           - '.github/installer/**'
+          - 'scripts/release/**'
 
 governance:
   - changed-files:

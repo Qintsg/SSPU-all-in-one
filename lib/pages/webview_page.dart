@@ -4,7 +4,7 @@
  * @Project : SSPU-all-in-one
  * @File : webview_page.dart
  * @Author : Qintsg
- * @Date : 2026-07-19
+ * @Date : 2026-04-19
  */
 
 import 'package:flutter/foundation.dart';
@@ -67,6 +67,13 @@ class _WebViewPageState extends State<WebViewPage> {
     _currentUrl = widget.url;
   }
 
+  /// 判断链接是否可由内嵌 WebView 安全加载。
+  bool _isSupportedWebUrl(String url) {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || uri.host.isEmpty) return false;
+    return uri.scheme == 'http' || uri.scheme == 'https';
+  }
+
   /// 更新导航按钮状态（前进/后退可用性）
   Future<void> _updateNavigationState() async {
     if (_controller == null) return;
@@ -83,7 +90,9 @@ class _WebViewPageState extends State<WebViewPage> {
   /// 使用系统默认浏览器打开当前 URL（fallback 方案）
   Future<void> _fallbackToExternalBrowser() async {
     final uri = Uri.tryParse(_currentUrl);
-    if (uri != null) {
+    if (uri != null &&
+        uri.host.isNotEmpty &&
+        (uri.scheme == 'http' || uri.scheme == 'https')) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
@@ -117,6 +126,42 @@ class _WebViewPageState extends State<WebViewPage> {
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
+          ),
+        ),
+      );
+    }
+
+    if (!_isSupportedWebUrl(_currentUrl)) {
+      return ScaffoldPage(
+        header: PageHeader(
+          title: Text(widget.initialTitle),
+          commandBar: IconButton(
+            icon: const Icon(FluentIcons.chrome_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        content: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(FluentIcons.warning, size: 48, color: theme.inactiveColor),
+                const SizedBox(height: 12),
+                Text('链接无效，无法打开', style: theme.typography.bodyStrong),
+                const SizedBox(height: 8),
+                Text(
+                  _currentUrl,
+                  style: theme.typography.caption,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Button(
+                  child: const Text('返回'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
           ),
         ),
       );

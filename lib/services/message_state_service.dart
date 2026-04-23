@@ -4,12 +4,17 @@
  * @Project : SSPU-all-in-one
  * @File : message_state_service.dart
  * @Author : Qintsg
- * @Date : 2026-07-19
+ * @Date : 2026-04-19
  */
 
 import 'dart:convert';
+import '../models/channel_config.dart';
 import '../models/message_item.dart';
 import '../services/storage_service.dart';
+
+part 'message_state_service_legacy.dart';
+part 'message_state_service_notifications.dart';
+part 'message_state_service_messages.dart';
 
 /// 消息渠道配置键名
 class MessageChannelKeys {
@@ -66,10 +71,24 @@ class MessageChannelKeys {
 
 /// 消息状态管理服务（单例）
 /// 管理已读/未读状态持久化和渠道开关
-class MessageStateService {
+class MessageStateService
+    with
+        MessageStateServiceLegacyIntervals,
+        MessageStateServiceNotifications,
+        MessageStateServiceMessages {
   MessageStateService._();
 
   static final MessageStateService instance = MessageStateService._();
+
+  /// 渠道默认配置索引，确保服务层读取默认值时与设置页展示保持一致。
+  static final Map<String, ChannelConfig> _channelDefaults = {
+    for (final channel in [
+      ...departmentChannels,
+      ...teachingChannels,
+      ...wechatChannels,
+    ])
+      channel.id: channel,
+  };
 
   /// 内存中缓存的已读消息 ID 集合，减少频繁读取存储
   Set<String> _readIds = {};
@@ -147,17 +166,16 @@ class MessageStateService {
     await StorageService.setBool(MessageChannelKeys.noticeEnabled, enabled);
   }
 
-  /// 获取微信公众号渠道是否启用（默认关闭 — 占位）
+  /// 获取微信公众号渠道是否启用。
+  /// 公众号平台链路现已固定启用，不再暴露独立总开关。
   Future<bool> isWechatPublicEnabled() async {
-    return await StorageService.getBool(MessageChannelKeys.wechatPublicEnabled);
+    return true;
   }
 
-  /// 设置微信公众号渠道启用状态
+  /// 设置微信公众号渠道启用状态。
+  /// 为兼容旧状态文件，始终将其纠正为启用。
   Future<void> setWechatPublicEnabled(bool enabled) async {
-    await StorageService.setBool(
-      MessageChannelKeys.wechatPublicEnabled,
-      enabled,
-    );
+    await StorageService.setBool(MessageChannelKeys.wechatPublicEnabled, true);
   }
 
   /// 获取微信服务号渠道是否启用（默认关闭 — 占位）
@@ -210,17 +228,28 @@ class MessageStateService {
   static String _channelIntervalKey(String channelId) =>
       'channel_${channelId}_interval';
 
+  /// 记录最近一次非 0 刷新间隔，便于自动刷新重新开启时恢复用户配置。
+  static String _channelLastIntervalKey(String channelId) =>
+      'channel_${channelId}_last_interval';
+
+  /// 手动刷新条数配置键。
+  static String _channelManualFetchCountKey(String channelId) =>
+      'channel_${channelId}_manual_fetch_count';
+
+  /// 自动刷新条数配置键。
+  static String _channelAutoFetchCountKey(String channelId) =>
+      'channel_${channelId}_auto_fetch_count';
+
   /// 获取指定渠道是否启用
   /// [channelId] 渠道唯一标识
-  /// [defaultValue] 默认值，未设置时返回此值
+  /// [defaultValue] 默认值，未设置时优先使用此值，否则使用渠道配置默认值
   /// :return: 渠道启用状态
-  Future<bool> isChannelEnabled(
-    String channelId, {
-    bool defaultValue = false,
-  }) async {
+  Future<bool> isChannelEnabled(String channelId, {bool? defaultValue}) async {
+    if (channelId == 'wechat_public') return true;
     return await StorageService.getBool(
       _channelEnabledKey(channelId),
-      defaultValue: defaultValue,
+      defaultValue:
+          defaultValue ?? _channelDefaults[channelId]?.defaultEnabled ?? false,
     );
   }
 
@@ -228,6 +257,10 @@ class MessageStateService {
   /// [channelId] 渠道唯一标识
   /// [enabled] 是否启用
   Future<void> setChannelEnabled(String channelId, bool enabled) async {
+    if (channelId == 'wechat_public') {
+      await StorageService.setBool(_channelEnabledKey(channelId), true);
+      return;
+    }
     await StorageService.setBool(_channelEnabledKey(channelId), enabled);
   }
 
@@ -262,227 +295,107 @@ class MessageStateService {
 
   /// 获取指定渠道的自动刷新间隔
   /// [channelId] 渠道唯一标识
-  /// [defaultValue] 默认间隔（分钟，0 = 关闭）
+  /// [defaultValue] 默认间隔，未设置时优先使用此值，否则使用渠道配置默认值
   /// :return: 自动刷新间隔（分钟）
-  Future<int> getChannelInterval(
-    String channelId, {
-    int defaultValue = 0,
-  }) async {
+  Future<int> getChannelInterval(String channelId, {int? defaultValue}) async {
     return (await StorageService.getInt(_channelIntervalKey(channelId))) ??
-        defaultValue;
+        defaultValue ??
+        _channelDefaults[channelId]?.defaultInterval ??
+        0;
   }
 
   /// 设置指定渠道的自动刷新间隔
   /// [channelId] 渠道唯一标识
   /// [minutes] 间隔分钟数（0 = 关闭）
   Future<void> setChannelInterval(String channelId, int minutes) async {
-    await StorageService.setInt(_channelIntervalKey(channelId), minutes);
+    final normalized = minutes < 0 ? 0 : minutes;
+    await StorageService.setInt(_channelIntervalKey(channelId), normalized);
+    if (normalized > 0) {
+      await StorageService.setInt(
+        _channelLastIntervalKey(channelId),
+        normalized,
+      );
+    }
   }
 
-  // ==================== 自动刷新间隔管理（旧接口，保持兼容） ====================
-
-  /// 获取最新公开信息自动刷新间隔（分钟，0 = 关闭，默认 60）
-  Future<int> getLatestInfoInterval() async {
-    return (await StorageService.getInt(
-          MessageChannelKeys.latestInfoInterval,
-        )) ??
-        60;
-  }
-
-  /// 设置最新公开信息自动刷新间隔（分钟）
-  Future<void> setLatestInfoInterval(int minutes) async {
-    await StorageService.setInt(MessageChannelKeys.latestInfoInterval, minutes);
-  }
-
-  /// 获取通知公示自动刷新间隔（分钟，0 = 关闭，默认 60）
-  Future<int> getNoticeInterval() async {
-    return (await StorageService.getInt(MessageChannelKeys.noticeInterval)) ??
-        60;
-  }
-
-  /// 设置通知公示自动刷新间隔（分钟）
-  Future<void> setNoticeInterval(int minutes) async {
-    await StorageService.setInt(MessageChannelKeys.noticeInterval, minutes);
-  }
-
-  /// 获取微信公众号自动刷新间隔（分钟，0 = 关闭，默认 0）
-  Future<int> getWechatPublicInterval() async {
-    return (await StorageService.getInt(
-          MessageChannelKeys.wechatPublicInterval,
-        )) ??
-        0;
-  }
-
-  /// 设置微信公众号自动刷新间隔（分钟）
-  Future<void> setWechatPublicInterval(int minutes) async {
-    await StorageService.setInt(
-      MessageChannelKeys.wechatPublicInterval,
-      minutes,
-    );
-  }
-
-  /// 获取微信服务号自动刷新间隔（分钟，0 = 关闭，默认 0）
-  Future<int> getWechatServiceInterval() async {
-    return (await StorageService.getInt(
-          MessageChannelKeys.wechatServiceInterval,
-        )) ??
-        0;
-  }
-
-  /// 设置微信服务号自动刷新间隔（分钟）
-  Future<void> setWechatServiceInterval(int minutes) async {
-    await StorageService.setInt(
-      MessageChannelKeys.wechatServiceInterval,
-      minutes,
-    );
-  }
-
-  // ==================== 消息推送与勿扰模式 ====================
-
-  /// 获取消息推送全局开关（默认开启）
-  Future<bool> isNotificationEnabled() async {
-    return await StorageService.getBool(
-      MessageChannelKeys.notificationEnabled,
-      defaultValue: true,
-    );
-  }
-
-  /// 设置消息推送全局开关
-  Future<void> setNotificationEnabled(bool enabled) async {
-    await StorageService.setBool(
-      MessageChannelKeys.notificationEnabled,
-      enabled,
-    );
-  }
-
-  /// 获取勿扰模式是否开启（默认关闭）
-  Future<bool> isDndEnabled() async {
-    return await StorageService.getBool(MessageChannelKeys.dndEnabled);
-  }
-
-  /// 设置勿扰模式开关
-  Future<void> setDndEnabled(bool enabled) async {
-    await StorageService.setBool(MessageChannelKeys.dndEnabled, enabled);
-  }
-
-  /// 获取勿扰开始时间（默认 22:00）
-  Future<int> getDndStartHour() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndStartHour)) ?? 22;
-  }
-
-  /// 获取勿扰开始分钟（默认 0）
-  Future<int> getDndStartMinute() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndStartMinute)) ??
-        0;
-  }
-
-  /// 获取勿扰结束时间（默认 7:00）
-  Future<int> getDndEndHour() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndEndHour)) ?? 7;
-  }
-
-  /// 获取勿扰结束分钟（默认 0）
-  Future<int> getDndEndMinute() async {
-    return (await StorageService.getInt(MessageChannelKeys.dndEndMinute)) ?? 0;
-  }
-
-  /// 设置勿扰时间段（一次性保存开始和结束时间）
-  Future<void> setDndTime({
-    required int startHour,
-    required int startMinute,
-    required int endHour,
-    required int endMinute,
+  /// 获取用于设置页展示的刷新间隔。
+  /// 自动刷新关闭时回显最近一次非 0 间隔，避免重新开启后丢失原选择。
+  Future<int> getChannelDisplayInterval(
+    String channelId, {
+    int? defaultValue,
   }) async {
-    await StorageService.setInt(MessageChannelKeys.dndStartHour, startHour);
-    await StorageService.setInt(MessageChannelKeys.dndStartMinute, startMinute);
-    await StorageService.setInt(MessageChannelKeys.dndEndHour, endHour);
-    await StorageService.setInt(MessageChannelKeys.dndEndMinute, endMinute);
+    final current = await getChannelInterval(
+      channelId,
+      defaultValue: defaultValue,
+    );
+    if (current > 0) return current;
+    return (await StorageService.getInt(_channelLastIntervalKey(channelId))) ??
+        defaultValue ??
+        _channelDefaults[channelId]?.defaultInterval ??
+        60;
   }
 
-  /// 判断当前时间是否在勿扰时段内
-  /// 支持跨午夜时段（如 22:00–7:00）
-  Future<bool> isInDndPeriod() async {
-    final enabled = await isDndEnabled();
-    if (!enabled) return false;
+  /// 判断指定渠道的自动刷新是否开启。
+  Future<bool> isChannelAutoRefreshEnabled(String channelId) async {
+    return (await getChannelInterval(channelId)) > 0;
+  }
 
-    final startH = await getDndStartHour();
-    final startM = await getDndStartMinute();
-    final endH = await getDndEndHour();
-    final endM = await getDndEndMinute();
-
-    final now = DateTime.now();
-    // 将时间转为当天分钟数以便比较
-    final nowMinutes = now.hour * 60 + now.minute;
-    final startMinutes = startH * 60 + startM;
-    final endMinutes = endH * 60 + endM;
-
-    if (startMinutes <= endMinutes) {
-      // 同天时段，如 8:00–12:00
-      return nowMinutes >= startMinutes && nowMinutes < endMinutes;
-    } else {
-      // 跨午夜时段，如 22:00–7:00
-      return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+  /// 切换指定渠道的自动刷新状态。
+  /// 关闭时将当前间隔落盘为最近一次有效值；开启时恢复最近一次有效值或默认值。
+  Future<void> setChannelAutoRefreshEnabled(
+    String channelId,
+    bool enabled,
+  ) async {
+    if (enabled) {
+      final restored = await getChannelDisplayInterval(channelId);
+      await setChannelInterval(channelId, restored <= 0 ? 60 : restored);
+      return;
     }
+
+    final current = await getChannelInterval(channelId);
+    if (current > 0) {
+      await StorageService.setInt(_channelLastIntervalKey(channelId), current);
+    }
+    await StorageService.setInt(_channelIntervalKey(channelId), 0);
   }
 
-  // ==================== 消息持久化管理 ====================
+  /// 获取指定渠道的手动刷新条数。
+  Future<int> getChannelManualFetchCount(
+    String channelId, {
+    int defaultValue = 20,
+  }) async {
+    final effectiveDefault = channelId == 'wechat_public' ? 10 : defaultValue;
+    final stored = await StorageService.getInt(
+      _channelManualFetchCountKey(channelId),
+    );
+    return (stored ?? effectiveDefault).clamp(1, 200);
+  }
 
-  /// 保存消息列表到本地存储
-  Future<void> saveMessages(List<MessageItem> messages) async {
-    final jsonList = messages.map((msg) => msg.toJson()).toList();
-    await StorageService.setString(
-      MessageChannelKeys.persistedMessages,
-      jsonEncode(jsonList),
+  /// 设置指定渠道的手动刷新条数。
+  Future<void> setChannelManualFetchCount(String channelId, int count) async {
+    await StorageService.setInt(
+      _channelManualFetchCountKey(channelId),
+      count.clamp(1, 200),
     );
   }
 
-  /// 从本地存储加载消息列表
-  Future<List<MessageItem>> loadMessages() async {
-    final stored = await StorageService.getString(
-      MessageChannelKeys.persistedMessages,
+  /// 获取指定渠道的自动刷新条数。
+  Future<int> getChannelAutoFetchCount(
+    String channelId, {
+    int defaultValue = 20,
+  }) async {
+    final effectiveDefault = channelId == 'wechat_public' ? 10 : defaultValue;
+    final stored = await StorageService.getInt(
+      _channelAutoFetchCountKey(channelId),
     );
-    if (stored == null || stored.isEmpty) return [];
-    try {
-      final jsonList = jsonDecode(stored) as List<dynamic>;
-      return jsonList
-          .map((json) => MessageItem.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      // 存储数据损坏时返回空列表
-      return [];
-    }
+    return (stored ?? effectiveDefault).clamp(1, 200);
   }
 
-  /// 清除所有微信公众号类型的预存文章
-  /// 保留其他渠道的消息不受影响
-  /// :return: 被清除的文章数量
-  Future<int> clearWechatArticles() async {
-    final messages = await loadMessages();
-    final before = messages.length;
-    messages.removeWhere(
-      (msg) => msg.sourceType == MessageSourceType.wechatPublic,
+  /// 设置指定渠道的自动刷新条数。
+  Future<void> setChannelAutoFetchCount(String channelId, int count) async {
+    await StorageService.setInt(
+      _channelAutoFetchCountKey(channelId),
+      count.clamp(1, 200),
     );
-    await saveMessages(messages);
-    return before - messages.length;
-  }
-
-  /// 将新抓取的消息与已有消息合并（按 ID 去重）
-  /// [existingMessages] 已有消息列表
-  /// [newMessages] 新抓取的消息列表
-  /// 返回合并后的列表（已存消息保持原样，避免刷新覆盖原始时间）
-  List<MessageItem> mergeMessages(
-    List<MessageItem> existingMessages,
-    List<MessageItem> newMessages,
-  ) {
-    final messageMap = <String, MessageItem>{};
-    // 先放旧消息，保留首次获取时记录的时间与字段。
-    for (final msg in existingMessages) {
-      messageMap[msg.id] = msg;
-    }
-    // 只补充新增消息，已有文章不再被新抓取结果覆盖。
-    for (final msg in newMessages) {
-      messageMap.putIfAbsent(msg.id, () => msg);
-    }
-    return messageMap.values.toList();
   }
 }

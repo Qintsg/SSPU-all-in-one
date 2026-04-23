@@ -1,26 +1,27 @@
 /*
- * 渠道列表组件 — 在设置页中展示渠道分组列表与二级详情页
+ * 渠道列表组件 — 分区级渠道状态与刷新配置入口
  * @Project : SSPU-all-in-one
  * @File : channel_list_section.dart
  * @Author : Qintsg
- * @Date : 2025-07-17
+ * @Date : 2026-04-22
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+
 import '../models/channel_config.dart';
 import '../models/message_item.dart';
-import '../services/message_state_service.dart';
 import '../services/auto_refresh_service.dart';
-import 'settings_widgets.dart';
+import '../services/message_state_service.dart';
+import '../theme/fluent_tokens.dart';
+import 'channel_list_panels.dart';
 
-/// 渠道列表组件
-/// 展示一组渠道的启用/禁用开关，点击渠道可进入二级详情页
-/// 同时支持已实现和未实现（占位）的渠道
+/// 渠道列表组件。
+/// 负责加载分区级状态，并将渠道卡片与刷新面板组合到同一页。
 class ChannelListSection extends StatefulWidget {
-  /// 分组标题
+  /// 分组标题。
   final String title;
 
-  /// 分组内的渠道配置列表
+  /// 分组内的渠道配置列表。
   final List<ChannelConfig> channels;
 
   const ChannelListSection({
@@ -34,25 +35,20 @@ class ChannelListSection extends StatefulWidget {
 }
 
 class _ChannelListSectionState extends State<ChannelListSection> {
-  /// 消息状态服务
   final MessageStateService _messageState = MessageStateService.instance;
-
-  /// 自动刷新服务
   final AutoRefreshService _autoRefresh = AutoRefreshService.instance;
 
-  /// 各渠道启用状态缓存（channelId → enabled）
   final Map<String, bool> _enabledMap = {};
-
-  /// 各渠道刷新间隔缓存（channelId → minutes）
+  final Map<String, bool> _autoRefreshEnabledMap = {};
   final Map<String, int> _intervalMap = {};
-
-  /// 各子分类启用状态缓存（categoryName → enabled）
+  final Map<String, int> _manualCountMap = {};
+  final Map<String, int> _autoCountMap = {};
   final Map<String, bool> _categoryEnabledMap = {};
 
-  /// 当前正在查看详情的渠道 ID（null 表示在列表页）
-  String? _detailChannelId;
-
-  /// 是否正在加载状态
+  bool _groupAutoRefreshEnabled = false;
+  int _groupInterval = 60;
+  int _groupManualCount = 20;
+  int _groupAutoCount = 20;
   bool _isLoading = true;
 
   @override
@@ -61,29 +57,61 @@ class _ChannelListSectionState extends State<ChannelListSection> {
     _loadChannelStates();
   }
 
-  /// 从存储中加载所有渠道的启用状态和刷新间隔
   Future<void> _loadChannelStates() async {
     for (final channel in widget.channels) {
       _enabledMap[channel.id] = await _messageState.isChannelEnabled(
         channel.id,
         defaultValue: channel.defaultEnabled,
       );
-      _intervalMap[channel.id] = await _messageState.getChannelInterval(
+      _autoRefreshEnabledMap[channel.id] = await _messageState
+          .isChannelAutoRefreshEnabled(channel.id);
+      _intervalMap[channel.id] = await _messageState.getChannelDisplayInterval(
         channel.id,
         defaultValue: channel.defaultInterval,
       );
+      _manualCountMap[channel.id] = await _messageState
+          .getChannelManualFetchCount(channel.id);
+      _autoCountMap[channel.id] = await _messageState.getChannelAutoFetchCount(
+        channel.id,
+      );
     }
-    // 加载子分类启用状态
+
+    _syncGroupRefreshState();
+
     for (final channel in widget.channels) {
-      final subcats = channelSubcategories[channel.id];
-      if (subcats != null) {
-        for (final sub in subcats) {
-          _categoryEnabledMap[sub.category.name] = await _messageState
-              .isCategoryEnabled(sub.category.name);
-        }
+      final subcategories = channelSubcategories[channel.id];
+      if (subcategories == null) continue;
+      for (final subcategory in subcategories) {
+        _categoryEnabledMap[subcategory.category.name] = await _messageState
+            .isCategoryEnabled(subcategory.category.name);
       }
     }
-    if (mounted) setState(() => _isLoading = false);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+  }
+
+  void _syncGroupRefreshState() {
+    ChannelConfig? sourceChannel;
+    for (final channel in widget.channels) {
+      if (!channel.implemented) continue;
+      sourceChannel ??= channel;
+      if ((_autoRefreshEnabledMap[channel.id] ?? false) &&
+          (_intervalMap[channel.id] ?? 0) > 0) {
+        sourceChannel = channel;
+        break;
+      }
+    }
+
+    if (sourceChannel == null) return;
+    _groupAutoRefreshEnabled = widget.channels.any(
+      (channel) =>
+          channel.implemented && (_autoRefreshEnabledMap[channel.id] ?? false),
+    );
+    _groupInterval =
+        _intervalMap[sourceChannel.id] ?? sourceChannel.defaultInterval;
+    _groupManualCount = _manualCountMap[sourceChannel.id] ?? 20;
+    _groupAutoCount = _autoCountMap[sourceChannel.id] ?? 20;
   }
 
   @override
@@ -92,251 +120,206 @@ class _ChannelListSectionState extends State<ChannelListSection> {
       return const Center(child: ProgressRing());
     }
 
-    // 如果正在查看某个渠道的详情页，显示详情
-    if (_detailChannelId != null) {
-      final channel = widget.channels.firstWhere(
-        (c) => c.id == _detailChannelId,
-      );
-      return _buildDetailPage(context, channel);
-    }
-
-    // 渠道列表页
-    return _buildListPage(context);
-  }
-
-  /// 构建渠道列表页
-  Widget _buildListPage(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final enabledCount = _enabledMap.values.where((enabled) => enabled).length;
+    final autoEnabledCount = widget.channels
+        .where(
+          (channel) =>
+              (_enabledMap[channel.id] ?? false) &&
+              (_autoRefreshEnabledMap[channel.id] ?? false),
+        )
+        .length;
+    final implementedChannels = widget.channels
+        .where((channel) => channel.implemented)
+        .toList(growable: false);
+    final hasEnabledImplementedChannel = implementedChannels.any(
+      (channel) => _enabledMap[channel.id] ?? false,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 分组标题
-        Text(widget.title, style: theme.typography.subtitle),
-        const SizedBox(height: 4),
+        Wrap(
+          spacing: FluentSpacing.s,
+          runSpacing: FluentSpacing.s,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(widget.title, style: theme.typography.subtitle),
+            FilledButton(
+              onPressed: () => _setAllChannelsEnabled(true),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(FluentIcons.check_mark, size: 14),
+                  SizedBox(width: 6),
+                  Text('一键全开'),
+                ],
+              ),
+            ),
+            Button(
+              onPressed: () => _setAllChannelsEnabled(false),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(FluentIcons.blocked, size: 14),
+                  SizedBox(width: 6),
+                  Text('一键全关'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: FluentSpacing.xxs),
         Text(
-          '共 ${widget.channels.length} 个渠道，'
-          '已启用 ${_enabledMap.values.where((v) => v).length} 个',
+          '共 ${widget.channels.length} 个渠道，已启用 $enabledCount 个，自动刷新开启 $autoEnabledCount 个。',
           style: theme.typography.caption,
         ),
-        const SizedBox(height: 16),
-        // 渠道列表
-        ...widget.channels.map((channel) => _buildChannelRow(context, channel)),
+        const SizedBox(height: FluentSpacing.m),
+        ChannelGroupRefreshPanel(
+          enabled: hasEnabledImplementedChannel,
+          hasImplementedChannel: implementedChannels.isNotEmpty,
+          groupAutoRefreshEnabled: _groupAutoRefreshEnabled,
+          groupInterval: _groupInterval,
+          groupManualCount: _groupManualCount,
+          groupAutoCount: _groupAutoCount,
+          onGroupManualCountChanged: (value) =>
+              _onGroupManualCountChanged(value),
+          onGroupAutoRefreshToggled: (value) =>
+              _onGroupAutoRefreshToggled(value),
+          onGroupIntervalChanged: (value) => _onGroupIntervalChanged(value),
+          onGroupAutoCountChanged: (value) => _onGroupAutoCountChanged(value),
+        ),
+        const SizedBox(height: FluentSpacing.m),
+        ...widget.channels.map(
+          (channel) => ChannelListItemCard(
+            channel: channel,
+            enabled: _enabledMap[channel.id] ?? false,
+            onToggled: (value) => _onChannelToggled(channel, value),
+            categoryEnabledMap: _categoryEnabledMap,
+            onToggleCategory: (category) => _onCategoryToggled(
+              category,
+              !(_categoryEnabledMap[category.name] ?? true),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  /// 构建单个渠道行 — 图标+名称+描述+开关+详情入口
-  Widget _buildChannelRow(BuildContext context, ChannelConfig channel) {
-    final theme = FluentTheme.of(context);
-    final enabled = _enabledMap[channel.id] ?? false;
-    // 未实现的渠道，描述显示"暂未接入"
-    final subtitle = channel.implemented
-        ? channel.description
-        : '${channel.description}（暂未接入）';
+  Future<void> _onChannelToggled(ChannelConfig channel, bool enabled) async {
+    await _messageState.setChannelEnabled(channel.id, enabled);
+    setState(() => _enabledMap[channel.id] = enabled);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: HoverButton(
-        onPressed: () => setState(() => _detailChannelId = channel.id),
-        builder: (context, states) {
-          // 悬停时显示浅灰色背景
-          final hovered = states.isHovered || states.isPressed;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: hovered
-                  ? theme.inactiveColor.withValues(alpha: 0.06)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Icon(channel.icon, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(channel.name, style: theme.typography.bodyStrong),
-                      const SizedBox(height: 2),
-                      Text(subtitle, style: theme.typography.caption),
-                    ],
-                  ),
-                ),
-                // 启用/禁用开关
-                ToggleSwitch(
-                  checked: enabled,
-                  onChanged: (value) => _onChannelToggled(channel, value),
-                ),
-                const SizedBox(width: 8),
-                // 详情入口箭头
-                Icon(
-                  FluentIcons.open_file,
-                  size: 12,
-                  color: theme.inactiveColor.withValues(alpha: 0.4),
-                ),
-              ],
-            ),
-          );
-        },
+    if (channel.implemented) {
+      await _autoRefresh.reloadChannel(channel.id);
+    }
+
+    if (!mounted) return;
+    final message = enabled
+        ? '已启用「${channel.name}」，请到信息中心刷新获取该渠道消息'
+        : '已关闭「${channel.name}」，该渠道消息将不再显示';
+    displayInfoBar(
+      context,
+      builder: (ctx, close) => InfoBar(
+        title: Text(message),
+        severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.warning,
+        action: IconButton(
+          icon: const Icon(FluentIcons.clear),
+          onPressed: close,
+        ),
       ),
     );
   }
 
-  /// 构建渠道详情页 — 返回按钮+渠道开关+刷新间隔选择器
-  Widget _buildDetailPage(BuildContext context, ChannelConfig channel) {
-    final theme = FluentTheme.of(context);
-    final enabled = _enabledMap[channel.id] ?? false;
-    final interval = _intervalMap[channel.id] ?? 0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 顶部返回导航
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(FluentIcons.back, size: 16),
-              onPressed: () => setState(() => _detailChannelId = null),
-            ),
-            const SizedBox(width: 8),
-            Text(channel.name, style: theme.typography.subtitle),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // 渠道开关
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 启用开关行
-                buildChannelToggle(
-                  context: context,
-                  icon: channel.icon,
-                  title: channel.name,
-                  subtitle: channel.implemented
-                      ? channel.description
-                      : '${channel.description}（暂未接入，启用后不会产生实际数据）',
-                  value: enabled,
-                  onChanged: (value) => _onChannelToggled(channel, value),
-                ),
-                if (channel.implemented) ...[
-                  const SizedBox(height: 8),
-                  // 自动刷新间隔选择器（仅已实现的渠道显示）
-                  buildIntervalSelector(
-                    context: context,
-                    currentValue: interval,
-                    enabled: enabled,
-                    onChanged: (minutes) =>
-                        _onIntervalChanged(channel, minutes),
-                  ),
-                  // 子分类开关（仅有多子分类的渠道显示）
-                  if (channelSubcategories.containsKey(channel.id)) ...[
-                    const SizedBox(height: 16),
-                    _buildSubcategoryToggles(context, channel),
-                  ],
-                ],
-                if (!channel.implemented) ...[
-                  const SizedBox(height: 16),
-                  // 未实现渠道提示
-                  InfoBar(
-                    title: const Text('此渠道数据源尚未接入'),
-                    content: const Text('后续版本将陆续支持，启用开关仅作预配置用途。'),
-                    severity: InfoBarSeverity.warning,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 渠道开关变更处理
-  /// [channel] 渠道配置
-  /// [enabled] 新的启用状态
-  Future<void> _onChannelToggled(ChannelConfig channel, bool enabled) async {
-    await _messageState.setChannelEnabled(channel.id, enabled);
-    setState(() => _enabledMap[channel.id] = enabled);
-    // 已实现的渠道触发自动刷新重载
-    if (channel.implemented) {
-      await _autoRefresh.reloadChannel(channel.id);
+  Future<void> _setAllChannelsEnabled(bool enabled) async {
+    for (final channel in widget.channels) {
+      await _messageState.setChannelEnabled(channel.id, enabled);
+      _enabledMap[channel.id] = enabled;
+      if (channel.implemented) {
+        await _autoRefresh.reloadChannel(channel.id);
+      }
     }
-    // 显示提示
-    if (mounted) {
-      final message = enabled
-          ? '已启用「${channel.name}」，请到信息中心刷新获取该渠道消息'
-          : '已关闭「${channel.name}」，该渠道消息将不再显示';
-      displayInfoBar(
-        context,
-        builder: (ctx, close) => InfoBar(
-          title: Text(message),
-          severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.warning,
-          action: IconButton(
-            icon: const Icon(FluentIcons.clear),
-            onPressed: close,
-          ),
-        ),
-      );
-    }
-  }
 
-  /// 刷新间隔变更处理
-  /// [channel] 渠道配置
-  /// [minutes] 新的间隔分钟数
-  Future<void> _onIntervalChanged(ChannelConfig channel, int minutes) async {
-    await _messageState.setChannelInterval(channel.id, minutes);
-    setState(() => _intervalMap[channel.id] = minutes);
-    if (channel.implemented) {
-      await _autoRefresh.reloadChannel(channel.id);
-    }
-  }
-
-  /// 构建子分类开关区域
-  /// 显示渠道下所有子分类的独立开关
-  Widget _buildSubcategoryToggles(BuildContext context, ChannelConfig channel) {
-    final theme = FluentTheme.of(context);
-    final subcats = channelSubcategories[channel.id]!;
-    final channelEnabled = _enabledMap[channel.id] ?? false;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 区域标题
-        Text('内容分类', style: theme.typography.bodyStrong),
-        const SizedBox(height: 4),
-        Text('单独控制每个分类的显示，关闭后该分类消息将不再展示', style: theme.typography.caption),
-        const SizedBox(height: 8),
-        // 每个子分类一行（名称 + 开关）
-        ...subcats.map((sub) {
-          final catEnabled = _categoryEnabledMap[sub.category.name] ?? true;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                Expanded(child: Text(sub.name, style: theme.typography.body)),
-                ToggleSwitch(
-                  checked: catEnabled,
-                  // 渠道未启用时子分类开关置灰不可操作
-                  onChanged: channelEnabled
-                      ? (value) => _onCategoryToggled(sub.category, value)
-                      : null,
-                ),
-              ],
-            ),
+    if (enabled) {
+      for (final subcategoryList in channelSubcategories.values) {
+        for (final subcategory in subcategoryList) {
+          await _messageState.setCategoryEnabled(
+            subcategory.category.name,
+            true,
           );
-        }),
-      ],
+          _categoryEnabledMap[subcategory.category.name] = true;
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {});
+    displayInfoBar(
+      context,
+      builder: (ctx, close) => InfoBar(
+        title: Text(enabled ? '已启用当前分区全部渠道' : '已关闭当前分区全部渠道'),
+        severity: enabled ? InfoBarSeverity.success : InfoBarSeverity.info,
+        action: IconButton(
+          icon: const Icon(FluentIcons.clear),
+          onPressed: close,
+        ),
+      ),
     );
   }
 
-  /// 子分类开关变更处理
-  /// [category] 消息分类枚举值
-  /// [enabled] 新的启用状态
+  Future<void> _onGroupManualCountChanged(int count) async {
+    final normalized = count.clamp(1, 200);
+    for (final channel in widget.channels.where((item) => item.implemented)) {
+      await _messageState.setChannelManualFetchCount(channel.id, normalized);
+      _manualCountMap[channel.id] = normalized;
+    }
+    setState(() => _groupManualCount = normalized);
+  }
+
+  Future<void> _onGroupAutoRefreshToggled(bool enabled) async {
+    final interval = _groupInterval <= 0 ? 60 : _groupInterval;
+    for (final channel in widget.channels.where((item) => item.implemented)) {
+      if (enabled) {
+        await _messageState.setChannelInterval(channel.id, interval);
+      } else {
+        await _messageState.setChannelAutoRefreshEnabled(channel.id, false);
+      }
+      _autoRefreshEnabledMap[channel.id] = enabled;
+      _intervalMap[channel.id] = interval;
+      await _autoRefresh.reloadChannel(channel.id);
+    }
+
+    setState(() {
+      _groupAutoRefreshEnabled = enabled;
+      _groupInterval = interval;
+    });
+  }
+
+  Future<void> _onGroupIntervalChanged(int minutes) async {
+    for (final channel in widget.channels.where((item) => item.implemented)) {
+      await _messageState.setChannelInterval(channel.id, minutes);
+      _intervalMap[channel.id] = minutes;
+      _autoRefreshEnabledMap[channel.id] = minutes > 0;
+      await _autoRefresh.reloadChannel(channel.id);
+    }
+
+    setState(() {
+      _groupInterval = minutes;
+      _groupAutoRefreshEnabled = minutes > 0;
+    });
+  }
+
+  Future<void> _onGroupAutoCountChanged(int count) async {
+    final normalized = count.clamp(1, 200);
+    for (final channel in widget.channels.where((item) => item.implemented)) {
+      await _messageState.setChannelAutoFetchCount(channel.id, normalized);
+      _autoCountMap[channel.id] = normalized;
+      await _autoRefresh.reloadChannel(channel.id);
+    }
+
+    setState(() => _groupAutoCount = normalized);
+  }
+
   Future<void> _onCategoryToggled(
     MessageCategory category,
     bool enabled,

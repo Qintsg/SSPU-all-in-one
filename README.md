@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.1.5--alpha-orange)](docs/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FQintsg%2FSSPU-all-in-one%2Fmain%2Fpubspec.yaml&query=%24.version&label=version&color=orange)](docs/CHANGELOG.md)
 
 ## 简介
 
@@ -37,9 +37,112 @@ flutter build macos          # macOS
 flutter build linux          # Linux
 ```
 
+## Release 使用指南
+
+完整发布规范、Tag 规则、资产命名、发布矩阵、Release Notes 模板与门槛，统一见 [docs/RELEASE.md](docs/RELEASE.md)。
+当前公开 Release 仍然通过带 `release` 标签的 PR merge 自动触发，版本号只读取 `pubspec.yaml`。
+
+### Android
+
+- 本仓库支持通过 `android/key.properties` 加载本地签名配置；当前工作区已生成一个本机自签名 keystore：`android/app/sspu-release.jks`
+- `android/key.properties` 与 `.jks` 文件默认不会提交；若需在新机器复用，请参考 `android/key.properties.example` 重新生成或复制 keystore
+- GitHub Actions 进行 Android release build 时，不依赖仓库内签名文件；可通过 Secrets 在运行时下发签名材料：
+  `ANDROID_KEYSTORE_BASE64`
+  `ANDROID_KEYSTORE_PASSWORD`
+  `ANDROID_KEY_ALIAS`
+  `ANDROID_KEY_PASSWORD`
+- 公开 Release 默认上传通用 APK：
+  `SSPU-All-in-One-v{version}-android-universal.apk`
+- 构建命令：
+
+```bash
+flutter build apk --release
+flutter build appbundle --release
+```
+
+- 产物位置：
+  `build/app/outputs/flutter-apk/app-release.apk`
+  `build/app/outputs/bundle/release/app-release.aab`
+- 使用方式：
+  `app-release.apk` 可直接分发安装
+  `app-release.aab` 用于应用商店上架，不适合直接本地安装
+
+### Windows
+
+- 构建命令：
+
+```bash
+flutter build windows --release
+```
+
+- 产物位置：
+  `build/windows/x64/runner/Release/`
+  `build/windows/arm64/runner/Release/`
+- 使用方式：
+  将 `x64` 架构的整个 `Release/` 目录连同其中的 DLL 和 `data/` 一起分发；直接运行目录中的 `sspu_all_in_one.exe`
+  Release workflow 会同时生成：
+  `SSPU-All-in-One-v{version}-windows-x64-installer.exe`
+  `SSPU-All-in-One-v{version}-windows-x64-portable.zip`
+  `SSPU-All-in-One-v{version}-windows-arm64-installer.exe`
+  `SSPU-All-in-One-v{version}-windows-arm64-portable.zip`
+
+### Linux
+
+- 构建命令：
+
+```bash
+flutter build linux --release
+```
+
+- 产物位置：
+  `build/linux/x64/release/bundle/`
+  `build/linux/arm64/release/bundle/`
+- 使用方式：
+  打包并分发整个 `bundle/` 目录；目标机器上运行 `./sspu_all_in_one`
+  对公开 Release，workflow 会统一生成：
+  `SSPU-All-in-One-v{version}-linux-x64-appimage.AppImage`
+  `SSPU-All-in-One-v{version}-linux-x64-deb.deb`
+  `SSPU-All-in-One-v{version}-linux-x64-rpm.rpm`
+  `SSPU-All-in-One-v{version}-linux-x64-portable.tar.gz`
+  `SSPU-All-in-One-v{version}-linux-arm64-appimage.AppImage`
+  `SSPU-All-in-One-v{version}-linux-arm64-deb.deb`
+  `SSPU-All-in-One-v{version}-linux-arm64-rpm.rpm`
+  `SSPU-All-in-One-v{version}-linux-arm64-portable.tar.gz`
+
+### macOS
+
+- 构建命令：
+
+```bash
+flutter build macos --release
+```
+
+- 产物位置：
+  `build/macos/Build/Products/Release/`
+- 使用方式：
+  分发生成的 `.app` 包；首次运行若被系统拦截，需要在“系统设置 → 隐私与安全性”中手动放行
+  公开 Release 当前默认提供未签名 DMG：
+  `SSPU-All-in-One-v{version}-macos-universal-unsigned.dmg`
+
+### Web
+
+- 构建命令：
+
+```bash
+flutter build web --release
+```
+
+- 产物位置：
+  `build/web/`
+- 使用方式：
+  将整个目录部署到任意静态文件服务器，并确保服务器对 `index.html` 开启 SPA 路由回退
+  公开 Release 会将静态站点压缩为：
+  `SSPU-All-in-One-v{version}-web-universal-static.zip`
+
 ## 文档
 
 - [设计文档](docs/DESIGN.md) — 架构、功能设计、技术选型
+- [发布规则](docs/RELEASE.md) — 版本、Tag、资产命名、发布门槛与 Release Notes 模板
 - [使用文档](docs/USAGE.md) — 开发环境、运行、测试、构建
 - [API 文档](docs/API.md)
 - [变更日志](docs/CHANGELOG.md)

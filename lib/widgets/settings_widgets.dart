@@ -3,7 +3,7 @@
  * @Project : SSPU-all-in-one
  * @File : settings_widgets.dart
  * @Author : Qintsg
- * @Date : 2026-07-17
+ * @Date : 2026-04-17
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
@@ -132,6 +132,54 @@ Widget buildSettingsNavItem({
         ),
       );
     },
+  );
+}
+
+/// 构建数值设置框。
+/// 适用于手动刷新条数、自动刷新条数等正整数输入项。
+Widget buildCountNumberBox({
+  required BuildContext context,
+  required String label,
+  required int value,
+  required bool enabled,
+  required ValueChanged<int> onChanged,
+}) {
+  final theme = FluentTheme.of(context);
+  final foreground = enabled
+      ? theme.typography.caption?.color
+      : theme.inactiveColor.withValues(alpha: 0.4);
+
+  return ConstrainedBox(
+    constraints: const BoxConstraints(minWidth: 280, maxWidth: 340),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            '$label：',
+            style: theme.typography.caption?.copyWith(color: foreground),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 128,
+          child: NumberBox(
+            value: value,
+            min: 1,
+            max: 200,
+            mode: SpinButtonPlacementMode.inline,
+            smallChange: 1,
+            onChanged: enabled
+                ? (newValue) {
+                    final parsed = num.tryParse('${newValue ?? value}');
+                    final normalized = (parsed?.round() ?? value).clamp(1, 200);
+                    onChanged(normalized);
+                  }
+                : null,
+          ),
+        ),
+      ],
+    ),
   );
 }
 

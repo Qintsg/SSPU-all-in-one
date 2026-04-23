@@ -9,13 +9,14 @@
 import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'app.dart';
 import 'pages/lock_page.dart';
 import 'pages/agreement_page.dart';
+import 'services/app_exit_service.dart';
+import 'services/app_data_directory_service.dart';
 import 'services/password_service.dart';
 import 'services/storage_service.dart';
 import 'services/tray_service.dart';
@@ -44,13 +45,11 @@ void main() async {
   if (_supportsWindowsServices) {
     final availableVersion = await WebViewEnvironment.getAvailableVersion();
     if (availableVersion != null) {
-      // 使用 LOCALAPPDATA 下的专属目录，避免安装到只读路径时崩溃
-      final localAppData =
-          Platform.environment['LOCALAPPDATA'] ?? Platform.localeName;
+      // WebView2 运行态同样放入统一应用数据目录，便于用户定位和清理。
+      final webViewDataFolder =
+          await AppDataDirectoryService.ensureDirectoryPath('webview2');
       globalWebViewEnvironment = await WebViewEnvironment.create(
-        settings: WebViewEnvironmentSettings(
-          userDataFolder: '$localAppData\\sspu_all_in_one\\WebView2',
-        ),
+        settings: WebViewEnvironmentSettings(userDataFolder: webViewDataFolder),
       );
     }
   }
@@ -93,6 +92,9 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
 
   /// 防止 EULA 弹窗重复弹出
   bool _eulaDialogShowing = false;
+
+  /// 防止关闭确认弹窗重复弹出
+  bool _closeDialogShowing = false;
 
   /// FluentApp 内部导航器 key，用于在 WindowListener 回调中弹出对话框
   final _navigatorKey = GlobalKey<NavigatorState>();
@@ -152,8 +154,8 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
         await windowManager.hide();
         return;
       case 'exit':
-        // 直接销毁窗口并退出
-        await windowManager.destroy();
+        // 直接退出应用并回收托盘 / 定时器资源
+        await AppExitService.instance.exit();
         return;
       default:
         // 每次询问用户
@@ -164,15 +166,16 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 显示关闭确认对话框，提供最小化/退出两个选项
   /// 勾选"以后都使用此选项"可持久化用户选择
   void _showCloseConfirmDialog() {
-    if (!_supportsDesktopShell) return;
+    if (!_supportsDesktopShell || _closeDialogShowing) return;
 
     final ctx = _navigatorKey.currentContext;
     // 若导航器上下文不可用（极端情况），直接退出
     if (ctx == null) {
-      windowManager.destroy();
+      AppExitService.instance.exit();
       return;
     }
 
+    _closeDialogShowing = true;
     bool rememberChoice = false;
 
     showDialog(
@@ -215,7 +218,7 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
                     if (rememberChoice) {
                       await StorageService.setCloseBehavior('exit');
                     }
-                    await windowManager.destroy();
+                    await AppExitService.instance.exit();
                   },
                 ),
               ],
@@ -223,7 +226,9 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
           },
         );
       },
-    );
+    ).whenComplete(() {
+      _closeDialogShowing = false;
+    });
   }
 
   // ==================== 系统托盘交互 ====================
@@ -247,16 +252,16 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
 
   /// 托盘右键菜单项点击回调
   @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
+  void onTrayMenuItemClick(MenuItem menuItem) async {
     if (!_supportsDesktopShell) return;
 
     switch (menuItem.key) {
       case 'show_window':
-        windowManager.show();
-        windowManager.focus();
+        await windowManager.show();
+        await windowManager.focus();
         break;
       case 'exit_app':
-        windowManager.destroy();
+        await AppExitService.instance.exit();
         break;
     }
   }
@@ -319,12 +324,7 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
 
   /// 按当前平台关闭应用，避免移动端调用未注册的桌面插件通道。
   Future<void> _closeApplication() async {
-    if (_supportsDesktopShell) {
-      await windowManager.destroy();
-      return;
-    }
-
-    await SystemNavigator.pop();
+    await AppExitService.instance.exit();
   }
 
   @override

@@ -1,0 +1,129 @@
+name: 信息网页接入请求
+description: 提交新增学院/部门官网消息源、补充栏目页或修复现有站点解析的请求
+title: "[Feature] 接入信息网页："
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量一次性补齐站点名称、官网地址、栏目列表页 URL 和页面结构特征，便于直接进入解析与联调阶段。
+        如果这是对已有来源的优化，请明确写出当前来源名称或渠道 ID。
+  - type: dropdown
+    id: request_type
+    attributes:
+      label: 请求类型
+      description: 选择这次是新增来源、优化已有来源，还是修复现有解析问题。
+      options:
+        - 新增官网消息来源
+        - 优化已有官网消息来源
+        - 修复已有官网解析问题
+    validations:
+      required: true
+  - type: input
+    id: unit_name
+    attributes:
+      label: 单位名称
+      description: 填写学院、职能部门、中心或站点名称。
+      placeholder: 例如：资源与环境工程学院 / 图书馆（档案馆）
+    validations:
+      required: true
+  - type: dropdown
+    id: unit_type
+    attributes:
+      label: 单位类型
+      options:
+        - 教学单位
+        - 职能部门
+        - 中心 / 场馆
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: homepage_url
+    attributes:
+      label: 官网首页 URL
+      description: 填写站点首页地址，使用完整 https 链接。
+      placeholder: https://example.sspu.edu.cn/
+    validations:
+      required: true
+  - type: input
+    id: existing_channel
+    attributes:
+      label: 现有来源名称 / 渠道 ID（可选）
+      description: 如果这是优化或修复已有来源，请填写应用内来源名称或 `channel_config.dart` 中的渠道 ID。
+      placeholder: 例如：college_re / 图书馆
+  - type: textarea
+    id: category_pages
+    attributes:
+      label: 栏目与列表页 URL
+      description: 按“一行一个栏目”的格式填写分类显示名与对应列表页 URL。
+      placeholder: |
+        新闻资讯 | https://example.sspu.edu.cn/123/list.htm
+        通知公告 | https://example.sspu.edu.cn/124/list.htm
+        学术活动 | https://example.sspu.edu.cn/125/list.htm
+    validations:
+      required: true
+  - type: textarea
+    id: page_structure
+    attributes:
+      label: 页面结构特征
+      description: 如果已知，请填写列表页的关键结构、选择器或 HTML 特征，帮助快速定位解析模板。
+      placeholder: |
+        例如：
+        - 列表容器：ul.news_list.list2
+        - 标题：span.news_title a
+        - 日期：span.news_meta
+        - 链接可能存在绝对 URL 或 javascript:void(0)
+  - type: dropdown
+    id: detail_time
+    attributes:
+      label: 详情页是否需要补充精确发布时间
+      description: 如果列表页只有日期没有时间，且详情页提供更精确的发布时间，请在这里说明。
+      options:
+        - 不需要，列表页日期足够
+        - 需要，详情页有更精确时间
+        - 不确定，需先调研
+    validations:
+      required: true
+  - type: dropdown
+    id: impact_scope
+    attributes:
+      label: 影响范围
+      multiple: true
+      options:
+        - 信息中心
+        - 快速跳转
+        - 设置
+        - 通知 / 后台刷新
+        - 文档
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 用可检查的条目说明什么情况算完成。
+      placeholder: |
+        - 应用内显示正确的来源名称与分类名称
+        - 可按给定栏目列表页抓取消息
+        - 刷新后不出现无效链接或解析异常
+        - 如有既有来源，信息中心筛选与快速跳转保持一致
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: 约束与补充信息
+      description: 填写是否需要补齐快速跳转、是否已有相关 PR/Issue、是否存在认证限制、反爬限制或外链跳转等情况。
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 提交前检查
+      options:
+        - label: 我已确认该站点需求不是重复 Issue
+          required: true
+        - label: 我已提供官网地址、栏目列表页 URL 和可验证的验收标准
+          required: true
+        - label: 我已说明这是新增、优化还是修复已有来源
+          required: true

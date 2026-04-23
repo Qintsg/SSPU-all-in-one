@@ -1,7 +1,8 @@
 /*
  * 教务处消息解析服务 — 抓取并解析教务处网站的消息列表
- * 支持 897（学生专栏）和 898（教师专栏）两个栏目
+ * 支持 895（教学动态）、897（学生专栏）和 898（教师专栏）三个栏目
  * 与信息公开网使用相同 CMS，共用 .col_news_con ul.news_list 解析模式
+ * 列表页只提供日期，精确发布时间需进入文章页读取 .arti_update
  * @Project : SSPU-all-in-one
  * @File : jwc_news_service.dart
  * @Author : Qintsg
@@ -17,7 +18,7 @@ import '../utils/date_utils.dart';
 import 'http_service.dart';
 
 /// 教务处消息解析服务（单例）
-/// 从 jwc.sspu.edu.cn 抓取学生/教师专栏消息
+/// 从 jwc.sspu.edu.cn 抓取教学动态、学生专栏和教师专栏消息
 class JwcNewsService {
   JwcNewsService._();
 
@@ -26,6 +27,9 @@ class JwcNewsService {
   /// 教务处基础 URL
   static const String _baseUrl = 'https://jwc.sspu.edu.cn';
 
+  /// 教学动态路径
+  static const String _teachingPath = '/895';
+
   /// 学生专栏路径
   static const String _studentPath = '/897';
 
@@ -33,6 +37,20 @@ class JwcNewsService {
   static const String _teacherPath = '/898';
 
   final HttpService _http = HttpService.instance;
+
+  /// 获取教学动态消息
+  /// [maxCount] 最大获取条数，默认 20 条
+  Future<List<MessageItem>> fetchTeachingNews({
+    int maxCount = 20,
+    Set<String>? knownMessageIds,
+  }) async {
+    return _fetchFromColumn(
+      columnPath: _teachingPath,
+      category: MessageCategory.jwcTeaching,
+      maxCount: maxCount,
+      knownMessageIds: knownMessageIds,
+    );
+  }
 
   /// 获取学生专栏消息
   /// [maxCount] 最大获取条数，默认 20 条
@@ -136,9 +154,11 @@ class JwcNewsService {
         final messageId = _generateId(fullUrl);
         if (knownMessageIds?.contains(messageId) ?? false) break;
 
-        // 提取发布日期并规范化格式
+        // 列表页日期用于回退，精确发布时间从文章页读取。
         final dateMeta = item.querySelector('span.news_meta');
-        final date = normalizeDate(dateMeta?.text.trim() ?? '');
+        final fallbackDate = normalizeDate(dateMeta?.text.trim() ?? '');
+        final publishTime = await _fetchArticlePublishTime(fullUrl);
+        final date = publishTime?.date ?? fallbackDate;
 
         messages.add(
           MessageItem(
@@ -149,7 +169,8 @@ class JwcNewsService {
             sourceType: MessageSourceType.schoolWebsite,
             sourceName: MessageSourceName.jwc,
             category: category,
-            timestamp: MessageItem.computeTimestamp(date),
+            timestamp:
+                publishTime?.timestamp ?? MessageItem.computeTimestamp(date),
           ),
         );
       }
@@ -161,10 +182,43 @@ class JwcNewsService {
     }
   }
 
+  /// 从文章页提取精确发布时间。
+  /// 页面格式通常为：发布时间：2026-04-22 09:38:56
+  Future<_ArticlePublishTime?> _fetchArticlePublishTime(
+    String articleUrl,
+  ) async {
+    try {
+      final htmlText = await _http.fetchText(articleUrl);
+      final document = html_parser.parse(htmlText);
+      final updateText = document.querySelector('.arti_update')?.text ?? '';
+      final match = RegExp(
+        r'(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}:\d{2}))?',
+      ).firstMatch(updateText);
+      if (match == null) return null;
+
+      final date = normalizeDate(match.group(1) ?? '');
+      final time = match.group(2);
+      final timestamp = time == null
+          ? MessageItem.computeTimestamp(date)
+          : DateTime.parse('$date $time').millisecondsSinceEpoch;
+      return _ArticlePublishTime(date: date, timestamp: timestamp);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 基于 URL 生成稳定的消息唯一 ID
   String _generateId(String url) {
     final bytes = utf8.encode(url);
     final digest = md5.convert(bytes);
     return digest.toString();
   }
+}
+
+/// 文章页发布时间解析结果
+class _ArticlePublishTime {
+  final String date;
+  final int timestamp;
+
+  const _ArticlePublishTime({required this.date, required this.timestamp});
 }
