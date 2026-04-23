@@ -176,7 +176,22 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-输出路径：`build/app/outputs/flutter-apk/`
+签名说明：
+
+- 仓库通过 `android/key.properties` 读取本地 Android release 签名配置
+- 可参考 `android/key.properties.example` 填写签名信息
+- 当前工作区已生成本机自签名 keystore：`android/app/sspu-release.jks`
+- `key.properties` 与 `.jks` 默认被 `.gitignore` 忽略，不会进入仓库
+
+输出路径：
+
+- `build/app/outputs/flutter-apk/app-release.apk`
+- `build/app/outputs/bundle/release/app-release.aab`
+
+发布后使用：
+
+- `app-release.apk` 可直接安装到 Android 设备
+- `app-release.aab` 用于应用商店上传，不适合本地直接安装
 
 ### 7.2 iOS
 
@@ -209,6 +224,11 @@ flutter build windows --release
 
 输出路径：`build/windows/x64/runner/Release/`
 
+发布后使用：
+
+- 需要连同整个 `Release/` 目录一起分发，不能只拷贝单个 `.exe`
+- 启动入口为 `sspu_all_in_one.exe`
+
 ### 7.5 macOS 桌面
 
 ```bash
@@ -217,6 +237,11 @@ flutter build macos --release
 ```
 
 输出路径：`build/macos/Build/Products/Release/`
+
+发布后使用：
+
+- 分发生成的 `.app` 包
+- 若未做 Apple 签名与公证，首次运行可能需要在系统安全设置中手动允许
 
 ### 7.6 Linux 桌面
 
@@ -327,6 +352,14 @@ flutter doctor -v
 flutter --version
 flutter pub deps | Select-String "fluent_ui"
 ```
+
+### 10.5 Android release 构建失败
+
+若 `flutter build apk --release` 提示缺少签名配置，请检查：
+
+- `android/key.properties` 是否存在
+- `storeFile` 是否指向实际存在的 keystore 文件
+- `storePassword` / `keyPassword` / `keyAlias` 是否与 keystore 一致
 
 ### 10.4 本地状态文件异常
 
