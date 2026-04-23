@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.0.1--alpha-orange)](docs/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FQintsg%2FSSPU-all-in-one%2Fmain%2Fpubspec.yaml&query=%24.version&label=version&color=orange)](docs/CHANGELOG.md)
 
 ## 简介
 
@@ -43,6 +43,11 @@ flutter build linux          # Linux
 
 - 本仓库支持通过 `android/key.properties` 加载本地签名配置；当前工作区已生成一个本机自签名 keystore：`android/app/sspu-release.jks`
 - `android/key.properties` 与 `.jks` 文件默认不会提交；若需在新机器复用，请参考 `android/key.properties.example` 重新生成或复制 keystore
+- GitHub Actions 进行 Android release build 时，不依赖仓库内签名文件；可通过 Secrets 在运行时下发签名材料：
+  `ANDROID_KEYSTORE_BASE64`
+  `ANDROID_KEYSTORE_PASSWORD`
+  `ANDROID_KEY_ALIAS`
+  `ANDROID_KEY_PASSWORD`
 - 构建命令：
 
 ```bash

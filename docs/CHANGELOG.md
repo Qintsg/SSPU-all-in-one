@@ -22,6 +22,7 @@
 
 - Android 构建链升级到 Gradle 9.4.1，并同步将 Android Gradle Plugin 调整到兼容的 8.13.2
 - Android release 构建改为优先读取本地 `key.properties` 中的签名配置，缺失时回退到 debug 签名
+- 关于页版本号改为运行时读取应用包信息，README 徽章改为直接从 `pubspec.yaml` 动态取值
 - 完善设置页“微信推文消息获取”操作逻辑，补齐公众号平台刷新设置、认证入口与 SSPU 微信矩阵展示
 - 将用户设置、认证信息、文章缓存和 WebView2 运行态统一收敛到 `~/.sspu-all-in-one/`
 - 将微信推文高级配置文件入口合并到公众号平台认证卡片，扫码登录成功后自动更新 `wxmp_config.toml`

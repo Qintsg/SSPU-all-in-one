@@ -182,6 +182,7 @@ flutter build appbundle --release
 - 可参考 `android/key.properties.example` 填写签名信息
 - 当前工作区已生成本机自签名 keystore：`android/app/sspu-release.jks`
 - `key.properties` 与 `.jks` 默认被 `.gitignore` 忽略，不会进入仓库
+- GitHub Actions 可通过 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 四个 Secrets 在运行时写入签名配置
 
 输出路径：
 

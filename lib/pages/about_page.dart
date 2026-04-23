@@ -9,6 +9,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/app_info_service.dart';
 import '../theme/fluent_tokens.dart';
 import 'agreement_page.dart';
 
@@ -145,17 +146,24 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(width: FluentSpacing.l),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('SSPU All-in-One', style: typography.subtitle),
-                        const SizedBox(height: FluentSpacing.xs),
-                        Text('版本 0.0.1-alpha', style: typography.caption),
-                        const SizedBox(height: FluentSpacing.l),
-                        _buildInfoRow(context, '著作人', 'Qintsg'),
-                        const SizedBox(height: FluentSpacing.s),
-                        _buildInfoRow(context, '许可证', 'MIT License'),
-                      ],
+                    child: FutureBuilder<AppVersionInfo>(
+                      future: AppInfoService.instance.loadVersionInfo(),
+                      builder: (context, snapshot) {
+                        final versionText =
+                            snapshot.data?.displayText ?? '版本加载中...';
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('SSPU All-in-One', style: typography.subtitle),
+                            const SizedBox(height: FluentSpacing.xs),
+                            Text(versionText, style: typography.caption),
+                            const SizedBox(height: FluentSpacing.l),
+                            _buildInfoRow(context, '著作人', 'Qintsg'),
+                            const SizedBox(height: FluentSpacing.s),
+                            _buildInfoRow(context, '许可证', 'MIT License'),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],
