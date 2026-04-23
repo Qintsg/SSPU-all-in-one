@@ -18,8 +18,8 @@ OutputBaseFilename=SSPU-All-in-One-v{#AppVersion}-windows-arm64-installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesAllowed=arm64compatible
-ArchitecturesInstallIn64BitMode=arm64compatible
+ArchitecturesAllowed=arm64
+ArchitecturesInstallIn64BitMode=arm64
 SetupIconFile={#WorkspaceDir}\windows\runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 
