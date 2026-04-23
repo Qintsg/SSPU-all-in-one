@@ -24,6 +24,7 @@ class WxmpApiError {
   static const int success = 0;
   static const int sessionExpired = 200003;
   static const int frequencyLimit = 200013;
+  static const int searchUnavailable = 200040;
 }
 
 /// 公众号平台认证有效性校验结果。
@@ -38,6 +39,11 @@ class WxmpAuthValidationResult {
     required this.isValid,
     required this.message,
   });
+}
+
+@visibleForTesting
+WxmpAuthValidationResult debugValidationResultForRet(int ret) {
+  return WxmpArticleService.validationResultForRet(ret);
 }
 
 /// 微信公众号平台文章采集服务（单例）
@@ -108,6 +114,28 @@ class WxmpArticleService {
     return ret;
   }
 
+  /// 将公众号平台业务错误码转换为认证校验结果。
+  /// 200040 会出现在 searchbiz 探针上，不代表 Cookie / Token 已失效。
+  @visibleForTesting
+  static WxmpAuthValidationResult validationResultForRet(int ret) {
+    if (ret == WxmpApiError.success) {
+      return const WxmpAuthValidationResult(
+        isValid: true,
+        message: '认证有效，可正常访问公众号平台接口',
+      );
+    }
+    if (ret == WxmpApiError.searchUnavailable) {
+      return const WxmpAuthValidationResult(
+        isValid: true,
+        message: '认证信息可用；公众号搜索接口暂时不可用，刷新文章时将继续使用文章接口',
+      );
+    }
+    return WxmpAuthValidationResult(
+      isValid: false,
+      message: '公众号平台返回异常状态：$ret',
+    );
+  }
+
   /// 校验当前 Cookie / Token 是否能访问公众号平台接口。
   /// 使用轻量搜索接口探测登录态，避免刷新文章时才暴露会话失效。
   Future<WxmpAuthValidationResult> validateAuth() async {
@@ -143,16 +171,7 @@ class WxmpArticleService {
       );
       final data = response.data as Map<String, dynamic>;
       final ret = _checkResponse(data);
-      if (ret == WxmpApiError.success) {
-        return const WxmpAuthValidationResult(
-          isValid: true,
-          message: '认证有效，可正常访问公众号平台接口',
-        );
-      }
-      return WxmpAuthValidationResult(
-        isValid: false,
-        message: '公众号平台返回异常状态：$ret',
-      );
+      return validationResultForRet(ret);
     } on WxmpSessionExpiredException {
       return const WxmpAuthValidationResult(
         isValid: false,
