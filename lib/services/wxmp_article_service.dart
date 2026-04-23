@@ -74,6 +74,20 @@ class WxmpArticleService {
     }
   }
 
+  /// 对 fakeid 做脱敏，日志只保留排查所需的定位能力。
+  String _maskFakeid(String fakeid) {
+    if (fakeid.length <= 8) return '***';
+    return '${fakeid.substring(0, 4)}***${fakeid.substring(fakeid.length - 4)}';
+  }
+
+  /// 记录公众号平台响应状态，不输出 Cookie / Token 等敏感字段。
+  void _logApiRet(String endpoint, Map<String, dynamic> data) {
+    final baseResp = data['base_resp'] as Map<String, dynamic>?;
+    final ret = baseResp?['ret'];
+    final errMsg = baseResp?['err_msg'];
+    _debugLog('$endpoint response ret=$ret err_msg=$errMsg');
+  }
+
   /// 读取配置失败时使用默认值，避免配置文件损坏影响扫码登录链路。
   Future<WxmpConfig> _loadConfigOrDefault() async {
     try {
@@ -139,8 +153,10 @@ class WxmpArticleService {
   /// 校验当前 Cookie / Token 是否能访问公众号平台接口。
   /// 使用轻量搜索接口探测登录态，避免刷新文章时才暴露会话失效。
   Future<WxmpAuthValidationResult> validateAuth() async {
+    _debugLog('validate auth start');
     final authStatus = await _auth.getAuthStatus();
     if (!authStatus.isUsable) {
+      _debugLog('validate auth skipped: ${authStatus.message}');
       return WxmpAuthValidationResult(
         isValid: false,
         message: authStatus.message,
@@ -170,14 +186,21 @@ class WxmpArticleService {
         options: Options(headers: await _buildHeaders()),
       );
       final data = response.data as Map<String, dynamic>;
+      _logApiRet('validate/searchbiz', data);
       final ret = _checkResponse(data);
-      return validationResultForRet(ret);
+      final result = validationResultForRet(ret);
+      _debugLog(
+        'validate auth result valid=${result.isValid} message=${result.message}',
+      );
+      return result;
     } on WxmpSessionExpiredException {
+      _debugLog('validate auth failed: session expired');
       return const WxmpAuthValidationResult(
         isValid: false,
         message: '会话已过期，请重新扫码登录',
       );
     } on WxmpFrequencyLimitException {
+      _debugLog('validate auth failed: frequency limited');
       return const WxmpAuthValidationResult(
         isValid: false,
         message: '平台限制了当前请求频率，请稍后再试',
@@ -200,6 +223,7 @@ class WxmpArticleService {
     int begin = 0,
     int count = 5,
   }) async {
+    _debugLog('search mp start keyword="$keyword" begin=$begin count=$count');
     final authStatus = await _auth.getAuthStatus();
     if (!authStatus.isUsable) {
       _debugLog('search skipped: ${authStatus.message}');
@@ -230,10 +254,15 @@ class WxmpArticleService {
     );
 
     final data = response.data as Map<String, dynamic>;
+    _logApiRet('searchbiz', data);
     final ret = _checkResponse(data);
-    if (ret != WxmpApiError.success) return [];
+    if (ret != WxmpApiError.success) {
+      _debugLog('search mp returned non-success ret=$ret');
+      return [];
+    }
 
     final list = data['list'] as List<dynamic>? ?? [];
+    _debugLog('search mp success result_count=${list.length}');
     return list.map<Map<String, String>>((item) {
       final map = item as Map<String, dynamic>;
       return {
@@ -257,6 +286,9 @@ class WxmpArticleService {
     int page = 0,
     int count = 5,
   }) async {
+    _debugLog(
+      'get articles start fakeid=${_maskFakeid(fakeid)} page=$page count=$count',
+    );
     final authStatus = await _auth.getAuthStatus();
     if (!authStatus.isUsable) {
       _debugLog('article list skipped: ${authStatus.message}');
@@ -288,15 +320,29 @@ class WxmpArticleService {
     );
 
     final data = response.data as Map<String, dynamic>;
+    _logApiRet('appmsgpublish', data);
     final ret = _checkResponse(data);
-    if (ret != WxmpApiError.success) return [];
+    if (ret != WxmpApiError.success) {
+      _debugLog(
+        'get articles non-success ret=$ret fakeid=${_maskFakeid(fakeid)}',
+      );
+      return [];
+    }
 
     // publish_page 是 JSON 字符串，需二次解析
     final publishPageStr = data['publish_page'] as String?;
-    if (publishPageStr == null || publishPageStr.isEmpty) return [];
+    if (publishPageStr == null || publishPageStr.isEmpty) {
+      _debugLog(
+        'get articles empty publish_page fakeid=${_maskFakeid(fakeid)}',
+      );
+      return [];
+    }
 
     final publishPage = jsonDecode(publishPageStr) as Map<String, dynamic>;
     final publishList = publishPage['publish_list'] as List<dynamic>? ?? [];
+    _debugLog(
+      'get articles publish_list_count=${publishList.length} fakeid=${_maskFakeid(fakeid)}',
+    );
 
     final articles = <Map<String, dynamic>>[];
     for (final item in publishList) {
@@ -316,6 +362,9 @@ class WxmpArticleService {
       }
     }
 
+    _debugLog(
+      'get articles parsed_count=${articles.length} fakeid=${_maskFakeid(fakeid)} page=$page',
+    );
     return articles;
   }
 
@@ -329,6 +378,9 @@ class WxmpArticleService {
     Set<String>? knownMessageIds,
     bool validateBeforeFetch = true,
   }) async {
+    _debugLog(
+      'refresh start maxCount=$maxCount known=${knownMessageIds?.length ?? -1} validate=$validateBeforeFetch',
+    );
     final authStatus = await _auth.getAuthStatus();
     if (!authStatus.isUsable) {
       _debugLog('refresh skipped: ${authStatus.message}');
@@ -336,6 +388,9 @@ class WxmpArticleService {
     }
     if (validateBeforeFetch) {
       final validation = await validateAuth();
+      _debugLog(
+        'refresh validation valid=${validation.isValid} message=${validation.message}',
+      );
       if (!validation.isValid) {
         _debugLog('refresh skipped: ${validation.message}');
         return [];
@@ -343,7 +398,11 @@ class WxmpArticleService {
     }
 
     final followedMps = await getLocalFollowedMps();
-    if (followedMps.isEmpty) return [];
+    _debugLog('refresh followed account count=${followedMps.length}');
+    if (followedMps.isEmpty) {
+      _debugLog('refresh skipped: no followed mp accounts');
+      return [];
+    }
 
     final storedMessageIds =
         knownMessageIds ??
@@ -352,6 +411,9 @@ class WxmpArticleService {
     final config = await _loadConfigOrDefault();
     final perRequestLimit = config.perRequestArticleCount;
     final requestDelayMs = config.requestDelayMs;
+    _debugLog(
+      'refresh config perRequestLimit=$perRequestLimit requestDelayMs=$requestDelayMs',
+    );
     for (final entry in followedMps.entries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
@@ -364,11 +426,17 @@ class WxmpArticleService {
       var reachedKnownMessage = false;
 
       try {
+        _debugLog(
+          'refresh account start name="$mpName" fakeid=${_maskFakeid(fakeid)} perRequestCount=$perRequestCount',
+        );
         while (fetchedForMp < maxCount && !reachedKnownMessage) {
           final articles = await getArticles(
             fakeid,
             page: page,
             count: perRequestCount,
+          );
+          _debugLog(
+            'refresh account page result name="$mpName" page=$page articles=${articles.length}',
           );
           if (articles.isEmpty) break;
 
@@ -376,6 +444,9 @@ class WxmpArticleService {
             final msgItem = _articleToMessageItem(article, mpName, fakeid);
             if (msgItem == null) continue;
             if (storedMessageIds.contains(msgItem.id)) {
+              _debugLog(
+                'refresh account reached known message name="$mpName" title="${msgItem.title}"',
+              );
               reachedKnownMessage = true;
               break;
             }
@@ -392,6 +463,9 @@ class WxmpArticleService {
             await Future.delayed(Duration(milliseconds: requestDelayMs));
           }
         }
+        _debugLog(
+          'refresh account done name="$mpName" fetched=$fetchedForMp reachedKnown=$reachedKnownMessage',
+        );
 
         // 请求间隔，避免频率限制
         if (followedMps.length > 1 && requestDelayMs > 0) {
@@ -412,6 +486,7 @@ class WxmpArticleService {
       }
     }
 
+    _debugLog('refresh done total_new=${allMessages.length}');
     return allMessages;
   }
 
@@ -421,14 +496,20 @@ class WxmpArticleService {
   /// :return: {fakeid: {name, alias, avatar}}
   Future<Map<String, Map<String, String>>> getLocalFollowedMps() async {
     final json = await StorageService.getString(_keyFollowedMps);
-    if (json == null || json.isEmpty) return {};
+    if (json == null || json.isEmpty) {
+      _debugLog('followed mp storage empty');
+      return {};
+    }
     try {
       final decoded = jsonDecode(json) as Map<String, dynamic>;
-      return decoded.map((k, v) {
+      final result = decoded.map((k, v) {
         final info = v as Map<String, dynamic>;
         return MapEntry(k, info.map((ik, iv) => MapEntry(ik, iv.toString())));
       });
-    } catch (_) {
+      _debugLog('followed mp storage loaded count=${result.length}');
+      return result;
+    } catch (error) {
+      _debugLog('followed mp storage parse failed: $error');
       return {};
     }
   }

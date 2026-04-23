@@ -9,6 +9,7 @@
 
 import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/message_item.dart';
@@ -91,6 +92,12 @@ class _InfoPageState extends State<InfoPage> {
 
   /// 自动刷新服务（用于手动全渠道刷新）
   final AutoRefreshService _autoRefreshService = AutoRefreshService.instance;
+
+  void _debugWechatRefreshLog(String message) {
+    if (kDebugMode) {
+      debugPrint('[InfoPage][WechatRefresh] $message');
+    }
+  }
 
   @override
   void initState() {
@@ -186,10 +193,12 @@ class _InfoPageState extends State<InfoPage> {
 
   /// 刷新微信公众号文章：通过 WechatArticleService 获取已关注公众号的推文
   Future<void> _refreshWechatArticles() async {
+    _debugWechatRefreshLog('manual refresh clicked');
     final isConfigured = await WechatArticleService.instance
         .hasConfiguredSource();
     if (!isConfigured) {
       _wechatSourceConfigured = false;
+      _debugWechatRefreshLog('source not configured');
       if (mounted) {
         displayInfoBar(
           context,
@@ -211,6 +220,9 @@ class _InfoPageState extends State<InfoPage> {
     }
 
     final validation = await WechatArticleService.instance.validateSource();
+    _debugWechatRefreshLog(
+      'validation valid=${validation.isValid} message=${validation.message}',
+    );
     if (!validation.isValid) {
       _wechatSourceConfigured = false;
       if (mounted) {
@@ -248,11 +260,15 @@ class _InfoPageState extends State<InfoPage> {
         'wechat_public',
         defaultValue: 50,
       );
+      _debugWechatRefreshLog(
+        'fetch request maxCount=$maxCount persisted=${persistedMessages.length}',
+      );
       final articles = await WechatArticleService.instance.fetchArticles(
         maxCount: maxCount,
         knownMessageIds: persistedMessages.map((msg) => msg.id).toSet(),
         validateBeforeFetch: false,
       );
+      _debugWechatRefreshLog('fetch returned articles=${articles.length}');
 
       if (articles.isEmpty) {
         if (mounted) {
@@ -276,6 +292,9 @@ class _InfoPageState extends State<InfoPage> {
 
       // 与已有消息合并
       final merged = _stateService.mergeMessages(_allMessages, articles);
+      _debugWechatRefreshLog(
+        'merge old=${_allMessages.length} fetched=${articles.length} merged=${merged.length}',
+      );
       _allMessages
         ..clear()
         ..addAll(merged);
@@ -285,6 +304,9 @@ class _InfoPageState extends State<InfoPage> {
 
       // 过滤并排序
       await _filterByEnabledChannels();
+      _debugWechatRefreshLog(
+        'filter completed visible=${_filteredMessages.length}',
+      );
 
       if (mounted) {
         displayInfoBar(
@@ -302,6 +324,7 @@ class _InfoPageState extends State<InfoPage> {
         );
       }
     } catch (e) {
+      _debugWechatRefreshLog('refresh failed: $e');
       if (mounted) {
         displayInfoBar(
           context,

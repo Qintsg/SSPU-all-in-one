@@ -8,6 +8,7 @@
  */
 
 import '../models/message_item.dart';
+import 'package:flutter/foundation.dart';
 import 'storage_service.dart';
 import 'wxmp_article_service.dart';
 import 'wxmp_auth_service.dart';
@@ -21,6 +22,12 @@ class WechatArticleService {
 
   final WxmpAuthService _auth = WxmpAuthService.instance;
   final WxmpArticleService _wxmpService = WxmpArticleService.instance;
+
+  void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint('[WechatArticleService] $message');
+    }
+  }
 
   /// 历史微信读书方案遗留的存储键。
   static const List<String> _legacyWereadKeys = [
@@ -56,13 +63,21 @@ class WechatArticleService {
     Set<String>? knownMessageIds,
     bool validateBeforeFetch = true,
   }) async {
+    _debugLog(
+      'fetch articles start maxCount=$maxCount known=${knownMessageIds?.length ?? -1} validate=$validateBeforeFetch',
+    );
     await clearLegacyWereadState();
-    if (!await _auth.hasAuth()) return [];
+    if (!await _auth.hasAuth()) {
+      _debugLog('fetch articles skipped: auth unavailable');
+      return [];
+    }
 
-    return _wxmpService.fetchArticles(
+    final articles = await _wxmpService.fetchArticles(
       maxCount: maxCount,
       knownMessageIds: knownMessageIds,
       validateBeforeFetch: validateBeforeFetch,
     );
+    _debugLog('fetch articles done count=${articles.length}');
+    return articles;
   }
 }
