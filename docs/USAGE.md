@@ -163,6 +163,9 @@ flutter test --coverage
 
 ## 7. 构建发布包
 
+发布版本号、Tag、GitHub Release 资产命名、Release Notes 模板与平台清单，统一以 [docs/RELEASE.md](RELEASE.md) 为准。
+公开 Release 仍然通过带 `release` 标签的 PR merge 自动触发，版本号只读取 `pubspec.yaml`。
+
 ### 7.1 Android
 
 ```bash
@@ -193,6 +196,7 @@ flutter build appbundle --release
 
 - `app-release.apk` 可直接安装到 Android 设备
 - `app-release.aab` 用于应用商店上传，不适合本地直接安装
+- GitHub Release 默认公开发布 `SSPU-All-in-One-v{version}-android-universal.apk`
 
 ### 7.2 iOS
 
@@ -223,12 +227,16 @@ python -m http.server 8080
 flutter build windows --release
 ```
 
-输出路径：`build/windows/x64/runner/Release/`
+输出路径：
+
+- `build/windows/x64/runner/Release/`
+- `build/windows/arm64/runner/Release/`
 
 发布后使用：
 
 - 需要连同整个 `Release/` 目录一起分发，不能只拷贝单个 `.exe`
 - 启动入口为 `sspu_all_in_one.exe`
+- GitHub Release 默认同时提供 x64 / arm64 的 installer 与 portable 产物
 
 ### 7.5 macOS 桌面
 
@@ -243,6 +251,7 @@ flutter build macos --release
 
 - 分发生成的 `.app` 包
 - 若未做 Apple 签名与公证，首次运行可能需要在系统安全设置中手动允许
+- 当前 GitHub Release 默认产出未签名 DMG：`SSPU-All-in-One-v{version}-macos-universal-unsigned.dmg`
 
 ### 7.6 Linux 桌面
 
@@ -250,7 +259,10 @@ flutter build macos --release
 flutter build linux --release
 ```
 
-输出路径：`build/linux/x64/release/bundle/`
+输出路径：
+
+- `build/linux/x64/release/bundle/`
+- `build/linux/arm64/release/bundle/`
 
 若使用 Release 压缩包运行，建议使用 `tar` 解压以保留 Unix 可执行权限：
 
@@ -265,6 +277,23 @@ cd sspu-all-in-one-linux-x64
 ```bash
 chmod +x sspu_all_in_one
 ./sspu_all_in_one
+```
+
+若通过 GitHub Release 工作流发布，当前还会额外生成：
+
+- `SSPU-All-in-One-v{version}-linux-x64-appimage.AppImage`
+- `SSPU-All-in-One-v{version}-linux-x64-deb.deb`
+- `SSPU-All-in-One-v{version}-linux-x64-rpm.rpm`
+- `SSPU-All-in-One-v{version}-linux-x64-portable.tar.gz`
+- `SSPU-All-in-One-v{version}-linux-arm64-appimage.AppImage`
+- `SSPU-All-in-One-v{version}-linux-arm64-deb.deb`
+- `SSPU-All-in-One-v{version}-linux-arm64-rpm.rpm`
+- `SSPU-All-in-One-v{version}-linux-arm64-portable.tar.gz`
+
+面向 Debian / Ubuntu 及其衍生发行版，可直接使用：
+
+```bash
+sudo apt install ./SSPU-All-in-One-v{version}-linux-x64-deb.deb
 ```
 
 ---

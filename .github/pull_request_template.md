@@ -4,7 +4,7 @@
 <!-- 说明这次变更为什么要做、解决什么问题 -->
 
 ## 关联事项
-<!-- 关联 Issue / 任务，例如 Closes #123 -->
+<!-- 关联当前仓库内的 Issue / 任务 -->
 Closes #
 
 ## 变更类型
@@ -23,7 +23,7 @@ Closes #
 - [ ] 平台工程（Android / iOS / macOS / Linux / Windows / Web）
 - [ ] 依赖 / 工具链
 - [ ] GitHub 工作流 / Release
-- [ ] 仓库治理（Issue / PR 模板、CODEOWNERS、Labeler、Dependabot）
+- [ ] 仓库治理（Issue / PR 模板、Labeler、CODEOWNERS、Dependabot）
 - [ ] 文档
 
 ## 风险与回滚
@@ -35,17 +35,57 @@ Closes #
 - 回滚方案：
 
 ## 验证记录
-<!-- 写清本次变更如何验证；如果未执行，请写原因 -->
 - [ ] `flutter analyze`
 - [ ] `flutter test`
 - [ ] 手动验证（请补充关键路径）
 - [ ] 未执行部分验证（请说明原因）
 
+## 发布触发说明
+- [ ] 本 PR 不触发公开 Release
+- [ ] 本 PR 需要在 merge 后触发公开 Release，并已人工添加 `release` 标签
+- [ ] 如为正式发布，目标分支为 `main`
+- [ ] 如为预发布，目标分支为 `main`、`develop` 或 `release/*`
+
 ## 截图 / 录屏（如涉及 UI）
 <!-- 若无，可写“无” -->
 
-## 发布说明（如涉及 Release / 配置 / 依赖）
-<!-- 写明版本、平台影响、迁移要求、环境变量或工作流变化 -->
+## 发布说明（仅带 `release` 标签时必填）
+<!--
+Release workflow 会直接从下列章节生成 release-notes.md 与 GitHub Release 正文。
+带 `release` 标签时，必须把每个章节替换为真实内容，不允许保留“无”“新装用户：”这类模板占位文本。
+若本 PR 不触发公开 Release，请删除或忽略下列章节内容，不要给 PR 添加 `release` 标签。
+-->
+
+## 亮点
+- 请填写本次发布的新增、修复、优化亮点
+
+## 破坏性变更
+- 若无破坏性变更，请明确写“无破坏性变更”
+
+## 平台清单
+- Android
+- Windows x64 / arm64
+- macOS universal
+- Linux x64 / arm64（AppImage / deb / rpm / tar.gz）
+- Web
+
+## 安装 / 升级说明
+- 新装用户：
+- 升级用户：
+- 是否需要清理旧配置：
+
+## Linux 安装说明
+- Debian / Ubuntu / Linux Mint 用户优先使用 `.deb`
+- Fedora / openSUSE / RHEL 系用户优先使用 `.rpm`
+- 需要免安装时使用 `.AppImage`
+- 无法直接安装时使用 `.tar.gz`
+
+## 已知问题
+- 若无已知问题，请明确写“无已知问题”
+
+## 校验信息
+- 合并后 Release 将附带 `SHA256SUMS.txt`
+- 合并后 Release 将附带 `manifest.json`
 
 ## 自查清单
 - [ ] 命名清晰，类型完整
