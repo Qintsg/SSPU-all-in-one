@@ -191,6 +191,37 @@ class SettingsWechatController extends ChangeNotifier {
     }
   }
 
+  /// 读取认证配置文件原文，供设置页内置编辑器展示。
+  Future<String> loadConfigFileText() async {
+    _wxmpConfigPath = await _wxmpConfigService.getConfigPath();
+    return _wxmpConfigService.loadConfigText();
+  }
+
+  /// 保存内置编辑器内容，并刷新设置页认证状态。
+  Future<SettingsWechatFeedback> saveConfigFileText(String content) async {
+    try {
+      await _wxmpConfigService.saveConfigText(content);
+      final authStatus = await _wxmpAuth.getAuthStatus();
+      _wxmpAuthenticated = authStatus.isUsable;
+      _wxmpAuthStatus = authStatus;
+      _wxmpConfigPath = await _wxmpConfigService.getConfigPath();
+      _wxmpConfigMessage = '配置文件已保存并重新加载';
+      notifyListeners();
+      return const SettingsWechatFeedback(
+        title: '配置文件已保存',
+        severity: InfoBarSeverity.success,
+      );
+    } catch (error) {
+      _wxmpConfigMessage = '保存配置文件失败：$error';
+      notifyListeners();
+      return SettingsWechatFeedback(
+        title: '保存配置文件失败',
+        content: '$error',
+        severity: InfoBarSeverity.error,
+      );
+    }
+  }
+
   /// 打开认证配置文件目录。
   Future<SettingsWechatFeedback> openConfigDirectory() async {
     try {

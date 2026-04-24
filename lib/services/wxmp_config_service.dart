@@ -212,6 +212,18 @@ class WxmpConfigService {
     await File(configPath).writeAsString(config.toToml());
   }
 
+  /// 读取原始 TOML 文本，供内置编辑器保留注释和用户排版。
+  Future<String> loadConfigText() async {
+    final configPath = await ensureConfigFile();
+    return File(configPath).readAsString();
+  }
+
+  /// 保存内置编辑器提交的 TOML 文本，保持用户注释和字段排版不被重写。
+  Future<void> saveConfigText(String content) async {
+    final configPath = await ensureConfigFile();
+    await File(configPath).writeAsString(content);
+  }
+
   /// 扫码登录成功后回写 Cookie / Token，同时保留用户手动配置的高级参数。
   Future<void> updateAuthCredentials({
     required String cookie,
@@ -244,11 +256,11 @@ class WxmpConfigService {
   Future<void> openConfigFile() async {
     final configPath = await ensureConfigFile();
     final fileUri = Uri.file(configPath);
-    if (await canLaunchUrl(fileUri)) {
-      await launchUrl(fileUri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(fileUri) &&
+        await launchUrl(fileUri, mode: LaunchMode.externalApplication)) {
       return;
     }
-    throw StateError('无法打开配置文件：$configPath');
+    throw UnsupportedError('当前平台无法外部打开配置文件，请使用内置编辑器');
   }
 
   Future<void> _openDirectoryNative(String directoryPath) async {
