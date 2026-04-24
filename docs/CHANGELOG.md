@@ -6,6 +6,16 @@
 
 ---
 
+## [0.2.2-alpha+2] - 2026-04-24
+
+### 修复
+
+- Release 工作流的 Linux x64 / arm64 构建依赖补齐 `libsecret-1-dev`，修复 `flutter_secure_storage_linux` 在 CMake 阶段找不到 `libsecret-1>=0.18.4` 导致 Linux 产物构建失败的问题
+
+### 发布
+
+- 以 `0.2.2-alpha+2` 重新发布 alpha 构建批次，使用 `v0.2.2-alpha` Tag，并通过完整版本号区分新产物
+
 ## [0.2.2-alpha] - 2026-04-24
 
 ### 新增
