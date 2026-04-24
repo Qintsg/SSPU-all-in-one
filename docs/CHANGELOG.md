@@ -6,6 +6,17 @@
 
 ---
 
+## [0.2.2-alpha+3] - 2026-04-24
+
+### 修复
+
+- Android release 构建将 `compileSdk` 提升到至少 34，修复 `flutter_secure_storage` 依赖链中的 AndroidX AAR metadata 要求 API 34 以上导致 APK 构建失败的问题
+- Android release 构建补充 Tink 编译期注解类的 R8 `dontwarn` 规则，修复 release shrink 阶段因缺少注解类而中断的问题
+
+### 发布
+
+- 以 `0.2.2-alpha+3` 重新发布 alpha 构建批次，使用 `v0.2.2-alpha` Tag，并通过完整版本号区分新产物
+
 ## [0.2.2-alpha+2] - 2026-04-24
 
 ### 修复
