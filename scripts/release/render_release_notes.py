@@ -17,12 +17,12 @@ from typing import Dict, List
 
 REQUIRED_SECTION_TITLES: List[str] = [
     "亮点",
+    "新增",
+    "修复",
+    "优化",
     "破坏性变更",
-    "平台清单",
     "安装 / 升级说明",
-    "Linux 安装说明",
     "已知问题",
-    "校验信息",
 ]
 
 
