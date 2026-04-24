@@ -6,6 +6,8 @@
  * @Date : 2026-04-23
  */
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
 
@@ -39,5 +41,35 @@ request_delay_ms = -1
     // 单次请求条数过高容易触发平台限制，服务层会限制上限。
     expect(config.perRequestArticleCount, 20);
     expect(config.requestDelayMs, 0);
+  });
+
+  test('保存原始 TOML 文本时保留用户注释', () async {
+    final configDirectory = await Directory.systemTemp.createTemp(
+      'wxmp_config_text_test_',
+    );
+    final configPath =
+        '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml';
+    final rawConfig = '''
+[wxmp]
+# 用户手动记录的来源说明
+cookie = "manual-cookie"
+token = "123456"
+''';
+
+    WxmpConfigService.instance.debugSetConfigPathForTesting(configPath);
+    addTearDown(() async {
+      WxmpConfigService.instance.debugSetConfigPathForTesting(null);
+      if (await configDirectory.exists()) {
+        await configDirectory.delete(recursive: true);
+      }
+    });
+
+    await WxmpConfigService.instance.saveConfigText(rawConfig);
+    final savedText = await WxmpConfigService.instance.loadConfigText();
+    final parsed = await WxmpConfigService.instance.loadConfig();
+
+    // 内置编辑器保存原文，避免移动端手动调整 Cookie 时丢失备注。
+    expect(savedText, rawConfig);
+    expect(parsed.cookie, 'manual-cookie');
   });
 }

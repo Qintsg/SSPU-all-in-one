@@ -79,6 +79,69 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
     }
   }
 
+  Future<void> _openConfigEditor() async {
+    late final String initialContent;
+    try {
+      initialContent = await _controller.loadConfigFileText();
+    } catch (error) {
+      await _showFeedback(
+        SettingsWechatFeedback(
+          title: '读取配置文件失败',
+          content: '$error',
+          severity: InfoBarSeverity.error,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    final textController = TextEditingController(text: initialContent);
+    final savedContent = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => ContentDialog(
+        title: const Text('编辑公众号平台配置'),
+        content: SizedBox(
+          width: 720,
+          height: 460,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '保存后会立即重新加载配置；Cookie 和 Token 属于敏感信息，请勿分享。',
+                style: FluentTheme.of(dialogContext).typography.caption,
+              ),
+              const SizedBox(height: FluentSpacing.s),
+              Expanded(
+                child: TextBox(
+                  controller: textController,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(fontFamily: 'Consolas'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          Button(
+            child: const Text('取消'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+          FilledButton(
+            child: const Text('保存'),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(textController.text),
+          ),
+        ],
+      ),
+    );
+
+    textController.dispose();
+    if (savedContent == null) return;
+    await _showFeedback(await _controller.saveConfigFileText(savedContent));
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -368,16 +431,20 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                           ),
                   ),
                 Button(
-                  onPressed: () async =>
-                      _showFeedback(await _controller.openConfigFile()),
+                  onPressed: _openConfigEditor,
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(FluentIcons.open_in_new_window, size: 14),
+                      Icon(FluentIcons.edit, size: 14),
                       SizedBox(width: 6),
-                      Text('打开配置文件'),
+                      Text('编辑配置文件'),
                     ],
                   ),
+                ),
+                Button(
+                  onPressed: () async =>
+                      _showFeedback(await _controller.openConfigFile()),
+                  child: const Text('外部打开'),
                 ),
                 Button(
                   onPressed: () async =>
