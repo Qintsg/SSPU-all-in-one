@@ -11,6 +11,11 @@ import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
 
 /// 构建不同平台下托盘图标候选路径（按优先级排序）。
+/// [executableDir] 当前运行可执行文件所在目录。
+/// [isWindows] 是否为 Windows 平台，用于拼接 `data/flutter_assets` 图标路径。
+/// [isLinux] 是否为 Linux 平台，用于拼接 bundle 内图标路径。
+/// [isMacOS] 是否为 macOS 平台，用于拼接 App.framework/Resources 图标路径。
+/// @returns 按优先级排序的候选路径列表，最后一项始终是 `assets/images/app_icon.png` 回退路径。
 @visibleForTesting
 List<String> buildTrayIconCandidates({
   required String executableDir,
@@ -34,7 +39,7 @@ List<String> buildTrayIconCandidates({
     );
   }
 
-  // 开发阶段统一回退到项目相对路径，避免平台路径解析失败时直接崩溃。
+  // 统一回退到项目相对路径，避免任何模式下路径解析失败时直接崩溃。
   candidates.add('assets/images/app_icon.png');
   return candidates;
 }
@@ -68,15 +73,16 @@ class TrayService {
       );
       await trayManager.setContextMenu(menu);
       _initialized = true;
-    } catch (error) {
+    } catch (error, stackTrace) {
       // 托盘初始化异常不应阻断主窗口启动。
-      debugPrint('TrayService 初始化失败，已降级为无托盘模式：$error');
+      debugPrint('TrayService 初始化失败，已降级为无托盘模式。错误：${error.toString()}');
+      debugPrintStack(stackTrace: stackTrace);
       _initialized = false;
     }
   }
 
-  /// 根据运行环境解析托盘图标的文件系统路径
-  /// release 模式：flutter_assets 内; debug 模式：项目根目录回退
+  /// 根据当前平台解析托盘图标路径。
+  /// 按候选顺序选择第一个存在的路径，全部不存在时回退到项目相对路径。
   String _resolveIconPath() {
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final candidates = buildTrayIconCandidates(
@@ -88,7 +94,7 @@ class TrayService {
     for (final iconPath in candidates) {
       if (File(iconPath).existsSync()) return iconPath;
     }
-    // setIcon 允许相对路径；即使文件暂不可见，也保留最后回退值避免空路径。
+    // setIcon 允许相对路径；即使文件暂不可见，仍保留最后回退值避免空路径。
     return candidates.last;
   }
 
