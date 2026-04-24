@@ -11,6 +11,7 @@
 ### 修复
 
 - 修复 Android 启动前等待本地状态目录、通知和自动刷新初始化导致首帧无法渲染、界面纯白的问题
+- 修复 Windows arm64 Release 构建中 JDK 架构与 Flutter Windows toolchain 不一致导致 `jni` 插件链接失败的问题
 
 ## [0.2.1-alpha] - 2026-04-23
 
