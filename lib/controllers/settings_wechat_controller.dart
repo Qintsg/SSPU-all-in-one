@@ -169,22 +169,44 @@ class SettingsWechatController extends ChangeNotifier {
     await _autoRefresh.reloadChannel('wechat_public');
   }
 
-  /// 打开认证配置文件。
-  Future<SettingsWechatFeedback> openConfigFile() async {
+  /// 通过 Visual Studio Code 打开认证配置文件。
+  Future<SettingsWechatFeedback> openConfigFileWithVSCode() async {
     try {
-      await _wxmpConfigService.openConfigFile();
+      await _wxmpConfigService.openConfigFileWithVSCode();
       _wxmpConfigPath = await _wxmpConfigService.getConfigPath();
-      _wxmpConfigMessage = '已打开配置文件';
+      _wxmpConfigMessage = '已通过 Visual Studio Code 打开配置文件';
       notifyListeners();
       return const SettingsWechatFeedback(
-        title: '已打开配置文件',
+        title: '已通过 Visual Studio Code 打开配置文件',
         severity: InfoBarSeverity.success,
       );
     } catch (error) {
-      _wxmpConfigMessage = '打开配置文件失败：$error';
+      _wxmpConfigMessage = '通过 Visual Studio Code 打开配置文件失败：$error';
       notifyListeners();
       return SettingsWechatFeedback(
-        title: '打开配置文件失败',
+        title: '通过 Visual Studio Code 打开配置文件失败',
+        content: '$error',
+        severity: InfoBarSeverity.error,
+      );
+    }
+  }
+
+  /// 打开认证配置文件目录。
+  Future<SettingsWechatFeedback> openConfigDirectory() async {
+    try {
+      await _wxmpConfigService.openConfigDirectory();
+      _wxmpConfigPath = await _wxmpConfigService.getConfigPath();
+      _wxmpConfigMessage = '已打开配置文件目录';
+      notifyListeners();
+      return const SettingsWechatFeedback(
+        title: '已打开配置文件目录',
+        severity: InfoBarSeverity.success,
+      );
+    } catch (error) {
+      _wxmpConfigMessage = '打开配置文件目录失败：$error';
+      notifyListeners();
+      return SettingsWechatFeedback(
+        title: '打开配置文件目录失败',
         content: '$error',
         severity: InfoBarSeverity.error,
       );

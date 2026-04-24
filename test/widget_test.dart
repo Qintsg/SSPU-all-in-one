@@ -99,4 +99,49 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     }
   });
+
+  testWidgets('设置页微信推文分区显示配置文件目录与 VS Code 入口', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final configDirectory = Directory(
+      '${Directory.systemTemp.path}${Platform.pathSeparator}'
+      'settings_page_wechat_actions_${DateTime.now().microsecondsSinceEpoch}',
+    );
+    StorageService.debugSetStateFilePathForTesting(
+      '${configDirectory.path}${Platform.pathSeparator}app_state.json',
+    );
+    await StorageService.init();
+    WxmpConfigService.instance.debugSetConfigPathForTesting(
+      '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml',
+    );
+
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+
+    try {
+      await tester.pumpWidget(const FluentApp(home: SettingsPage()));
+      for (var attempt = 0; attempt < 60; attempt++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (find.byType(ProgressRing).evaluate().isEmpty) break;
+      }
+
+      await tester.tap(find.text('微信推文'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('打开配置文件目录'), findsOneWidget);
+      expect(find.text('使用 Visual Studio Code 打开配置文件'), findsOneWidget);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 300));
+      WxmpConfigService.instance.debugSetConfigPathForTesting(null);
+      StorageService.debugSetStateFilePathForTesting(null);
+      if (await configDirectory.exists()) {
+        await configDirectory.delete(recursive: true);
+      }
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      await tester.binding.setSurfaceSize(null);
+    }
+  });
 }

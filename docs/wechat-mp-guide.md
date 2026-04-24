@@ -49,7 +49,7 @@
 - `per_request_article_count`：单次文章列表请求条数
 - `request_delay_ms`：公众号平台请求间隔，单位毫秒
 
-保存配置文件后，回到设置页点击 **重新加载配置** 即可生效。点击 **清除认证** 会同步清除状态文件和 `wxmp_config.toml` 中的 Cookie / Token。
+保存配置文件后，回到设置页点击 **重新加载配置** 即可生效。你也可以使用 **打开配置文件目录** 快速定位目录，或点击 **使用 Visual Studio Code 打开配置文件** 直接在 VS Code 中编辑。点击 **清除认证** 会同步清除状态文件和 `wxmp_config.toml` 中的 Cookie / Token。
 
 ---
 

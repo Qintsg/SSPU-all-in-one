@@ -369,13 +369,20 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                   ),
                 Button(
                   onPressed: () async =>
-                      _showFeedback(await _controller.openConfigFile()),
+                      _showFeedback(await _controller.openConfigDirectory()),
+                  child: const Text('打开配置文件目录'),
+                ),
+                Button(
+                  onPressed: () async =>
+                      _showFeedback(
+                        await _controller.openConfigFileWithVSCode(),
+                      ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(FluentIcons.open_in_new_window, size: 14),
                       SizedBox(width: 6),
-                      Text('打开配置文件'),
+                      Text('使用 Visual Studio Code 打开配置文件'),
                     ],
                   ),
                 ),
