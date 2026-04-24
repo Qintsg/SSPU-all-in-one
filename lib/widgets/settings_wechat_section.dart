@@ -7,6 +7,7 @@
  */
 
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/settings_wechat_controller.dart';
@@ -19,18 +20,35 @@ import '../pages/wxmp_login_page.dart';
 
 /// 微信推文设置分区。
 class SettingsWechatSection extends StatefulWidget {
-  const SettingsWechatSection({super.key});
+  /// 测试可注入已加载控制器，避免 widget test 的 fake async 阻塞文件 I/O。
+  @visibleForTesting
+  final SettingsWechatController? controller;
+
+  const SettingsWechatSection({super.key, this.controller});
 
   @override
   State<SettingsWechatSection> createState() => _SettingsWechatSectionState();
 }
 
 class _SettingsWechatSectionState extends State<SettingsWechatSection> {
-  final SettingsWechatController _controller = SettingsWechatController();
+  late final SettingsWechatController _controller;
+
+  bool get _canOpenConfigDirectory {
+    if (kIsWeb) return false;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.windows ||
+      TargetPlatform.macOS ||
+      TargetPlatform.linux => true,
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.fuchsia => false,
+    };
+  }
 
   @override
   void initState() {
     super.initState();
+    _controller = widget.controller ?? SettingsWechatController();
     _controller.load();
   }
 
@@ -369,23 +387,22 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                   ),
                 Button(
                   onPressed: () async =>
-                      _showFeedback(await _controller.openConfigDirectory()),
-                  child: const Text('打开配置文件目录'),
-                ),
-                Button(
-                  onPressed: () async =>
-                      _showFeedback(
-                        await _controller.openConfigFileWithVSCode(),
-                      ),
+                      _showFeedback(await _controller.openConfigFile()),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(FluentIcons.open_in_new_window, size: 14),
                       SizedBox(width: 6),
-                      Text('使用 Visual Studio Code 打开配置文件'),
+                      Text('打开配置文件'),
                     ],
                   ),
                 ),
+                if (_canOpenConfigDirectory)
+                  Button(
+                    onPressed: () async =>
+                        _showFeedback(await _controller.openConfigDirectory()),
+                    child: const Text('打开配置文件所在文件夹'),
+                  ),
                 Button(
                   onPressed: () async =>
                       _showFeedback(await _controller.reloadConfigFile()),

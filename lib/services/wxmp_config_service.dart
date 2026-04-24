@@ -227,25 +227,6 @@ class WxmpConfigService {
     await saveConfig(currentConfig.copyWith(cookie: '', token: ''));
   }
 
-  /// 使用 Visual Studio Code 打开配置文件。
-  Future<void> openConfigFileWithVSCode() async {
-    final configPath = await ensureConfigFile();
-    if (!kIsWeb &&
-        (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-      try {
-        await Process.start(
-          'code',
-          [configPath],
-          mode: ProcessStartMode.detached,
-        );
-      } on ProcessException {
-        throw StateError('未安装 Visual Studio Code 或 code 命令不可用，请确认 VS Code 已安装且 code 已加入 PATH');
-      }
-      return;
-    }
-    throw UnsupportedError('当前平台不支持通过 Visual Studio Code 打开配置文件');
-  }
-
   /// 打开配置文件所在目录。
   Future<void> openConfigDirectory() async {
     final configPath = await ensureConfigFile();
@@ -256,15 +237,7 @@ class WxmpConfigService {
       return;
     }
 
-    final directoryUri = Uri.directory(
-      configDirectoryPath,
-      windows: !kIsWeb && Platform.isWindows,
-    );
-    if (await canLaunchUrl(directoryUri)) {
-      await launchUrl(directoryUri, mode: LaunchMode.externalApplication);
-      return;
-    }
-    throw StateError('无法打开配置文件目录：$configDirectoryPath');
+    throw UnsupportedError('当前平台不支持打开配置文件目录');
   }
 
   /// 使用系统默认应用打开配置文件。
@@ -281,27 +254,21 @@ class WxmpConfigService {
   Future<void> _openDirectoryNative(String directoryPath) async {
     try {
       if (Platform.isWindows) {
-        await Process.start(
-          'explorer',
-          [directoryPath],
-          mode: ProcessStartMode.detached,
-        );
+        await Process.start('explorer', [
+          directoryPath,
+        ], mode: ProcessStartMode.detached);
         return;
       }
       if (Platform.isMacOS) {
-        await Process.start(
-          'open',
-          [directoryPath],
-          mode: ProcessStartMode.detached,
-        );
+        await Process.start('open', [
+          directoryPath,
+        ], mode: ProcessStartMode.detached);
         return;
       }
       if (Platform.isLinux) {
-        await Process.start(
-          'xdg-open',
-          [directoryPath],
-          mode: ProcessStartMode.detached,
-        );
+        await Process.start('xdg-open', [
+          directoryPath,
+        ], mode: ProcessStartMode.detached);
         return;
       }
       throw UnsupportedError('当前平台不支持打开配置目录');

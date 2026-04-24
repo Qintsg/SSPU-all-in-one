@@ -169,22 +169,22 @@ class SettingsWechatController extends ChangeNotifier {
     await _autoRefresh.reloadChannel('wechat_public');
   }
 
-  /// 通过 Visual Studio Code 打开认证配置文件。
-  Future<SettingsWechatFeedback> openConfigFileWithVSCode() async {
+  /// 使用系统默认应用打开认证配置文件。
+  Future<SettingsWechatFeedback> openConfigFile() async {
     try {
-      await _wxmpConfigService.openConfigFileWithVSCode();
+      await _wxmpConfigService.openConfigFile();
       _wxmpConfigPath = await _wxmpConfigService.getConfigPath();
-      _wxmpConfigMessage = '已通过 Visual Studio Code 打开配置文件';
+      _wxmpConfigMessage = '已打开配置文件';
       notifyListeners();
       return const SettingsWechatFeedback(
-        title: '已通过 Visual Studio Code 打开配置文件',
+        title: '已打开配置文件',
         severity: InfoBarSeverity.success,
       );
     } catch (error) {
-      _wxmpConfigMessage = '通过 Visual Studio Code 打开配置文件失败：$error';
+      _wxmpConfigMessage = '打开配置文件失败：$error';
       notifyListeners();
       return SettingsWechatFeedback(
-        title: '通过 Visual Studio Code 打开配置文件失败',
+        title: '打开配置文件失败',
         content: '$error',
         severity: InfoBarSeverity.error,
       );

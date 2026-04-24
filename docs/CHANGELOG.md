@@ -8,11 +8,14 @@
 
 ## [0.2.1-alpha.2] - 2026-04-24
 
+### 新增
+
+- 微信推文认证卡片新增“打开配置文件所在文件夹”入口，并保留使用系统默认应用打开 `wxmp_config.toml`
+
 ### 修复
 
 - 修复 Android 启动前等待本地状态目录、通知和自动刷新初始化导致首帧无法渲染、界面纯白的问题
 - 修复 Windows arm64 Release 构建中 JDK 架构与 Flutter Windows toolchain 不一致导致 `jni` 插件链接失败的问题
-- 微信推文认证卡片新增“打开配置文件目录”和“使用 Visual Studio Code 打开配置文件”入口，便于跨 IDE 场景快速定位与编辑 `wxmp_config.toml`
 
 ## [0.2.1-alpha] - 2026-04-23
 
