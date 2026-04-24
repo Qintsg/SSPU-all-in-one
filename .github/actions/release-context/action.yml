@@ -11,21 +11,27 @@ outputs:
   version:
     description: 完整版本号，保留 +BUILD
     value: ${{ steps.parse.outputs.version }}
+
   version_core:
     description: 不含 +BUILD 的版本主体
     value: ${{ steps.parse.outputs.version_core }}
+
   channel:
     description: 发布通道，stable / alpha / beta / rc
     value: ${{ steps.parse.outputs.channel }}
+
   build_number:
     description: 构建号
     value: ${{ steps.parse.outputs.build_number }}
+
   tag:
     description: Git Tag
     value: ${{ steps.parse.outputs.tag }}
+
   prerelease:
     description: 是否为预发布
     value: ${{ steps.parse.outputs.prerelease }}
+
   release_title:
     description: GitHub Release 标题
     value: ${{ steps.parse.outputs.release_title }}
@@ -35,37 +41,70 @@ runs:
   steps:
     - id: parse
       shell: bash
+      env:
+        PUBSPEC_PATH: ${{ inputs.pubspec-path }}
       run: |
         set -euo pipefail
 
-        version_line="$(grep -E '^version:' '${{ inputs.pubspec-path }}' | head -n 1)"
+        fail() {
+          echo "::error::$1" >&2
+          exit 1
+        }
+
+        if [[ ! -f "$PUBSPEC_PATH" ]]; then
+          fail "未找到 pubspec.yaml 文件：$PUBSPEC_PATH"
+        fi
+
+        version_line="$(grep -E '^[[:space:]]*version[[:space:]]*:' "$PUBSPEC_PATH" | head -n 1 || true)"
+
         if [[ -z "$version_line" ]]; then
-          echo "未在 ${{ inputs.pubspec-path }} 中找到 version 字段。" >&2
-          exit 1
+          fail "未在 $PUBSPEC_PATH 中找到 version 字段。"
         fi
 
-        release_version="${version_line#version: }"
-        if [[ ! "$release_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-(alpha|beta|rc))?\+([1-9][0-9]*)$ ]]; then
-          echo "版本号不符合发布规范：$release_version" >&2
-          exit 1
+        release_version="${version_line#*:}"
+        release_version="${release_version%%#*}"
+        release_version="$(echo "$release_version" | xargs)"
+
+        if [[ -z "$release_version" ]]; then
+          fail "version 字段为空。"
         fi
 
-        version_core="${release_version%%+*}"
-        build_number="${BASH_REMATCH[4]}"
+        if [[ ! "$release_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-(alpha|beta|rc)(\.[0-9]+)?)?\+([1-9][0-9]*)$ ]]; then
+          fail "版本号不符合发布规范：$release_version。期望格式：1.2.3+4、1.2.3-beta+4 或 1.2.3-beta.1+4。"
+        fi
+
+        version_core="${BASH_REMATCH[1]}${BASH_REMATCH[2]:-}"
         channel="${BASH_REMATCH[3]:-stable}"
+        build_number="${BASH_REMATCH[5]}"
         tag="v${version_core}"
-        prerelease=false
 
+        prerelease=false
         if [[ "$channel" != "stable" ]]; then
           prerelease=true
         fi
 
+        release_title="SSPU All-in-One ${tag} (${release_version})"
+
         {
           echo "version=$release_version"
           echo "version_core=$version_core"
-          echo "build_number=$build_number"
           echo "channel=$channel"
+          echo "build_number=$build_number"
           echo "tag=$tag"
           echo "prerelease=$prerelease"
-          echo "release_title=SSPU All-in-One $tag ($release_version)"
+          echo "release_title=$release_title"
         } >> "$GITHUB_OUTPUT"
+
+        {
+          echo "## Release Context"
+          echo
+          echo "| Key | Value |"
+          echo "| --- | --- |"
+          echo "| Version | \`$release_version\` |"
+          echo "| Version Core | \`$version_core\` |"
+          echo "| Tag | \`$tag\` |"
+          echo "| Channel | \`$channel\` |"
+          echo "| Build Number | \`$build_number\` |"
+          echo "| Prerelease | \`$prerelease\` |"
+          echo "| Release Title | \`$release_title\` |"
+        } >> "$GITHUB_STEP_SUMMARY"

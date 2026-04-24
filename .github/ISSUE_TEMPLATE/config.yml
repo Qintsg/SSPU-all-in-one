@@ -6,6 +6,3 @@ contact_links:
   - name: 使用与排障文档
     url: https://github.com/Qintsg/SSPU-all-in-one/blob/main/docs/USAGE.md
     about: 先查看运行方式、环境要求与常见排障说明，再决定是否需要提交 Issue。
-  - name: API 与设计文档
-    url: https://github.com/Qintsg/SSPU-all-in-one/blob/main/docs/API.md
-    about: 如果问题涉及数据来源、接口契约或抓取逻辑，请先阅读相关设计与接口说明。
