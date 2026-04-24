@@ -100,7 +100,7 @@ void main() {
     }
   });
 
-  testWidgets('设置页微信推文分区显示配置文件目录与 VS Code 入口', (WidgetTester tester) async {
+  testWidgets('设置页显示配置目录和VS Code按钮', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final configDirectory = Directory(
       '${Directory.systemTemp.path}${Platform.pathSeparator}'
