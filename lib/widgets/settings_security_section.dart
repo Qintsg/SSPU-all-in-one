@@ -8,10 +8,12 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 
+import '../models/academic_credentials.dart';
+import '../services/academic_credentials_service.dart';
 import '../theme/fluent_tokens.dart';
 
 /// 安全设置分区。
-class SettingsSecuritySection extends StatelessWidget {
+class SettingsSecuritySection extends StatefulWidget {
   /// 是否已启用密码保护。
   final bool isPasswordEnabled;
 
@@ -41,6 +43,138 @@ class SettingsSecuritySection extends StatelessWidget {
   });
 
   @override
+  State<SettingsSecuritySection> createState() =>
+      _SettingsSecuritySectionState();
+}
+
+class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
+  final AcademicCredentialsService _academicCredentials =
+      AcademicCredentialsService.instance;
+  final TextEditingController _oaAccountController = TextEditingController();
+  final TextEditingController _oaPasswordController = TextEditingController();
+  final TextEditingController _sportsPasswordController =
+      TextEditingController();
+  final TextEditingController _emailPasswordController =
+      TextEditingController();
+
+  AcademicCredentialsStatus _credentialsStatus =
+      const AcademicCredentialsStatus.empty();
+  bool _isCredentialsLoading = true;
+  bool _isSavingCredentials = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAcademicCredentials();
+  }
+
+  @override
+  void dispose() {
+    _oaAccountController.dispose();
+    _oaPasswordController.dispose();
+    _sportsPasswordController.dispose();
+    _emailPasswordController.dispose();
+    super.dispose();
+  }
+
+  /// 加载教务凭据状态，密码输入框始终保持为空。
+  Future<void> _loadAcademicCredentials() async {
+    try {
+      final status = await _academicCredentials.getStatus();
+      if (!mounted) return;
+      _oaAccountController.text = status.oaAccount;
+      _clearPasswordInputs();
+      setState(() {
+        _credentialsStatus = status;
+        _isCredentialsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _credentialsStatus = const AcademicCredentialsStatus.empty();
+        _isCredentialsLoading = false;
+      });
+    }
+  }
+
+  /// 保存本次填写的账号和密码。
+  Future<void> _saveAcademicCredentials() async {
+    if (_isSavingCredentials) return;
+    setState(() => _isSavingCredentials = true);
+
+    try {
+      await _academicCredentials.saveCredentials(
+        oaAccount: _oaAccountController.text,
+        oaPassword: _nullablePassword(_oaPasswordController.text),
+        sportsQueryPassword: _nullablePassword(_sportsPasswordController.text),
+        emailPassword: _nullablePassword(_emailPasswordController.text),
+      );
+      final status = await _academicCredentials.getStatus();
+      if (!mounted) return;
+      _clearPasswordInputs();
+      setState(() {
+        _credentialsStatus = status;
+        _isSavingCredentials = false;
+      });
+      _showCredentialInfoBar('教务凭据已保存', InfoBarSeverity.success);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSavingCredentials = false);
+      _showCredentialInfoBar('保存失败，请确认系统安全存储可用', InfoBarSeverity.error);
+    }
+  }
+
+  /// 清除指定密码字段。
+  Future<void> _clearAcademicSecret(AcademicCredentialSecret secret) async {
+    if (_isSavingCredentials) return;
+    setState(() => _isSavingCredentials = true);
+
+    try {
+      await _academicCredentials.clearSecret(secret);
+      final status = await _academicCredentials.getStatus();
+      if (!mounted) return;
+      _clearPasswordInputs();
+      setState(() {
+        _credentialsStatus = status;
+        _isSavingCredentials = false;
+      });
+      _showCredentialInfoBar(
+        '${_secretLabel(secret)}已清除',
+        InfoBarSeverity.info,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSavingCredentials = false);
+      _showCredentialInfoBar('清除失败，请确认系统安全存储可用', InfoBarSeverity.error);
+    }
+  }
+
+  /// 空输入表示不修改当前密码。
+  String? _nullablePassword(String value) => value.isEmpty ? null : value;
+
+  /// 清空所有密码输入框，避免明文停留在页面控件中。
+  void _clearPasswordInputs() {
+    _oaPasswordController.clear();
+    _sportsPasswordController.clear();
+    _emailPasswordController.clear();
+  }
+
+  /// 显示教务凭据操作反馈。
+  void _showCredentialInfoBar(String message, InfoBarSeverity severity) {
+    displayInfoBar(
+      context,
+      builder: (ctx, close) => InfoBar(
+        title: Text(message),
+        severity: severity,
+        action: IconButton(
+          icon: const Icon(FluentIcons.clear),
+          onPressed: close,
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
@@ -64,7 +198,7 @@ class SettingsSecuritySection extends StatelessWidget {
                       ),
                       const SizedBox(height: FluentSpacing.xxs),
                       Text(
-                        isPasswordEnabled
+                        widget.isPasswordEnabled
                             ? '已开启 — 重新打开应用时需要输入密码'
                             : '未开启 — 任何人可直接进入应用',
                         style: FluentTheme.of(context).typography.caption,
@@ -73,22 +207,22 @@ class SettingsSecuritySection extends StatelessWidget {
                   ),
                 ),
                 ToggleSwitch(
-                  checked: isPasswordEnabled,
-                  onChanged: onPasswordProtectionChanged,
+                  checked: widget.isPasswordEnabled,
+                  onChanged: widget.onPasswordProtectionChanged,
                 ),
               ],
             ),
-            if (isPasswordEnabled) ...[
+            if (widget.isPasswordEnabled) ...[
               const SizedBox(height: FluentSpacing.m),
               Row(
                 children: [
                   Button(
-                    onPressed: onChangePassword,
+                    onPressed: widget.onChangePassword,
                     child: const Text('修改密码'),
                   ),
                   const SizedBox(width: FluentSpacing.m),
                   FilledButton(
-                    onPressed: onLock,
+                    onPressed: widget.onLock,
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -104,6 +238,10 @@ class SettingsSecuritySection extends StatelessWidget {
             const SizedBox(height: FluentSpacing.xl),
             const Divider(),
             const SizedBox(height: FluentSpacing.l),
+            _buildAcademicCredentialsSection(context),
+            const SizedBox(height: FluentSpacing.xl),
+            const Divider(),
+            const SizedBox(height: FluentSpacing.l),
             Text('数据管理', style: FluentTheme.of(context).typography.subtitle),
             const SizedBox(height: FluentSpacing.xs),
             Text(
@@ -112,7 +250,7 @@ class SettingsSecuritySection extends StatelessWidget {
             ),
             const SizedBox(height: FluentSpacing.m),
             Button(
-              onPressed: onClearMessageCache,
+              onPressed: widget.onClearMessageCache,
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -131,7 +269,7 @@ class SettingsSecuritySection extends StatelessWidget {
             ),
             const SizedBox(height: FluentSpacing.m),
             Button(
-              onPressed: onClearAllData,
+              onPressed: widget.onClearAllData,
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -145,5 +283,141 @@ class SettingsSecuritySection extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 构建教务系统账号与密码保存区域。
+  Widget _buildAcademicCredentialsSection(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    if (_isCredentialsLoading) {
+      return const Center(child: ProgressRing());
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('教务凭据', style: theme.typography.subtitle),
+        const SizedBox(height: FluentSpacing.xs),
+        Text(
+          '数据均加密存储在本地，不会上传至云端；密码框留空时不修改已保存密码。',
+          style: theme.typography.caption,
+        ),
+        const SizedBox(height: FluentSpacing.m),
+        InfoLabel(
+          label: '学工号（OA账号）',
+          child: TextBox(
+            controller: _oaAccountController,
+            placeholder: '请输入学工号',
+          ),
+        ),
+        const SizedBox(height: FluentSpacing.m),
+        _buildPasswordCredentialField(
+          label: 'OA账号密码',
+          controller: _oaPasswordController,
+          secret: AcademicCredentialSecret.oaPassword,
+        ),
+        const SizedBox(height: FluentSpacing.m),
+        _buildPasswordCredentialField(
+          label: '体育部查询密码',
+          controller: _sportsPasswordController,
+          secret: AcademicCredentialSecret.sportsQueryPassword,
+        ),
+        const SizedBox(height: FluentSpacing.m),
+        _buildPasswordCredentialField(
+          label: '邮箱密码',
+          controller: _emailPasswordController,
+          secret: AcademicCredentialSecret.emailPassword,
+        ),
+        const SizedBox(height: FluentSpacing.l),
+        FilledButton(
+          onPressed: _isSavingCredentials ? null : _saveAcademicCredentials,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isSavingCredentials) ...[
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: ProgressRing(strokeWidth: 2),
+                ),
+              ] else ...[
+                const Icon(FluentIcons.save, size: 14),
+              ],
+              const SizedBox(width: 6),
+              const Text('保存教务凭据'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建单个密码输入框和填写状态。
+  Widget _buildPasswordCredentialField({
+    required String label,
+    required TextEditingController controller,
+    required AcademicCredentialSecret secret,
+  }) {
+    final hasSecret = _credentialsStatus.hasSecret(secret);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InfoLabel(
+          label: label,
+          child: PasswordBox(
+            controller: controller,
+            placeholder: '留空则不修改已保存密码',
+            revealMode: PasswordRevealMode.peekAlways,
+          ),
+        ),
+        const SizedBox(height: FluentSpacing.xs),
+        Wrap(
+          spacing: FluentSpacing.s,
+          runSpacing: FluentSpacing.xs,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _buildSecretStatus(hasSecret),
+            if (hasSecret)
+              Button(
+                onPressed: _isSavingCredentials
+                    ? null
+                    : () => _clearAcademicSecret(secret),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(FluentIcons.delete, size: 14),
+                    SizedBox(width: 6),
+                    Text('清除'),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 构建已填写/未填写状态提示。
+  Widget _buildSecretStatus(bool hasSecret) {
+    final theme = FluentTheme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          hasSecret ? FluentIcons.check_mark : FluentIcons.blocked,
+          size: 14,
+        ),
+        const SizedBox(width: FluentSpacing.xs),
+        Text(hasSecret ? '已填写' : '未填写', style: theme.typography.caption),
+      ],
+    );
+  }
+
+  /// 返回密码字段展示名。
+  String _secretLabel(AcademicCredentialSecret secret) {
+    return switch (secret) {
+      AcademicCredentialSecret.oaPassword => 'OA账号密码',
+      AcademicCredentialSecret.sportsQueryPassword => '体育部查询密码',
+      AcademicCredentialSecret.emailPassword => '邮箱密码',
+    };
   }
 }
