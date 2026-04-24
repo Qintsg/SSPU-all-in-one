@@ -1,0 +1,39 @@
+name: 开发任务
+description: 创建一个明确的开发、重构或维护任务
+title: "[Task] "
+labels: ["task"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 任务目标
+      placeholder: 这个任务要完成什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: 待办清单
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 背景说明
+      placeholder: 为什么需要做这个任务？涉及哪些模块？
+    validations:
+      required: false
+
+  - type: input
+    id: related
+    attributes:
+      label: 相关 Issue / PR
+      placeholder: "#123"
+    validations:
+      required: false
