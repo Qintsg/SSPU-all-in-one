@@ -36,6 +36,7 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
   final bool _initFailed = false;
   String _title = '公众号平台登录';
   bool _extracting = false;
+  bool _pageTokenCheckScheduled = false;
   _LoginResult? _result;
 
   /// 监听 URL 变化，检测登录成功
@@ -44,12 +45,64 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
   void _checkLoginSuccess(String url) {
     if (_extracting || _result != null) return;
 
-    if (url.contains('mp.weixin.qq.com') && url.contains('token=')) {
-      final tokenMatch = RegExp(r'token=(\d+)').firstMatch(url);
-      if (tokenMatch != null) {
-        final token = tokenMatch.group(1)!;
-        _extractCookieAndSave(token, url);
+    if (!url.contains('mp.weixin.qq.com')) return;
+    final urlToken = _extractTokenFromText(url);
+    if (urlToken != null) {
+      _extractCookieAndSave(urlToken, url);
+      return;
+    }
+
+    _schedulePageTokenCheck(url);
+  }
+
+  /// URL 不含 token 时，从页面脚本变量和当前地址中补充识别登录态。
+  void _schedulePageTokenCheck(String pageUrl) {
+    if (_pageTokenCheckScheduled) return;
+    _pageTokenCheckScheduled = true;
+    Future<void>(() async {
+      await Future.delayed(const Duration(milliseconds: 500));
+      _pageTokenCheckScheduled = false;
+      if (!mounted || _extracting || _result != null) return;
+
+      final pageToken = await _readTokenFromPage();
+      if (pageToken != null) {
+        _extractCookieAndSave(pageToken, pageUrl);
       }
+    });
+  }
+
+  String? _extractTokenFromText(String text) {
+    final tokenMatch = RegExp(
+      r'''(?:[?&]token=|["']token["']\s*:\s*["']?)(\d+)''',
+    ).firstMatch(text);
+    return tokenMatch?.group(1);
+  }
+
+  Future<String?> _readTokenFromPage() async {
+    final controller = _controller;
+    if (controller == null) return null;
+    try {
+      final tokenText = await controller.evaluateJavascript(
+        source: '''
+(() => {
+  const candidates = [
+    window.location.href,
+    document.documentElement ? document.documentElement.innerHTML : '',
+    document.body ? document.body.innerText : ''
+  ];
+  for (const candidate of candidates) {
+    const match = String(candidate).match(/(?:[?&]token=|["']token["']\\s*:\\s*["']?)(\\d+)/);
+    if (match) return match[1];
+  }
+  return '';
+})()
+''',
+      );
+      final token = tokenText?.toString() ?? '';
+      return RegExp(r'^\d+$').hasMatch(token) ? token : null;
+    } catch (error) {
+      debugPrint('[WxmpLogin] 页面 token 读取失败: $error');
+      return null;
     }
   }
 
@@ -59,31 +112,43 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
     setState(() => _extracting = true);
 
     try {
-      // onUpdateVisitedHistory 可能早于后台路径 Cookie 写入，稍等页面完成会话落盘。
-      await Future.delayed(const Duration(milliseconds: 800));
-      final cookieManager = CookieManager.instance();
-      final cookieMap = <String, String>{};
-      final cookieNames = <String>{};
-      final cookieUrls = <String>{
-        'https://mp.weixin.qq.com/',
-        'https://mp.weixin.qq.com/cgi-bin/home',
-        'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
-        successUrl,
-      };
+      _CookieReadResult? lastCookieReadResult;
+      WxmpAuthValidationResult? lastValidation;
 
-      for (final cookieUrl in cookieUrls) {
-        final cookies = await cookieManager.getCookies(
-          url: WebUri(cookieUrl),
-          webViewController: _controller,
-        );
-        for (final cookie in cookies) {
-          if (cookie.name.isEmpty) continue;
-          cookieMap[cookie.name] = cookie.value;
-          cookieNames.add(cookie.name);
+      for (var attempt = 0; attempt < 4; attempt++) {
+        await Future.delayed(Duration(milliseconds: 500 + attempt * 500));
+        lastCookieReadResult = await _readWxmpCookies(successUrl);
+        if (lastCookieReadResult.cookieMap.isEmpty) continue;
+
+        final cookieStr = lastCookieReadResult.cookieMap.entries
+            .map((entry) => '${entry.key}=${entry.value}')
+            .join('; ');
+
+        await WxmpAuthService.instance.saveAuth(cookieStr, token);
+        lastValidation = await WxmpArticleService.instance.validateAuth();
+        if (lastValidation.isValid) {
+          debugPrint(
+            '[WxmpLogin] 认证保存成功, Cookie 数量: '
+            '${lastCookieReadResult.cookieMap.length}, Cookie 键名: '
+            '${lastCookieReadResult.cookieNames.toList()..sort()}',
+          );
+
+          if (mounted) {
+            setState(() {
+              _extracting = false;
+              _result = _LoginResult(
+                success: true,
+                message: '登录成功，Token 和 Cookie 已保存',
+              );
+            });
+          }
+          return;
         }
       }
 
-      if (cookieMap.isEmpty) {
+      final cookieCount = lastCookieReadResult?.cookieMap.length ?? 0;
+      final cookieNames = lastCookieReadResult?.cookieNames ?? <String>{};
+      if (cookieCount == 0) {
         if (mounted) {
           setState(() {
             _extracting = false;
@@ -96,42 +161,16 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
         return;
       }
 
-      // 拼接为标准 Cookie 字符串
-      final cookieStr = cookieMap.entries
-          .map((entry) => '${entry.key}=${entry.value}')
-          .join('; ');
-
-      // 保存到 WxmpAuthService
-      await WxmpAuthService.instance.saveAuth(cookieStr, token);
-      final validation = await WxmpArticleService.instance.validateAuth();
-      if (!validation.isValid) {
-        debugPrint(
-          '[WxmpLogin] 认证保存后校验失败: ${validation.message}, Cookie 数量: ${cookieMap.length}, Cookie 键名: '
-          '${cookieNames.toList()..sort()}',
-        );
-        if (mounted) {
-          setState(() {
-            _extracting = false;
-            _result = _LoginResult(
-              success: false,
-              message: '认证校验失败：${validation.message}',
-            );
-          });
-        }
-        return;
-      }
-
       debugPrint(
-        '[WxmpLogin] 认证保存成功, Cookie 数量: ${cookieMap.length}, Cookie 键名: '
+        '[WxmpLogin] 认证保存后校验失败: ${lastValidation?.message}, Cookie 数量: $cookieCount, Cookie 键名: '
         '${cookieNames.toList()..sort()}',
       );
-
       if (mounted) {
         setState(() {
           _extracting = false;
           _result = _LoginResult(
-            success: true,
-            message: '登录成功，Token 和 Cookie 已保存',
+            success: false,
+            message: '认证校验失败：${lastValidation?.message ?? 'Cookie 不完整'}',
           );
         });
       }
@@ -142,6 +181,62 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
           _result = _LoginResult(success: false, message: '提取失败：$error');
         });
       }
+    }
+  }
+
+  Future<_CookieReadResult> _readWxmpCookies(String successUrl) async {
+    final cookieManager = CookieManager.instance();
+    final cookieMap = <String, String>{};
+    final cookieNames = <String>{};
+    final currentUrl = await _controller?.getUrl();
+    final cookieUrls = <String>{
+      'https://mp.weixin.qq.com/',
+      'https://mp.weixin.qq.com/cgi-bin/home',
+      'https://mp.weixin.qq.com/cgi-bin/searchbiz',
+      'https://mp.weixin.qq.com/cgi-bin/appmsg',
+      'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
+      if (currentUrl != null) currentUrl.toString(),
+      successUrl,
+    };
+
+    for (final cookieUrl in cookieUrls) {
+      final cookies = await cookieManager.getCookies(
+        url: WebUri(cookieUrl),
+        webViewController: _controller,
+      );
+      for (final cookie in cookies) {
+        final cookieValue = cookie.value?.toString() ?? '';
+        if (cookie.name.isEmpty || cookieValue.isEmpty) continue;
+        cookieMap[cookie.name] = cookieValue;
+        cookieNames.add(cookie.name);
+      }
+    }
+
+    final documentCookie = await _readDocumentCookie();
+    for (final cookiePart in documentCookie.split(';')) {
+      final separatorIndex = cookiePart.indexOf('=');
+      if (separatorIndex <= 0) continue;
+      final cookieName = cookiePart.substring(0, separatorIndex).trim();
+      final cookieValue = cookiePart.substring(separatorIndex + 1).trim();
+      if (cookieName.isEmpty || cookieValue.isEmpty) continue;
+      cookieMap[cookieName] = cookieValue;
+      cookieNames.add(cookieName);
+    }
+
+    return _CookieReadResult(cookieMap: cookieMap, cookieNames: cookieNames);
+  }
+
+  Future<String> _readDocumentCookie() async {
+    final controller = _controller;
+    if (controller == null) return '';
+    try {
+      final cookieText = await controller.evaluateJavascript(
+        source: 'document.cookie',
+      );
+      return cookieText?.toString() ?? '';
+    } catch (error) {
+      debugPrint('[WxmpLogin] document.cookie 读取失败: $error');
+      return '';
     }
   }
 
@@ -315,4 +410,11 @@ class _LoginResult {
   final bool success;
   final String message;
   _LoginResult({required this.success, required this.message});
+}
+
+class _CookieReadResult {
+  final Map<String, String> cookieMap;
+  final Set<String> cookieNames;
+
+  _CookieReadResult({required this.cookieMap, required this.cookieNames});
 }

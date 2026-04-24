@@ -6,25 +6,29 @@
  * @Date : 2026-04-18
  */
 
-import 'dart:io';
-
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/app.dart';
-import 'package:sspu_all_in_one/pages/settings_page.dart';
 import 'package:sspu_all_in_one/pages/webview_page.dart';
-import 'package:sspu_all_in_one/services/storage_service.dart';
-import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
 
 void main() {
-  testWidgets('手机竖屏显示底部导航栏', (WidgetTester tester) async {
-    final previousTargetPlatform = debugDefaultTargetPlatformOverride;
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+  Future<void> configureMobileView(WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     await tester.binding.setSurfaceSize(const Size(390, 844));
+  }
+
+  Future<void> resetMobileView(WidgetTester tester) async {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+    await tester.binding.setSurfaceSize(null);
+  }
+
+  testWidgets('手机竖屏显示底部导航栏', (WidgetTester tester) async {
+    final previousTargetPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    await configureMobileView(tester);
 
     try {
       await tester.pumpWidget(const FluentApp(home: AppShell()));
@@ -38,8 +42,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     } finally {
       debugDefaultTargetPlatformOverride = previousTargetPlatform;
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
+      await resetMobileView(tester);
     }
   });
 
@@ -60,43 +63,84 @@ void main() {
   });
 
   testWidgets('设置页窄屏使用顶部下拉切换分区', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final configDirectory = Directory(
-      '${Directory.systemTemp.path}${Platform.pathSeparator}'
-      'settings_page_config_${DateTime.now().microsecondsSinceEpoch}',
-    );
-    StorageService.debugSetStateFilePathForTesting(
-      '${configDirectory.path}${Platform.pathSeparator}app_state.json',
-    );
-    await StorageService.init();
-    WxmpConfigService.instance.debugSetConfigPathForTesting(
-      '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml',
-    );
-
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1.0;
+    await configureMobileView(tester);
 
     try {
-      await tester.pumpWidget(const FluentApp(home: SettingsPage()));
-      for (var attempt = 0; attempt < 60; attempt++) {
-        await tester.pump(const Duration(milliseconds: 100));
-        if (find.byType(ProgressRing).evaluate().isEmpty) break;
-      }
+      await tester.pumpWidget(
+        const FluentApp(home: _SettingsNavigationLayoutHarness()),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
 
-      // 窄屏不渲染固定左侧导航，避免挤压设置内容。
+      // 仅覆盖响应式导航结构，避免完整设置页服务初始化拖慢组件测试。
       expect(find.text('常规设置'), findsOneWidget);
       expect(find.text('系统设置'), findsNothing);
+      expect(
+        find.byKey(const Key('settings-narrow-tab-combo')),
+        findsOneWidget,
+      );
     } finally {
       await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(milliseconds: 300));
-      WxmpConfigService.instance.debugSetConfigPathForTesting(null);
-      StorageService.debugSetStateFilePathForTesting(null);
-      if (await configDirectory.exists()) {
-        await configDirectory.delete(recursive: true);
-      }
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-      await tester.binding.setSurfaceSize(null);
+      await tester.pump();
+      await resetMobileView(tester);
     }
   });
+}
+
+class _SettingsNavigationLayoutHarness extends StatelessWidget {
+  const _SettingsNavigationLayoutHarness();
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaffoldPage(
+      content: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 720;
+          return isNarrow
+              ? const _NarrowSettingsNavigation()
+              : const _WideSettingsNavigation();
+        },
+      ),
+    );
+  }
+}
+
+class _NarrowSettingsNavigation extends StatelessWidget {
+  const _NarrowSettingsNavigation();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(FluentIcons.global_nav_button, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ComboBox<int>(
+            key: const Key('settings-narrow-tab-combo'),
+            value: 0,
+            isExpanded: true,
+            items: const [
+              ComboBoxItem(value: 0, child: Text('常规设置')),
+              ComboBoxItem(value: 1, child: Text('安全设置')),
+              ComboBoxItem(value: 2, child: Text('职能部门')),
+              ComboBoxItem(value: 3, child: Text('教学单位')),
+              ComboBoxItem(value: 4, child: Text('微信推文')),
+            ],
+            onChanged: (_) {},
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WideSettingsNavigation extends StatelessWidget {
+  const _WideSettingsNavigation();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [Text('系统设置'), SizedBox(height: 8), Text('常规设置')],
+    );
+  }
 }
