@@ -6,6 +6,7 @@
  * @Date : 2026-04-18
  */
 
+import 'dart:async';
 import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
@@ -54,18 +55,12 @@ void main() async {
     }
   }
 
-  await StorageService.init();
-
   if (_supportsDesktopShell) {
     // 桌面端拦截关闭事件并提供系统托盘入口。
     await windowManager.ensureInitialized();
     await windowManager.setPreventClose(true);
     await TrayService.instance.init();
   }
-
-  // 非 Windows 平台不注册 Windows 通知插件，避免 Android 启动时调用缺失通道。
-  await NotificationService.instance.init();
-  await AutoRefreshService.instance.init();
 
   runApp(const SSPUApp());
 }
@@ -96,6 +91,9 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   /// 防止关闭确认弹窗重复弹出
   bool _closeDialogShowing = false;
 
+  /// 启动初始化失败时显示明确错误，避免长期停留在加载状态。
+  String? _startupErrorMessage;
+
   /// FluentApp 内部导航器 key，用于在 WindowListener 回调中弹出对话框
   final _navigatorKey = GlobalKey<NavigatorState>();
 
@@ -120,14 +118,33 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
 
   /// 初始化应用状态：先检查 EULA，再检查密码
   Future<void> _initApp() async {
-    final eulaOk = await StorageService.isEulaAccepted();
-    final hasPassword = await PasswordService.isPasswordSet();
-    if (mounted) {
+    try {
+      await StorageService.init();
+      final eulaOk = await StorageService.isEulaAccepted();
+      final hasPassword = await PasswordService.isPasswordSet();
+      if (!mounted) return;
       setState(() {
         _eulaAccepted = eulaOk;
         _isUnlocked = !hasPassword;
         _isInitialized = true;
       });
+      unawaited(_initBackgroundServices());
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _startupErrorMessage = '启动初始化失败：$error';
+        _isInitialized = true;
+      });
+    }
+  }
+
+  /// 初始化后台能力，不阻塞首屏渲染和用户进入主页。
+  Future<void> _initBackgroundServices() async {
+    try {
+      await NotificationService.instance.init();
+      await AutoRefreshService.instance.init();
+    } catch (_) {
+      // 后台刷新或通知初始化失败不应阻断 Android 启动主流程。
     }
   }
 
@@ -346,6 +363,17 @@ class _SSPUAppState extends State<SSPUApp> with WindowListener, TrayListener {
   Widget _buildHome() {
     if (!_isInitialized) {
       return const ScaffoldPage(content: Center(child: ProgressRing()));
+    }
+
+    if (_startupErrorMessage != null) {
+      return ScaffoldPage(
+        content: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(FluentSpacing.xxl),
+            child: Text(_startupErrorMessage!),
+          ),
+        ),
+      );
     }
 
     // 未接受 EULA 时显示空白页并弹出协议对话框

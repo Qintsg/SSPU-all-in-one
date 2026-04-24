@@ -9,9 +9,10 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// 应用数据目录服务。
-/// 所有用户级文件统一落在 ~/.sspu-all-in-one，避免配置和缓存散落到不同平台目录。
+/// 桌面端使用用户目录，移动端使用系统分配的应用支持目录。
 class AppDataDirectoryService {
   AppDataDirectoryService._();
 
@@ -27,12 +28,21 @@ class AppDataDirectoryService {
     _debugDirectoryOverride = directoryPath;
   }
 
+  /// Android / iOS 沙盒不保证存在可写 HOME，必须使用系统分配目录。
+  static bool get _requiresPlatformSupportDirectory =>
+      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
   /// 获取应用数据根目录路径；不存在时不会立即创建。
   static Future<String> getRootDirectoryPath() async {
     if (kIsWeb) {
       throw UnsupportedError('Web 平台不支持本地文件目录');
     }
     if (_debugDirectoryOverride != null) return _debugDirectoryOverride!;
+
+    if (_requiresPlatformSupportDirectory) {
+      final supportDirectory = await getApplicationSupportDirectory();
+      return '${supportDirectory.path}${Platform.pathSeparator}$directoryName';
+    }
 
     final home =
         Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];

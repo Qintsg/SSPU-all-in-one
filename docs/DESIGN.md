@@ -1,6 +1,6 @@
 # SSPU All-in-One 设计文档
 
-> 版本：v0.2.1-alpha | 最后更新：2026-04-23
+> 版本：v0.2.1-alpha.2 | 最后更新：2026-04-24
 
 ---
 
@@ -23,12 +23,12 @@ SSPU All-in-One 是面向上海第二工业大学（SSPU）师生的校园综合
 | 框架 | Flutter | >= 3.41.7 | 跨平台 UI 框架 |
 | 语言 | Dart | ^3.11.5 | 随 Flutter SDK 绑定 |
 | UI 组件库 | fluent_ui | ^4.11.1 | 微软 Fluent Design 风格 Widget |
-| 本地存储 | shared_preferences | ^2.5.3 | 键值对持久化（设置、密码哈希等） |
+| 本地存储 | shared_preferences / path_provider | ^2.5.3 / ^2.1.5 | 键值迁移与平台应用目录解析 |
 | 加密 | crypto | ^3.0.6 | SHA-256 哈希（密码安全存储） |
 | 网络请求 | dio | ^5.8.0+1 | 官网与公众号平台 HTTP 抓取 |
 | 桌面集成 | window_manager / tray_manager | ^0.5.1 | 桌面窗口控制与系统托盘 |
 | Windows WebView | flutter_inappwebview | ^6.1.5 | 文章页与公众号平台登录页 |
-| 应用信息 | package_info_plus | ^8.3.1 | 运行时版本号与构建号读取 |
+| 应用信息 | package_info_plus | ^10.1.0 | 运行时版本号与构建号读取 |
 | 代码规范 | flutter_lints | ^6.0.0 | Dart 推荐 lint 规则集 |
 
 ---
@@ -79,17 +79,16 @@ WidgetsFlutterBinding.ensureInitialized()
   ▼
 平台能力初始化
   ├── Windows: WebView2 环境
-  ├── StorageService.init()
-  ├── 桌面端 windowManager + TrayService
-  ├── NotificationService.init()
-  └── AutoRefreshService.init()
+  └── 桌面端 windowManager + TrayService
   │
   ▼
 runApp(SSPUApp)
   │
 _initApp()
+  ├── StorageService.init()
   ├── 检查 EULA 状态
-  └── 检查密码是否已设置
+  ├── 检查密码是否已设置
+  └── 后台启动 NotificationService / AutoRefreshService
   │
   ├── 未同意 EULA ──▶ Agreement Dialog
   ├── 未设密码 ─────▶ AppShell（主界面）
@@ -424,7 +423,7 @@ lib/
 
 1. **密码不以明文存储**：始终使用 SHA-256 哈希
 2. **加盐防御**：防止彩虹表攻击
-3. **状态文件本地化**：设置、认证信息、消息缓存与 WebView2 数据统一保存在用户目录
+3. **状态文件本地化**：桌面端保存在用户目录，移动端保存在系统分配的应用支持目录
 4. **网络请求仅用于内容抓取**：当前版本会访问学校官网与微信公众平台，不上传用户业务数据到自建服务
 5. **认证材料最小暴露**：公众号平台 Cookie / Token 仅保存在本地状态文件，不进入仓库
 6. **发布签名不入库**：Android release keystore 通过本地文件或 CI Secrets 注入

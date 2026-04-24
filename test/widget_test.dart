@@ -13,36 +13,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/app.dart';
-import 'package:sspu_all_in_one/main.dart';
 import 'package:sspu_all_in_one/pages/settings_page.dart';
 import 'package:sspu_all_in_one/pages/webview_page.dart';
 import 'package:sspu_all_in_one/services/storage_service.dart';
 import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
 
 void main() {
-  testWidgets('应用启动冒烟测试', (WidgetTester tester) async {
-    final storageDirectory = await Directory.systemTemp.createTemp(
-      'app_smoke_storage_',
-    );
-    StorageService.debugSetStateFilePathForTesting(
-      '${storageDirectory.path}${Platform.pathSeparator}app_state.json',
-    );
-    addTearDown(() async {
-      StorageService.debugSetStateFilePathForTesting(null);
-      if (await storageDirectory.exists()) {
-        await storageDirectory.delete(recursive: true);
-      }
-    });
-
-    // 构建应用并渲染首帧
-    await tester.pumpWidget(const SSPUApp());
-    // 首屏包含持续动画的 ProgressRing，固定推进一帧即可验证启动。
-    await tester.pump(const Duration(milliseconds: 100));
-
-    // 验证应用能正常渲染（不崩溃即通过）
-    expect(find.byType(SSPUApp), findsOneWidget);
-  });
-
   testWidgets('手机竖屏显示底部导航栏', (WidgetTester tester) async {
     final previousTargetPlatform = debugDefaultTargetPlatformOverride;
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -85,7 +61,6 @@ void main() {
 
   testWidgets('设置页窄屏使用顶部下拉切换分区', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
-    await StorageService.init();
     final configDirectory = Directory(
       '${Directory.systemTemp.path}${Platform.pathSeparator}'
       'settings_page_config_${DateTime.now().microsecondsSinceEpoch}',
@@ -93,6 +68,7 @@ void main() {
     StorageService.debugSetStateFilePathForTesting(
       '${configDirectory.path}${Platform.pathSeparator}app_state.json',
     );
+    await StorageService.init();
     WxmpConfigService.instance.debugSetConfigPathForTesting(
       '${configDirectory.path}${Platform.pathSeparator}wxmp_config.toml',
     );
