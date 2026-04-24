@@ -1,0 +1,28 @@
+name: 文档问题
+description: 报告文档错误、缺失或不清楚的地方
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: 相关页面或文件
+      placeholder: README.md / docs/xxx.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: 问题描述
+      placeholder: 哪一部分有问题？是错误、过时、不清楚，还是缺少说明？
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 修改建议
+      placeholder: 你建议如何修改？
+    validations:
+      required: false
