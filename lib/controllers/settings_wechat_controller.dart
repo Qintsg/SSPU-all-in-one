@@ -169,7 +169,7 @@ class SettingsWechatController extends ChangeNotifier {
     await _autoRefresh.reloadChannel('wechat_public');
   }
 
-  /// 打开认证配置文件。
+  /// 使用系统默认应用打开认证配置文件。
   Future<SettingsWechatFeedback> openConfigFile() async {
     try {
       await _wxmpConfigService.openConfigFile();
@@ -185,6 +185,28 @@ class SettingsWechatController extends ChangeNotifier {
       notifyListeners();
       return SettingsWechatFeedback(
         title: '打开配置文件失败',
+        content: '$error',
+        severity: InfoBarSeverity.error,
+      );
+    }
+  }
+
+  /// 打开认证配置文件目录。
+  Future<SettingsWechatFeedback> openConfigDirectory() async {
+    try {
+      await _wxmpConfigService.openConfigDirectory();
+      _wxmpConfigPath = await _wxmpConfigService.getConfigPath();
+      _wxmpConfigMessage = '已打开配置文件目录';
+      notifyListeners();
+      return const SettingsWechatFeedback(
+        title: '已打开配置文件目录',
+        severity: InfoBarSeverity.success,
+      );
+    } catch (error) {
+      _wxmpConfigMessage = '打开配置文件目录失败：$error';
+      notifyListeners();
+      return SettingsWechatFeedback(
+        title: '打开配置文件目录失败',
         content: '$error',
         severity: InfoBarSeverity.error,
       );

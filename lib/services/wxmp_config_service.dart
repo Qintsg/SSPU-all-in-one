@@ -227,24 +227,53 @@ class WxmpConfigService {
     await saveConfig(currentConfig.copyWith(cookie: '', token: ''));
   }
 
-  /// 使用系统编辑器打开配置文件；优先尝试 VS Code。
-  Future<void> openConfigFile() async {
+  /// 打开配置文件所在目录。
+  Future<void> openConfigDirectory() async {
     final configPath = await ensureConfigFile();
+    final configDirectoryPath = File(configPath).parent.path;
     if (!kIsWeb &&
         (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-      try {
-        await Process.start('code', [
-          configPath,
-        ], mode: ProcessStartMode.detached);
-        return;
-      } catch (_) {
-        // 未安装 code 命令时交给系统默认应用处理。
-      }
+      await _openDirectoryNative(configDirectoryPath);
+      return;
     }
 
+    throw UnsupportedError('当前平台不支持打开配置文件目录');
+  }
+
+  /// 使用系统默认应用打开配置文件。
+  Future<void> openConfigFile() async {
+    final configPath = await ensureConfigFile();
     final fileUri = Uri.file(configPath);
     if (await canLaunchUrl(fileUri)) {
       await launchUrl(fileUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    throw StateError('无法打开配置文件：$configPath');
+  }
+
+  Future<void> _openDirectoryNative(String directoryPath) async {
+    try {
+      if (Platform.isWindows) {
+        await Process.start('explorer', [
+          directoryPath,
+        ], mode: ProcessStartMode.detached);
+        return;
+      }
+      if (Platform.isMacOS) {
+        await Process.start('open', [
+          directoryPath,
+        ], mode: ProcessStartMode.detached);
+        return;
+      }
+      if (Platform.isLinux) {
+        await Process.start('xdg-open', [
+          directoryPath,
+        ], mode: ProcessStartMode.detached);
+        return;
+      }
+      throw UnsupportedError('当前平台不支持打开配置目录');
+    } on ProcessException {
+      throw StateError('无法打开配置文件目录，请确认系统文件管理器可用');
     }
   }
 
