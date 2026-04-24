@@ -11,6 +11,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/quick_links_config_service.dart';
+import '../services/quick_links_search_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -59,7 +60,7 @@ class QuickLinksPage extends StatelessWidget {
 }
 
 /// 快捷跳转内容区域。
-class _QuickLinksContent extends StatelessWidget {
+class _QuickLinksContent extends StatefulWidget {
   /// 从 YAML 解析出的分组。
   final List<QuickLinkGroupConfig> groups;
 
@@ -67,6 +68,15 @@ class _QuickLinksContent extends StatelessWidget {
   final Future<void> Function(String url) onOpenUrl;
 
   const _QuickLinksContent({required this.groups, required this.onOpenUrl});
+
+  @override
+  State<_QuickLinksContent> createState() => _QuickLinksContentState();
+}
+
+class _QuickLinksContentState extends State<_QuickLinksContent> {
+  final TextEditingController _searchController = TextEditingController();
+
+  String _searchQuery = '';
 
   static final List<AccentColor> _groupColors = [
     Colors.blue,
@@ -96,8 +106,24 @@ class _QuickLinksContent extends StatelessWidget {
   };
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openBestMatch(List<QuickLinkSearchResult> results) async {
+    if (results.isEmpty) return;
+    await widget.onOpenUrl(results.first.item.url);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final searchResults = QuickLinksSearchService.search(
+      widget.groups,
+      _searchQuery,
+    );
+    final hasSearchQuery = _searchQuery.trim().isNotEmpty;
 
     return ResponsiveBuilder(
       builder: (context, deviceType, constraints) {
@@ -116,18 +142,134 @@ class _QuickLinksContent extends StatelessWidget {
           header: const PageHeader(title: Text('快速跳转')),
           padding: EdgeInsets.all(pagePadding),
           children: [
-            for (var groupIndex = 0; groupIndex < groups.length; groupIndex++)
-              ..._buildGroup(
-                context,
-                theme,
-                groups[groupIndex],
-                groupIndex,
-                tileWidth,
-              ),
+            _buildSearchBar(theme, hasSearchQuery, searchResults),
+            const SizedBox(height: FluentSpacing.l),
+            if (hasSearchQuery)
+              ..._buildSearchResults(theme, searchResults, tileWidth)
+            else
+              for (
+                var groupIndex = 0;
+                groupIndex < widget.groups.length;
+                groupIndex++
+              )
+                ..._buildGroup(
+                  context,
+                  theme,
+                  widget.groups[groupIndex],
+                  groupIndex,
+                  tileWidth,
+                ),
           ],
         );
       },
     );
+  }
+
+  Widget _buildSearchBar(
+    FluentThemeData theme,
+    bool hasSearchQuery,
+    List<QuickLinkSearchResult> searchResults,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextBox(
+            controller: _searchController,
+            placeholder: '搜索快捷入口或网址',
+            prefix: const Padding(
+              padding: EdgeInsets.only(left: 8.0),
+              child: Icon(FluentIcons.search, size: 14),
+            ),
+            suffix: hasSearchQuery
+                ? IconButton(
+                    icon: const Icon(FluentIcons.clear, size: 12),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            onSubmitted: (_) => _openBestMatch(searchResults),
+          ),
+        ),
+        const SizedBox(width: FluentSpacing.s),
+        Tooltip(
+          message: '打开最佳匹配',
+          child: FilledButton(
+            onPressed: searchResults.isEmpty
+                ? null
+                : () => _openBestMatch(searchResults),
+            child: const Icon(FluentIcons.open_in_new_window, size: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildSearchResults(
+    FluentThemeData theme,
+    List<QuickLinkSearchResult> searchResults,
+    double tileWidth,
+  ) {
+    if (searchResults.isEmpty) {
+      return [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: FluentSpacing.xxxl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  FluentIcons.search_issue,
+                  size: 42,
+                  color: theme.resources.textFillColorSecondary,
+                ),
+                const SizedBox(height: FluentSpacing.s),
+                Text(
+                  '未找到匹配的快捷入口',
+                  style: theme.typography.body?.copyWith(
+                    color: theme.resources.textFillColorSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      Text(
+        '搜索结果 (${searchResults.length})',
+        style: theme.typography.bodyStrong,
+      ),
+      const SizedBox(height: FluentSpacing.s),
+      Wrap(
+            spacing: FluentSpacing.m,
+            runSpacing: FluentSpacing.m,
+            children: searchResults.map((result) {
+              return _LinkTile(
+                icon: _resolveIcon(result.group.category, result.item),
+                label: result.item.name,
+                subtitle: result.group.category,
+                color: _resolveColor(
+                  result.group.category,
+                  result.item,
+                  _groupColors[widget.groups.indexOf(result.group) %
+                      _groupColors.length],
+                ),
+                url: result.item.url,
+                onTap: widget.onOpenUrl,
+                width: tileWidth,
+              );
+            }).toList(),
+          )
+          .animate()
+          .fadeIn(duration: FluentDuration.slow, curve: FluentEasing.decelerate)
+          .slideY(begin: 0.04, end: 0),
+    ];
   }
 
   List<Widget> _buildGroup(
@@ -151,7 +293,7 @@ class _QuickLinksContent extends StatelessWidget {
                 label: item.name,
                 color: _resolveColor(group.category, item, groupColor),
                 url: item.url,
-                onTap: onOpenUrl,
+                onTap: widget.onOpenUrl,
                 width: tileWidth,
               );
             }).toList(),
@@ -250,6 +392,7 @@ class _QuickLinksContent extends StatelessWidget {
 class _LinkTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final AccentColor color;
   final String url;
   final Future<void> Function(String) onTap;
@@ -260,6 +403,7 @@ class _LinkTile extends StatelessWidget {
   const _LinkTile({
     required this.icon,
     required this.label,
+    this.subtitle,
     required this.color,
     required this.url,
     required this.onTap,
@@ -279,7 +423,7 @@ class _LinkTile extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           width: width,
-          constraints: const BoxConstraints(minHeight: 118),
+          constraints: const BoxConstraints(minHeight: 122),
           padding: const EdgeInsets.all(FluentSpacing.l),
           decoration: BoxDecoration(
             color: isHovered
@@ -307,9 +451,21 @@ class _LinkTile extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 3,
+                maxLines: subtitle == null ? 3 : 2,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: FluentSpacing.xs),
+                Text(
+                  subtitle!,
+                  style: theme.typography.caption?.copyWith(
+                    color: theme.resources.textFillColorSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
         );
