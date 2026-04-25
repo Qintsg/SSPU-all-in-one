@@ -1,6 +1,6 @@
 # SSPU All-in-One 设计文档
 
-> 版本：v0.2.1-alpha.2 | 最后更新：2026-04-24
+> 版本：v0.2.2-alpha+3 | 最后更新：2026-04-24
 
 ---
 
@@ -24,7 +24,7 @@ SSPU All-in-One 是面向上海第二工业大学（SSPU）师生的校园综合
 | 语言 | Dart | ^3.11.5 | 随 Flutter SDK 绑定 |
 | UI 组件库 | fluent_ui | ^4.11.1 | 微软 Fluent Design 风格 Widget |
 | 本地存储 | shared_preferences / path_provider | ^2.5.3 / ^2.1.5 | 键值迁移与平台应用目录解析 |
-| 加密 | crypto | ^3.0.6 | SHA-256 哈希（密码安全存储） |
+| 加密 | crypto / flutter_secure_storage | ^3.0.6 / ^8.1.0 | 应用锁密码哈希与可解密凭据安全存储 |
 | 网络请求 | dio | ^5.8.0+1 | 官网与公众号平台 HTTP 抓取 |
 | 桌面集成 | window_manager / tray_manager | ^0.5.1 | 桌面窗口控制与系统托盘 |
 | Windows WebView | flutter_inappwebview | ^6.1.5 | 文章页与公众号平台登录页 |
@@ -214,8 +214,9 @@ _initApp()
   - 关闭时弹出"移除密码"对话框（需验证当前密码）
 - **修改密码**：仅在已设置密码时显示，需验证旧密码
 - **立即上锁**：不退出应用，直接回到锁定页
+- **教务凭据**：保存学工号、OA 密码、体育部查询密码和邮箱密码，密码框回访时保持为空，仅显示“已填写 / 未填写”
 - **清理信息中心缓存**：只清理消息缓存与已读状态
-- **清除所有本地数据**：清空状态文件并退出应用
+- **清除所有本地数据**：清空状态文件、教务安全存储项并退出应用
 
 #### 4.5.3 消息推送设置
 
@@ -302,7 +303,33 @@ PasswordService（核心服务）
 | `verifyPassword` | `static Future<bool> (String)` | 验证密码是否正确 |
 | `removePassword` | `static Future<void>` | 移除密码保护 |
 
-### 5.3 密码操作流程
+### 5.3 AcademicCredentialsService
+
+**文件**：`lib/services/academic_credentials_service.dart`
+
+**存储机制**：
+- 后端：`flutter_secure_storage`，按平台委托系统安全存储能力
+- Android：启用 `EncryptedSharedPreferences`
+- iOS / macOS：使用系统 Keychain；macOS Runner 配置 `keychain-access-groups`
+- Windows / Linux / Web：使用插件对应平台实现；Linux 打包需提供 `libsecret` 运行依赖
+
+**安全设计**：
+- 教务凭据需要后续解密登录外部网站，因此不能使用不可逆哈希
+- 设置页只回填学工号，OA 密码、体育部查询密码和邮箱密码输入框始终为空
+- 页面展示每个密码字段是否已保存，并提示数据加密存储在本地、不上传至云端
+- 不使用 `readAll` / `deleteAll` 批量接口，清理时逐项删除已知键，保持 Windows 兼容性
+
+**API 接口**：
+
+| 方法 | 签名 | 说明 |
+|------|------|------|
+| `getStatus` | `Future<AcademicCredentialsStatus>` | 获取学工号和各密码填写状态 |
+| `saveCredentials` | `Future<void> ({required String oaAccount, String? oaPassword, String? sportsQueryPassword, String? emailPassword})` | 保存账号和本次填写的密码，空密码不覆盖旧值 |
+| `readSecret` | `Future<String?> (AcademicCredentialSecret)` | 读取指定密码原文 |
+| `clearSecret` | `Future<void> (AcademicCredentialSecret)` | 清除指定密码字段 |
+| `clearAll` | `Future<void>` | 清除全部教务凭据 |
+
+### 5.4 密码操作流程
 
 #### 设置密码
 
@@ -422,10 +449,11 @@ lib/
 
 ## 10. 安全设计约束
 
-1. **密码不以明文存储**：始终使用 SHA-256 哈希
+1. **应用锁密码不以明文存储**：始终使用 SHA-256 哈希
 2. **加盐防御**：防止彩虹表攻击
-3. **状态文件本地化**：桌面端保存在用户目录，移动端保存在系统分配的应用支持目录
-4. **网络请求仅用于内容抓取**：当前版本会访问学校官网与微信公众平台，不上传用户业务数据到自建服务
-5. **认证材料最小暴露**：公众号平台 Cookie / Token 仅保存在本地状态文件，不进入仓库
-6. **发布签名不入库**：Android release keystore 通过本地文件或 CI Secrets 注入
-7. **无敏感信息调试日志**：密码与微信认证敏感字段不输出到控制台
+3. **可解密凭据使用系统安全存储**：教务凭据不写入统一 JSON 状态文件，按平台使用 Keychain / Keystore / Credential Locker / libsecret 等能力
+4. **状态文件本地化**：桌面端保存在用户目录，移动端保存在系统分配的应用支持目录
+5. **网络请求仅用于内容抓取**：当前版本会访问学校官网与微信公众平台，不上传用户业务数据到自建服务
+6. **认证材料最小暴露**：公众号平台 Cookie / Token 仅保存在本地状态文件，不进入仓库
+7. **发布签名不入库**：Android release keystore 通过本地文件或 CI Secrets 注入
+8. **无敏感信息调试日志**：密码、教务凭据与微信认证敏感字段不输出到控制台

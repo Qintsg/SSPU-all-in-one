@@ -6,16 +6,45 @@
 
 ---
 
-## [0.2.1-alpha.2] - 2026-04-24
+## [0.2.2-alpha+3] - 2026-04-24
+
+### 修复
+
+- Android release 构建将 `compileSdk` 提升到至少 34，修复 `flutter_secure_storage` 依赖链中的 AndroidX AAR metadata 要求 API 34 以上导致 APK 构建失败的问题
+- Android release 构建补充 Tink 编译期注解类的 R8 `dontwarn` 规则，修复 release shrink 阶段因缺少注解类而中断的问题
+
+### 发布
+
+- 以 `0.2.2-alpha+3` 重新发布 alpha 构建批次，使用 `v0.2.2-alpha` Tag，并通过完整版本号区分新产物
+
+## [0.2.2-alpha+2] - 2026-04-24
+
+### 修复
+
+- Release 工作流的 Linux x64 / arm64 构建依赖补齐 `libsecret-1-dev`，修复 `flutter_secure_storage_linux` 在 CMake 阶段找不到 `libsecret-1>=0.18.4` 导致 Linux 产物构建失败的问题
+
+### 发布
+
+- 以 `0.2.2-alpha+2` 重新发布 alpha 构建批次，使用 `v0.2.2-alpha` Tag，并通过完整版本号区分新产物
+
+## [0.2.2-alpha] - 2026-04-24
 
 ### 新增
 
 - 微信推文认证卡片新增“打开配置文件所在文件夹”入口，并保留使用系统默认应用打开 `wxmp_config.toml`
 - 快速跳转页新增搜索框，支持名称 / URL 精确匹配、模糊匹配和校园服务意图匹配，并可直接打开最佳匹配结果
+- 安全设置页新增教务凭据本地保存入口，支持学工号、OA 密码、体育部查询密码和邮箱密码的加密存储与填写状态提示
+
+### 变更
+
+- 移除设置页中的 VS Code 专用配置文件入口，统一改为使用系统默认文件管理器打开配置目录
+- 同步 Release PR 发布说明章节校验规则，确保工作流可从 PR 正文生成规范化的 `release-notes.md`
 
 ### 修复
 
 - 修复 Android 启动前等待本地状态目录、通知和自动刷新初始化导致首帧无法渲染、界面纯白的问题
+- 修复微信公众号平台认证信息提取与配置文件编辑流程，避免无效认证状态影响刷新链路
+- 优化配置入口异常提示和相关测试命名，降低配置文件打开失败时的排查成本
 - 修复 Windows arm64 Release 构建中 JDK 架构与 Flutter Windows toolchain 不一致导致 `jni` 插件链接失败的问题
 
 ## [0.2.1-alpha] - 2026-04-23

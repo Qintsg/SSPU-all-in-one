@@ -13,6 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/channel_config.dart';
 import '../services/app_exit_service.dart';
+import '../services/academic_credentials_service.dart';
 import '../services/message_state_service.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
@@ -107,6 +108,15 @@ class _SettingsPageState extends State<SettingsPage> {
       context,
       builder: (ctx, close) =>
           InfoBar(title: Text(message), severity: InfoBarSeverity.success),
+    );
+  }
+
+  /// 显示操作失败提示。
+  void _showErrorBar(String message) {
+    displayInfoBar(
+      context,
+      builder: (ctx, close) =>
+          InfoBar(title: Text(message), severity: InfoBarSeverity.error),
     );
   }
 
@@ -253,8 +263,14 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (confirmed == true) {
-      await StorageService.clearAll();
-      await AppExitService.instance.exit();
+      try {
+        await AcademicCredentialsService.instance.clearAll();
+        await StorageService.clearAll();
+        await AppExitService.instance.exit();
+      } catch (_) {
+        if (!mounted) return;
+        _showErrorBar('清除失败，请确认系统安全存储可用');
+      }
     }
   }
 

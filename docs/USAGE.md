@@ -63,6 +63,7 @@ flutter pub get
 | `shared_preferences` | 本地键值对存储 |
 | `path_provider` | 平台应用支持目录解析 |
 | `crypto` | SHA-256 哈希 |
+| `flutter_secure_storage` | 系统安全存储，用于保存可解密教务凭据 |
 | `flutter_lints` | 代码规范（dev） |
 
 ---
@@ -394,13 +395,14 @@ flutter pub deps | Select-String "fluent_ui"
 
 ### 10.4 本地状态文件异常
 
-桌面端会将用户设置、认证信息、消息缓存和 WebView2 运行态写入 `~/.sspu-all-in-one/`；Android / iOS 会写入系统分配的应用支持目录。设置页提供 `wxmp_config.toml` 内置编辑器，移动端可直接在应用内修改公众号平台认证配置。若状态文件损坏或需要重建本地状态，可先退出应用，备份后删除对应目录中的文件，再重新启动应用。
+桌面端会将用户设置、认证信息、消息缓存和 WebView2 运行态写入 `~/.sspu-all-in-one/`；Android / iOS 会写入系统分配的应用支持目录。设置页提供 `wxmp_config.toml` 内置编辑器，移动端可直接在应用内修改公众号平台认证配置。教务凭据使用系统安全存储单独保存，不写入 `app_state.json`，安全设置页只显示学工号和密码填写状态。若状态文件损坏或需要重建本地状态，可先退出应用，备份后删除对应目录中的文件，再重新启动应用。
 
 常用文件：
 
 - `app_state.json`：应用设置、消息缓存、已读状态、关注列表
 - `wxmp_config.toml`：微信公众号平台认证与高级抓取参数
 - `webview2/`：Windows WebView2 用户数据目录
+- 系统安全存储：学工号、OA 密码、体育部查询密码和邮箱密码；Linux 打包运行时需提供 `libsecret` 相关依赖
 
 ---
 
@@ -410,4 +412,4 @@ flutter pub deps | Select-String "fluent_ui"
 2. **不要修改 `pubspec.lock`**：除非执行了 `flutter pub get/upgrade`
 3. **Windows 开发**：确保以管理员身份运行 Visual Studio Installer 安装 C++ 工作负载
 4. **Web 调试**：推荐使用 Chrome，其他浏览器可能存在兼容性差异
-5. **用户数据存储位置**：桌面端位于 `~/.sspu-all-in-one/`，移动端位于系统分配的应用支持目录，包括密码哈希、设置项、消息缓存、微信公众号认证配置和 WebView2 运行态
+5. **用户数据存储位置**：桌面端位于 `~/.sspu-all-in-one/`，移动端位于系统分配的应用支持目录，包括密码哈希、设置项、消息缓存、微信公众号认证配置和 WebView2 运行态；教务凭据另存于系统安全存储
