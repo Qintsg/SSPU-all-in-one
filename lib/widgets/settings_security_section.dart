@@ -11,6 +11,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import '../models/academic_credentials.dart';
 import '../services/academic_credentials_service.dart';
 import '../theme/fluent_tokens.dart';
+import 'settings_widgets.dart';
 
 /// 安全设置分区。
 class SettingsSecuritySection extends StatefulWidget {
@@ -22,6 +23,18 @@ class SettingsSecuritySection extends StatefulWidget {
 
   /// 修改密码回调。
   final VoidCallback onChangePassword;
+
+  /// 是否已启用系统快速验证。
+  final bool isQuickAuthEnabled;
+
+  /// 当前平台/设备是否可用系统快速验证。
+  final bool isQuickAuthAvailable;
+
+  /// 系统快速验证开关是否正在处理。
+  final bool isQuickAuthBusy;
+
+  /// 开关系统快速验证。
+  final ValueChanged<bool> onQuickAuthChanged;
 
   /// 立即上锁回调。
   final VoidCallback? onLock;
@@ -37,6 +50,10 @@ class SettingsSecuritySection extends StatefulWidget {
     required this.isPasswordEnabled,
     required this.onPasswordProtectionChanged,
     required this.onChangePassword,
+    required this.isQuickAuthEnabled,
+    required this.isQuickAuthAvailable,
+    required this.isQuickAuthBusy,
+    required this.onQuickAuthChanged,
     required this.onLock,
     required this.onClearMessageCache,
     required this.onClearAllData,
@@ -184,43 +201,85 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
           children: [
             Text('安全', style: FluentTheme.of(context).typography.subtitle),
             const SizedBox(height: FluentSpacing.l),
-            Row(
-              children: [
-                const Icon(FluentIcons.lock, size: 20),
-                const SizedBox(width: FluentSpacing.m),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '密码保护',
-                        style: FluentTheme.of(context).typography.bodyStrong,
-                      ),
-                      const SizedBox(height: FluentSpacing.xxs),
-                      Text(
-                        widget.isPasswordEnabled
-                            ? '已开启 — 重新打开应用时需要输入密码'
-                            : '未开启 — 任何人可直接进入应用',
-                        style: FluentTheme.of(context).typography.caption,
-                      ),
-                    ],
-                  ),
-                ),
-                ToggleSwitch(
-                  checked: widget.isPasswordEnabled,
-                  onChanged: widget.onPasswordProtectionChanged,
-                ),
-              ],
+            buildResponsiveSettingsRow(
+              context: context,
+              icon: FluentIcons.lock,
+              title: Text(
+                '密码保护',
+                style: FluentTheme.of(context).typography.bodyStrong,
+              ),
+              subtitle: Text(
+                widget.isPasswordEnabled
+                    ? '已开启 — 重新打开应用时需要输入密码'
+                    : '未开启 — 任何人可直接进入应用',
+                style: FluentTheme.of(context).typography.caption,
+              ),
+              trailing: ToggleSwitch(
+                checked: widget.isPasswordEnabled,
+                onChanged: widget.onPasswordProtectionChanged,
+              ),
             ),
+            if (widget.isPasswordEnabled && widget.isQuickAuthAvailable) ...[
+              const SizedBox(height: FluentSpacing.l),
+              buildResponsiveSettingsRow(
+                context: context,
+                icon: FluentIcons.fingerprint,
+                title: Text(
+                  '系统快速验证',
+                  style: FluentTheme.of(context).typography.bodyStrong,
+                ),
+                subtitle: Text(
+                  widget.isQuickAuthEnabled
+                      ? '已开启 — 锁定页会优先请求系统认证，仍可输入密码解锁'
+                      : '可使用设备 PIN、生物识别或平台支持的系统认证快速解锁',
+                  style: FluentTheme.of(context).typography.caption,
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.isQuickAuthBusy) ...[
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: ProgressRing(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: FluentSpacing.s),
+                    ],
+                    ToggleSwitch(
+                      checked: widget.isQuickAuthEnabled,
+                      onChanged: widget.isQuickAuthBusy
+                          ? null
+                          : widget.onQuickAuthChanged,
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (widget.isPasswordEnabled) ...[
+              const SizedBox(height: FluentSpacing.l),
+              buildResponsiveSettingsRow(
+                context: context,
+                icon: FluentIcons.fingerprint,
+                title: Text(
+                  '系统快速验证不可用',
+                  style: FluentTheme.of(context).typography.bodyStrong,
+                ),
+                subtitle: Text(
+                  '当前平台、设备或系统认证未配置；仍可使用应用密码手动解锁。',
+                  style: FluentTheme.of(context).typography.caption,
+                ),
+                trailing: const Icon(FluentIcons.info, size: 16),
+              ),
+            ],
             if (widget.isPasswordEnabled) ...[
               const SizedBox(height: FluentSpacing.m),
-              Row(
+              Wrap(
+                spacing: FluentSpacing.m,
+                runSpacing: FluentSpacing.s,
                 children: [
                   Button(
                     onPressed: widget.onChangePassword,
                     child: const Text('修改密码'),
                   ),
-                  const SizedBox(width: FluentSpacing.m),
                   FilledButton(
                     onPressed: widget.onLock,
                     child: const Row(
@@ -249,16 +308,22 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
               style: FluentTheme.of(context).typography.caption,
             ),
             const SizedBox(height: FluentSpacing.m),
-            Button(
-              onPressed: widget.onClearMessageCache,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(FluentIcons.broom, size: 14),
-                  SizedBox(width: 6),
-                  Text('清理信息中心缓存'),
-                ],
-              ),
+            Wrap(
+              spacing: FluentSpacing.s,
+              runSpacing: FluentSpacing.s,
+              children: [
+                Button(
+                  onPressed: widget.onClearMessageCache,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.broom, size: 14),
+                      SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
+                      Text('清理信息中心缓存'),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: FluentSpacing.l),
             const Divider(),
@@ -268,16 +333,22 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
               style: FluentTheme.of(context).typography.caption,
             ),
             const SizedBox(height: FluentSpacing.m),
-            Button(
-              onPressed: widget.onClearAllData,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(FluentIcons.delete, size: 14),
-                  SizedBox(width: 6),
-                  Text('清除所有数据'),
-                ],
-              ),
+            Wrap(
+              spacing: FluentSpacing.s,
+              runSpacing: FluentSpacing.s,
+              children: [
+                Button(
+                  onPressed: widget.onClearAllData,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.delete, size: 14),
+                      SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
+                      Text('清除所有数据'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

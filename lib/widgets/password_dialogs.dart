@@ -168,6 +168,78 @@ Future<bool> showRemovePasswordDialog(BuildContext context) async {
   return false;
 }
 
+/// 显示当前密码确认对话框。
+/// 返回 true 表示当前密码验证成功。
+Future<bool> showConfirmCurrentPasswordDialog(
+  BuildContext context, {
+  String title = '确认当前密码',
+  String message = '请输入当前密码以继续。',
+  String confirmLabel = '确认',
+}) async {
+  final passwordController = TextEditingController();
+  String? errorMessage;
+
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (builderContext, setDialogState) {
+          return ContentDialog(
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message),
+                const SizedBox(height: 16),
+                InfoLabel(
+                  label: '当前密码',
+                  child: PasswordBox(
+                    controller: passwordController,
+                    placeholder: '请输入当前密码',
+                    revealMode: PasswordRevealMode.peekAlways,
+                  ),
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  InfoBar(
+                    title: Text(errorMessage!),
+                    severity: InfoBarSeverity.error,
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              Button(
+                child: const Text('取消'),
+                onPressed: () => Navigator.pop(dialogContext, false),
+              ),
+              FilledButton(
+                child: Text(confirmLabel),
+                onPressed: () async {
+                  final isCorrect = await PasswordService.verifyPassword(
+                    passwordController.text,
+                  );
+                  if (isCorrect) {
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext, true);
+                    }
+                  } else {
+                    setDialogState(() => errorMessage = '密码错误');
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  passwordController.dispose();
+  return result == true;
+}
+
 /// 显示修改密码对话框
 /// 返回 true 表示密码修改成功
 Future<bool> showChangePasswordDialog(BuildContext context) async {

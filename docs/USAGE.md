@@ -64,6 +64,7 @@ flutter pub get
 | `path_provider` | 平台应用支持目录解析 |
 | `crypto` | SHA-256 哈希 |
 | `flutter_secure_storage` | 系统安全存储，用于保存可解密教务凭据 |
+| `local_auth` | 可选系统快速验证，用于密码保护开启后的本机认证解锁 |
 | `flutter_lints` | 代码规范（dev） |
 
 ---
@@ -188,6 +189,7 @@ flutter build appbundle --release
 - 当前工作区已生成本机自签名 keystore：`android/app/sspu-release.jks`
 - `key.properties` 与 `.jks` 默认被 `.gitignore` 忽略，不会进入仓库
 - GitHub Actions 可通过 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 四个 Secrets 在运行时写入签名配置
+- 系统快速验证依赖 `local_auth`，Android Runner 使用 `FlutterFragmentActivity` 并声明 `android.permission.USE_BIOMETRIC`；仍保留密码输入作为兜底路径
 
 输出路径：
 
@@ -207,6 +209,8 @@ flutter build appbundle --release
 flutter build ios --release
 ```
 
+iOS 系统快速验证通过 `local_auth` 调用系统能力，`Info.plist` 已配置 `NSFaceIDUsageDescription`。启用该功能仍需先开启应用密码保护并输入当前密码确认。
+
 ### 7.3 Web
 
 ```bash
@@ -214,6 +218,8 @@ flutter build web --release
 ```
 
 输出路径：`build/web/`
+
+Web 不支持 `local_auth`，系统快速验证入口会隐藏或显示不可用提示，用户仍使用手动密码解锁。Web 端也不访问本地文件目录，应用状态会保存到浏览器提供的 `shared_preferences` Web 存储；若浏览器存储不可用，则退回本次会话内存态以保证启动可用。
 
 可使用任意静态文件服务器预览：
 
@@ -254,6 +260,7 @@ flutter build macos --release
 - 分发生成的 `.app` 包
 - 若未做 Apple 签名与公证，首次运行可能需要在系统安全设置中手动允许
 - 当前 GitHub Release 默认产出未签名 DMG：`SSPU-All-in-One-v{version}-macos-universal-unsigned.dmg`
+- macOS 系统快速验证通过 `local_auth` 调用系统能力，`Info.plist` 已配置 `NSFaceIDUsageDescription`
 
 ### 7.6 Linux 桌面
 
@@ -291,6 +298,8 @@ chmod +x sspu_all_in_one
 - `SSPU-All-in-One-v{version}-linux-arm64-deb.deb`
 - `SSPU-All-in-One-v{version}-linux-arm64-rpm.rpm`
 - `SSPU-All-in-One-v{version}-linux-arm64-portable.tar.gz`
+
+Linux 当前没有 `local_auth` 官方实现，系统快速验证入口会隐藏，用户仍使用手动密码解锁。
 
 面向 Debian / Ubuntu 及其衍生发行版，可直接使用：
 
@@ -399,7 +408,7 @@ flutter pub deps | Select-String "fluent_ui"
 
 常用文件：
 
-- `app_state.json`：应用设置、消息缓存、已读状态、关注列表
+- `app_state.json`：应用设置、消息缓存、已读状态、关注列表；系统快速验证只保存 `app_quick_auth_enabled` 布尔配置，不保存任何 PIN、生物识别或系统认证原始数据
 - `wxmp_config.toml`：微信公众号平台认证与高级抓取参数
 - `webview2/`：Windows WebView2 用户数据目录
 - 系统安全存储：学工号、OA 密码、体育部查询密码和邮箱密码；Linux 打包运行时需提供 `libsecret` 相关依赖

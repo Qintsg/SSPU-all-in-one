@@ -21,6 +21,18 @@ Future<void> pumpUntilFound(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  Future<void> configureNarrowView(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 720);
+    tester.view.devicePixelRatio = 1.0;
+    await tester.binding.setSurfaceSize(const Size(320, 720));
+  }
+
+  Future<void> resetView(WidgetTester tester) async {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+    await tester.binding.setSurfaceSize(null);
+  }
+
   testWidgets('安全设置页显示教务凭据状态但不回填密码', (tester) async {
     FlutterSecureStorage.setMockInitialValues({});
     await AcademicCredentialsService.instance.saveCredentials(
@@ -38,6 +50,10 @@ void main() {
               isPasswordEnabled: false,
               onPasswordProtectionChanged: (_) {},
               onChangePassword: () {},
+              isQuickAuthEnabled: false,
+              isQuickAuthAvailable: false,
+              isQuickAuthBusy: false,
+              onQuickAuthChanged: (_) {},
               onLock: null,
               onClearMessageCache: () {},
               onClearAllData: () {},
@@ -55,5 +71,121 @@ void main() {
     expect(find.text('oa-pass'), findsNothing);
     expect(find.text('sports-pass'), findsNothing);
     expect(find.text('mail-pass'), findsNothing);
+  });
+
+  testWidgets('系统快速验证在可用时显示开关，不可用时显示密码兜底提示', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      FluentApp(
+        home: ScaffoldPage(
+          content: SingleChildScrollView(
+            child: SettingsSecuritySection(
+              isPasswordEnabled: false,
+              onPasswordProtectionChanged: (_) {},
+              onChangePassword: () {},
+              isQuickAuthEnabled: false,
+              isQuickAuthAvailable: true,
+              isQuickAuthBusy: false,
+              onQuickAuthChanged: (_) {},
+              onLock: null,
+              onClearMessageCache: () {},
+              onClearAllData: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('学工号（OA账号）'));
+
+    expect(find.text('系统快速验证'), findsNothing);
+
+    await tester.pumpWidget(
+      FluentApp(
+        home: ScaffoldPage(
+          content: SingleChildScrollView(
+            child: SettingsSecuritySection(
+              isPasswordEnabled: true,
+              onPasswordProtectionChanged: (_) {},
+              onChangePassword: () {},
+              isQuickAuthEnabled: true,
+              isQuickAuthAvailable: false,
+              isQuickAuthBusy: false,
+              onQuickAuthChanged: (_) {},
+              onLock: null,
+              onClearMessageCache: () {},
+              onClearAllData: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('学工号（OA账号）'));
+
+    expect(find.text('系统快速验证不可用'), findsOneWidget);
+    expect(find.textContaining('仍可使用应用密码手动解锁'), findsOneWidget);
+
+    await tester.pumpWidget(
+      FluentApp(
+        home: ScaffoldPage(
+          content: SingleChildScrollView(
+            child: SettingsSecuritySection(
+              isPasswordEnabled: true,
+              onPasswordProtectionChanged: (_) {},
+              onChangePassword: () {},
+              isQuickAuthEnabled: true,
+              isQuickAuthAvailable: true,
+              isQuickAuthBusy: false,
+              onQuickAuthChanged: (_) {},
+              onLock: null,
+              onClearMessageCache: () {},
+              onClearAllData: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('系统快速验证'));
+
+    expect(find.text('系统快速验证'), findsOneWidget);
+    expect(find.textContaining('仍可输入密码解锁'), findsOneWidget);
+  });
+
+  testWidgets('窄屏安全设置堆叠 quick auth 与数据管理操作', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    await configureNarrowView(tester);
+
+    try {
+      await tester.pumpWidget(
+        FluentApp(
+          home: ScaffoldPage(
+            content: SingleChildScrollView(
+              child: SettingsSecuritySection(
+                isPasswordEnabled: true,
+                onPasswordProtectionChanged: (_) {},
+                onChangePassword: () {},
+                isQuickAuthEnabled: true,
+                isQuickAuthAvailable: true,
+                isQuickAuthBusy: true,
+                onQuickAuthChanged: (_) {},
+                onLock: null,
+                onClearMessageCache: () {},
+                onClearAllData: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await pumpUntilFound(tester, find.text('系统快速验证'));
+
+      expect(find.text('系统快速验证'), findsOneWidget);
+      expect(find.text('立即上锁'), findsOneWidget);
+      expect(find.text('清理信息中心缓存'), findsOneWidget);
+      expect(find.text('清除所有数据'), findsOneWidget);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await resetView(tester);
+    }
   });
 }
