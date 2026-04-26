@@ -6,6 +6,24 @@
 
 ---
 
+## [0.2.3-alpha+2] - 2026-04-26
+
+### 修复
+
+- Release workflow 在打包 macOS unsigned DMG 前重新 ad-hoc 签名 `.app`，剥离 Flutter/Xcode 构建后残留的受限 entitlement
+
+### 测试
+
+- 补充 macOS Release workflow 回归测试，确保打包前先清理签名权限再执行 entitlement 拦截
+
+### 文档
+
+- 补充 macOS unsigned DMG 打包前重新 ad-hoc 签名的发布约束
+
+### 发布
+
+- 以 `0.2.3-alpha+2` 重新发布 alpha 构建批次，使用 `v0.2.3-alpha` Tag，并通过完整版本号区分新产物
+
 ## [0.2.3-alpha+1] - 2026-04-26
 
 ### 修复
@@ -18,7 +36,7 @@
 
 ### 发布
 
-- 以 `0.2.3-alpha+1` 发布 alpha 构建批次，使用 `v0.2.3-alpha` Tag，并通过完整版本号区分发布产物
+- 尝试以 `0.2.3-alpha+1` 发布 alpha 构建批次；因 macOS DMG entitlement 校验失败，未生成 GitHub Release
 
 ## [0.2.2-alpha+4] - 2026-04-25
 
