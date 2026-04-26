@@ -56,6 +56,23 @@ class ResponsivePadding extends StatelessWidget {
   }
 }
 
+/// 根据设备类型返回页面内容边距。
+///
+/// 统一设置页、信息页等页面的窄屏边距，避免各页面使用不同的硬编码值。
+EdgeInsets responsivePagePadding(DeviceType deviceType, {double vertical = 0}) {
+  final horizontal = switch (deviceType) {
+    DeviceType.phone => FluentSpacing.m,
+    DeviceType.tablet => FluentSpacing.xl,
+    DeviceType.desktop => FluentSpacing.xxl,
+  };
+  return EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical);
+}
+
+/// 窄屏时是否应将设置行的尾部控件堆叠到下一行。
+bool shouldStackSettingsControls(BoxConstraints constraints) {
+  return FluentBreakpoints.fromWidth(constraints.maxWidth) == DeviceType.phone;
+}
+
 /// 响应式网格列数 — 根据设备类型返回合适的列数
 /// [phoneCols] 手机列数（默认 2）
 /// [tabletCols] 平板列数（默认 3）

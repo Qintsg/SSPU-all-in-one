@@ -67,77 +67,66 @@ class SettingsWechatMatrixCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text('SSPU 微信矩阵', style: theme.typography.bodyStrong),
-                          const SizedBox(width: FluentSpacing.s),
-                          Text(
-                            '来源：校园+微信矩阵·共 ${sspuWechatAccounts.length} 个',
-                            style: theme.typography.caption,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: FluentSpacing.s),
-                      Text(
-                        '以下为上海第二工业大学官方认可的微信公众号',
-                        style: theme.typography.caption,
-                      ),
-                      const SizedBox(height: FluentSpacing.s),
-                      Text(
-                        '已关注的公众号可在此直接控制是否获取推文；未关注项仅展示状态。',
-                        style: theme.typography.caption,
-                      ),
-                    ],
-                  ),
-                ),
-                if (!allAccountsFollowed) ...[
-                  const SizedBox(width: FluentSpacing.m),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      FilledButton(
-                        onPressed: !authenticated || batchFollowing
-                            ? null
-                            : onBatchFollow,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (batchFollowing)
-                              const Padding(
-                                padding: EdgeInsets.only(right: 6),
-                                child: SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: ProgressRing(strokeWidth: 2),
-                                ),
-                              ),
-                            const Text('一键全部关注'),
-                          ],
-                        ),
-                      ),
-                      if (batchFollowing && batchProgress.isNotEmpty) ...[
-                        const SizedBox(height: FluentSpacing.xs),
-                        SizedBox(
-                          width: 220,
-                          child: Text(
-                            batchProgress,
-                            style: theme.typography.caption,
-                            textAlign: TextAlign.right,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final shouldStack =
+                    FluentBreakpoints.fromWidth(constraints.maxWidth) ==
+                    DeviceType.phone;
+                final intro = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: FluentSpacing.s,
+                      runSpacing: FluentSpacing.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text('SSPU 微信矩阵', style: theme.typography.bodyStrong),
+                        Text(
+                          '来源：校园+微信矩阵·共 ${sspuWechatAccounts.length} 个',
+                          style: theme.typography.caption,
                         ),
                       ],
+                    ),
+                    const SizedBox(height: FluentSpacing.s),
+                    Text(
+                      '以下为上海第二工业大学官方认可的微信公众号',
+                      style: theme.typography.caption,
+                    ),
+                    const SizedBox(height: FluentSpacing.s),
+                    Text(
+                      '已关注的公众号可在此直接控制是否获取推文；未关注项仅展示状态。',
+                      style: theme.typography.caption,
+                    ),
+                  ],
+                );
+                final batchAction = !allAccountsFollowed
+                    ? _buildBatchFollowAction(theme, alignEnd: !shouldStack)
+                    : null;
+
+                if (shouldStack) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      intro,
+                      if (batchAction != null) ...[
+                        const SizedBox(height: FluentSpacing.s),
+                        batchAction,
+                      ],
                     ],
-                  ),
-                ],
-              ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: intro),
+                    if (batchAction != null) ...[
+                      const SizedBox(width: FluentSpacing.m),
+                      batchAction,
+                    ],
+                  ],
+                );
+              },
             ),
             const SizedBox(height: FluentSpacing.m),
             LayoutBuilder(
@@ -165,12 +154,16 @@ class SettingsWechatMatrixCard extends StatelessWidget {
                         padding: const EdgeInsets.all(FluentSpacing.s),
                         decoration: BoxDecoration(
                           color: theme.inactiveColor.withValues(alpha: 0.035),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                            FluentRadius.xLarge,
+                          ),
                         ),
                         child: Row(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(
+                                FluentRadius.large,
+                              ),
                               child: Image.network(
                                 account.iconUrl,
                                 width: 36,
@@ -194,7 +187,7 @@ class SettingsWechatMatrixCard extends StatelessWidget {
                                     style: theme.typography.bodyStrong,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 2),
+                                  const SizedBox(height: FluentSpacing.xxs),
                                   Text(
                                     account.wxAccount,
                                     style: theme.typography.caption,
@@ -244,6 +237,49 @@ class SettingsWechatMatrixCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBatchFollowAction(
+    FluentThemeData theme, {
+    required bool alignEnd,
+  }) {
+    return Column(
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        FilledButton(
+          onPressed: !authenticated || batchFollowing ? null : onBatchFollow,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (batchFollowing)
+                const Padding(
+                  padding: EdgeInsets.only(right: FluentSpacing.s),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: ProgressRing(strokeWidth: 2),
+                  ),
+                ),
+              const Text('一键全部关注'),
+            ],
+          ),
+        ),
+        if (batchFollowing && batchProgress.isNotEmpty) ...[
+          const SizedBox(height: FluentSpacing.xs),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
+            child: Text(
+              batchProgress,
+              style: theme.typography.caption,
+              textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -17,6 +17,7 @@ import '../services/info_refresh_service.dart';
 import '../services/wechat_article_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/message_tile.dart';
+import '../widgets/responsive_layout.dart';
 import '../services/message_state_service.dart';
 import '../utils/webview_env.dart';
 import 'webview_page.dart';

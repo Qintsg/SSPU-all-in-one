@@ -8,6 +8,9 @@
 
 import 'package:fluent_ui/fluent_ui.dart';
 
+import '../theme/fluent_tokens.dart';
+import 'responsive_layout.dart';
+
 /// 可选的自动刷新间隔（分钟 => 显示文本）
 const Map<int, String> kIntervalOptions = {
   0: '关闭',
@@ -149,37 +152,137 @@ Widget buildCountNumberBox({
       ? theme.typography.caption?.color
       : theme.inactiveColor.withValues(alpha: 0.4);
 
-  return ConstrainedBox(
-    constraints: const BoxConstraints(minWidth: 280, maxWidth: 340),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            '$label：',
-            style: theme.typography.caption?.copyWith(color: foreground),
-            overflow: TextOverflow.ellipsis,
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final shouldStack = shouldStackSettingsControls(constraints);
+      if (shouldStack) {
+        return ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$label：',
+                style: theme.typography.caption?.copyWith(color: foreground),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: FluentSpacing.xs),
+              SizedBox(
+                width: 128,
+                child: NumberBox(
+                  value: value,
+                  min: 1,
+                  max: 200,
+                  mode: SpinButtonPlacementMode.inline,
+                  smallChange: 1,
+                  onChanged: enabled
+                      ? (newValue) {
+                          final parsed = num.tryParse('${newValue ?? value}');
+                          final normalized = (parsed?.round() ?? value).clamp(
+                            1,
+                            200,
+                          );
+                          onChanged(normalized);
+                        }
+                      : null,
+                ),
+              ),
+            ],
           ),
+        );
+      }
+
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 340),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$label：',
+                style: theme.typography.caption?.copyWith(color: foreground),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: FluentSpacing.s),
+            SizedBox(
+              width: 128,
+              child: NumberBox(
+                value: value,
+                min: 1,
+                max: 200,
+                mode: SpinButtonPlacementMode.inline,
+                smallChange: 1,
+                onChanged: enabled
+                    ? (newValue) {
+                        final parsed = num.tryParse('${newValue ?? value}');
+                        final normalized = (parsed?.round() ?? value).clamp(
+                          1,
+                          200,
+                        );
+                        onChanged(normalized);
+                      }
+                    : null,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 128,
-          child: NumberBox(
-            value: value,
-            min: 1,
-            max: 200,
-            mode: SpinButtonPlacementMode.inline,
-            smallChange: 1,
-            onChanged: enabled
-                ? (newValue) {
-                    final parsed = num.tryParse('${newValue ?? value}');
-                    final normalized = (parsed?.round() ?? value).clamp(1, 200);
-                    onChanged(normalized);
-                  }
-                : null,
+      );
+    },
+  );
+}
+
+/// 构建可在窄屏自动堆叠尾部控件的设置行。
+Widget buildResponsiveSettingsRow({
+  required BuildContext context,
+  required IconData icon,
+  required Widget title,
+  required Widget subtitle,
+  required Widget trailing,
+  Color? iconColor,
+}) {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final shouldStack = shouldStackSettingsControls(constraints);
+      final leading = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(width: FluentSpacing.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                title,
+                const SizedBox(height: FluentSpacing.xxs),
+                subtitle,
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
+        ],
+      );
+
+      if (shouldStack) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            leading,
+            const SizedBox(height: FluentSpacing.s),
+            Padding(
+              padding: const EdgeInsets.only(left: FluentSpacing.xxl),
+              child: trailing,
+            ),
+          ],
+        );
+      }
+
+      return Row(
+        children: [
+          Expanded(child: leading),
+          const SizedBox(width: FluentSpacing.m),
+          trailing,
+        ],
+      );
+    },
   );
 }
 
