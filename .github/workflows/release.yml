@@ -323,6 +323,13 @@ jobs:
             exit 1
           }
 
+          codesign --verify --deep --strict --verbose=2 "$macos_app_bundle"
+
+          if codesign -d --entitlements :- "$macos_app_bundle" 2>/dev/null | grep -Eq 'com\.apple\.security\.|keychain-access-groups'; then
+            echo "unsigned macOS 产物不得携带 App Sandbox 或 Keychain Access Groups 等受限 entitlement。" >&2
+            exit 1
+          fi
+
           hdiutil create \
             -volname "SSPU All-in-One" \
             -srcfolder "$macos_app_bundle" \
