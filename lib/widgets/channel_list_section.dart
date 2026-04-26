@@ -151,7 +151,7 @@ class _ChannelListSectionState extends State<ChannelListSection> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(FluentIcons.check_mark, size: 14),
-                  SizedBox(width: 6),
+                  SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
                   Text('一键全开'),
                 ],
               ),
@@ -162,7 +162,7 @@ class _ChannelListSectionState extends State<ChannelListSection> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(FluentIcons.blocked, size: 14),
-                  SizedBox(width: 6),
+                  SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
                   Text('一键全关'),
                 ],
               ),

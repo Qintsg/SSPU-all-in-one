@@ -17,9 +17,11 @@ import '../services/academic_credentials_service.dart';
 import '../services/message_state_service.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
+import '../services/system_auth_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../widgets/channel_list_section.dart';
 import '../widgets/password_dialogs.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/settings_general_section.dart';
 import '../widgets/settings_security_section.dart';
 import '../widgets/settings_wechat_section.dart';
@@ -41,6 +43,15 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   /// 是否已设置密码保护。
   bool _isPasswordEnabled = false;
+
+  /// 是否已启用系统快速验证。
+  bool _isQuickAuthEnabled = false;
+
+  /// 当前平台/设备是否支持系统快速验证。
+  bool _isQuickAuthAvailable = false;
+
+  /// 是否正在处理系统快速验证开关。
+  bool _isQuickAuthBusy = false;
 
   /// 是否正在加载设置。
   bool _isLoading = true;
@@ -78,6 +89,8 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 加载页面级设置状态。
   Future<void> _loadSettings() async {
     final isSet = await PasswordService.isPasswordSet();
+    final quickAuthEnabled = await PasswordService.isQuickAuthEnabled();
+    final quickAuthAvailable = await SystemAuthService.instance.isAvailable();
     final behavior = await StorageService.getCloseBehavior();
     await _messageState.init();
 
@@ -91,6 +104,8 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!mounted) return;
     setState(() {
       _isPasswordEnabled = isSet;
+      _isQuickAuthEnabled = isSet && quickAuthAvailable && quickAuthEnabled;
+      _isQuickAuthAvailable = quickAuthAvailable;
       _closeBehavior = behavior;
       _notificationEnabled = notifEnabled;
       _dndEnabled = dndOn;
@@ -176,7 +191,10 @@ class _SettingsPageState extends State<SettingsPage> {
     if (enabled) {
       final ok = await showSetPasswordDialog(context);
       if (ok && mounted) {
-        setState(() => _isPasswordEnabled = true);
+        setState(() {
+          _isPasswordEnabled = true;
+          _isQuickAuthEnabled = false;
+        });
         _showSuccessBar('密码已设置');
       }
       return;
@@ -184,7 +202,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
     final ok = await showRemovePasswordDialog(context);
     if (ok && mounted) {
-      setState(() => _isPasswordEnabled = false);
+      setState(() {
+        _isPasswordEnabled = false;
+        _isQuickAuthEnabled = false;
+      });
       _showSuccessBar('密码保护已移除');
     }
   }
@@ -193,8 +214,60 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _onChangePassword() async {
     final ok = await showChangePasswordDialog(context);
     if (ok && mounted) {
+      setState(() => _isQuickAuthEnabled = false);
       _showSuccessBar('密码已修改');
     }
+  }
+
+  /// 修改系统快速验证开关。
+  Future<void> _onQuickAuthChanged(bool enabled) async {
+    if (!_isPasswordEnabled || _isQuickAuthBusy) return;
+
+    if (!enabled) {
+      await PasswordService.setQuickAuthEnabled(false);
+      if (!mounted) return;
+      setState(() => _isQuickAuthEnabled = false);
+      _showSuccessBar('系统快速验证已关闭');
+      return;
+    }
+
+    if (!_isQuickAuthAvailable) {
+      _showErrorBar('当前平台或设备不支持系统快速验证');
+      return;
+    }
+
+    final passwordConfirmed = await showConfirmCurrentPasswordDialog(
+      context,
+      title: '启用系统快速验证',
+      message: '请输入当前密码。通过后将调用系统认证完成启用确认。',
+      confirmLabel: '继续',
+    );
+    if (!passwordConfirmed || !mounted) return;
+
+    setState(() => _isQuickAuthBusy = true);
+    final authResult = await SystemAuthService.instance.authenticate(
+      localizedReason: '验证身份以启用 SSPU All-in-One 系统快速解锁',
+    );
+    if (!mounted) return;
+
+    if (authResult == SystemAuthResult.success) {
+      await PasswordService.setQuickAuthEnabled(true);
+      if (!mounted) return;
+      setState(() {
+        _isQuickAuthEnabled = true;
+        _isQuickAuthBusy = false;
+      });
+      _showSuccessBar('系统快速验证已启用');
+      return;
+    }
+
+    await PasswordService.setQuickAuthEnabled(false);
+    if (!mounted) return;
+    setState(() {
+      _isQuickAuthEnabled = false;
+      _isQuickAuthBusy = false;
+    });
+    _showErrorBar('系统认证未完成，已保留手动密码解锁');
   }
 
   /// 清理信息中心缓存。
@@ -282,10 +355,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return ScaffoldPage(
       header: const PageHeader(title: Text('设置')),
-      content: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 720;
-          return isNarrow
+      content: ResponsiveBuilder(
+        builder: (context, deviceType, constraints) {
+          return deviceType == DeviceType.phone
               ? _buildNarrowSettingsLayout(context)
               : _buildWideSettingsLayout(context);
         },
@@ -301,17 +373,23 @@ class _SettingsPageState extends State<SettingsPage> {
         SizedBox(
           width: 180,
           child: Padding(
-            padding: const EdgeInsets.only(left: 16, top: 8),
+            padding: const EdgeInsets.only(
+              left: FluentSpacing.l,
+              top: FluentSpacing.s,
+            ),
             child: _buildSettingsNavigation(context),
           ),
         ),
         const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: FluentSpacing.s),
           child: Divider(direction: Axis.vertical),
         ),
         Expanded(
           child: _buildScrollableContent(
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            responsivePagePadding(
+              DeviceType.desktop,
+              vertical: FluentSpacing.s,
+            ),
           ),
         ),
       ],
@@ -324,13 +402,18 @@ class _SettingsPageState extends State<SettingsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            FluentSpacing.l,
+            0,
+            FluentSpacing.l,
+            FluentSpacing.s,
+          ),
           child: _buildSettingsTabCombo(context),
         ),
         const Divider(),
         Expanded(
           child: _buildScrollableContent(
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            responsivePagePadding(DeviceType.phone, vertical: FluentSpacing.s),
           ),
         ),
       ],
@@ -414,6 +497,7 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(width: FluentSpacing.s),
         Expanded(
           child: ComboBox<int>(
+            key: const Key('settings-narrow-tab-combo'),
             value: _selectedTab,
             isExpanded: true,
             items: const [
@@ -467,6 +551,10 @@ class _SettingsPageState extends State<SettingsPage> {
           onPasswordProtectionChanged: (value) =>
               _onPasswordProtectionChanged(value),
           onChangePassword: _onChangePassword,
+          isQuickAuthEnabled: _isQuickAuthEnabled,
+          isQuickAuthAvailable: _isQuickAuthAvailable,
+          isQuickAuthBusy: _isQuickAuthBusy,
+          onQuickAuthChanged: (value) => _onQuickAuthChanged(value),
           onLock: widget.onLock,
           onClearMessageCache: _showClearMessageCacheDialog,
           onClearAllData: _showClearAllDataDialog,

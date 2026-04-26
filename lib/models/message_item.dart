@@ -507,6 +507,9 @@ class MessageItem {
   /// 微信公众号名称（仅微信渠道有值，用于来源显示）
   final String? mpName;
 
+  /// 微信公众号展示 ID（优先微信号/别名；仅微信渠道有值，用于来源显示）
+  final String? mpDisplayId;
+
   /// 精确时间戳（毫秒，可选；用于显示精确到分钟的时间）
   final int? timestamp;
 
@@ -520,10 +523,11 @@ class MessageItem {
     required this.category,
     this.mpBookId,
     this.mpName,
+    this.mpDisplayId,
     this.timestamp,
   });
 
-  /// 从 JSON 反序列化（兼容旧数据中无 mpBookId/mpName 的情况）
+  /// 从 JSON 反序列化（兼容旧数据中无 mpBookId/mpName/mpDisplayId 的情况）
   factory MessageItem.fromJson(Map<String, dynamic> json) {
     return MessageItem(
       id: json['id'] as String,
@@ -541,6 +545,7 @@ class MessageItem {
       ),
       mpBookId: json['mpBookId'] as String?,
       mpName: json['mpName'] as String?,
+      mpDisplayId: json['mpDisplayId'] as String?,
       timestamp: json['timestamp'] as int?,
     );
   }
@@ -556,6 +561,7 @@ class MessageItem {
     'category': category.name,
     if (mpBookId != null) 'mpBookId': mpBookId,
     if (mpName != null) 'mpName': mpName,
+    if (mpDisplayId != null) 'mpDisplayId': mpDisplayId,
     if (timestamp != null) 'timestamp': timestamp,
   };
 

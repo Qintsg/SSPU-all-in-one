@@ -7,66 +7,69 @@ Widget _buildInfoPageView(_InfoPageState state, BuildContext context) {
 
   return ScaffoldPage(
     header: const PageHeader(title: Text('信息中心')),
-    content: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          state._buildActionBar(theme),
-          if (refreshSnapshot.isRefreshing) ...[
-            const SizedBox(height: FluentSpacing.s),
-            state._buildRefreshProgress(theme),
-          ],
-          const SizedBox(height: FluentSpacing.m),
-          state._buildSearchBar(theme),
-          const SizedBox(height: FluentSpacing.s),
-          state
-              ._buildFilterBar(theme, isDark)
-              .animate()
-              .fadeIn(
-                duration: FluentDuration.slow,
-                curve: FluentEasing.decelerate,
-              ),
-          const SizedBox(height: FluentSpacing.m),
-          Expanded(
-            child:
-                refreshSnapshot.isRefreshing && state._filteredMessages.isEmpty
-                ? const Center(child: ProgressRing())
-                : state._filteredMessages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          FluentIcons.inbox,
-                          size: 48,
-                          color: theme.resources.textFillColorSecondary,
-                        ),
-                        const SizedBox(height: FluentSpacing.m),
-                        Text(
-                          '暂无消息',
-                          style: theme.typography.body?.copyWith(
-                            color: theme.resources.textFillColorSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: FluentSpacing.s),
-                        Text(
-                          '点击上方刷新按钮获取最新消息',
-                          style: theme.typography.caption?.copyWith(
-                            color: theme.resources.textFillColorSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : state._buildMessageList(theme, isDark),
-          ),
-          if (state._filteredMessages.isNotEmpty) ...[
-            const SizedBox(height: FluentSpacing.s),
-            state._buildPagination(theme),
+    content: ResponsiveBuilder(
+      builder: (context, deviceType, constraints) => Padding(
+        padding: responsivePagePadding(deviceType),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            state._buildActionBar(theme),
+            if (refreshSnapshot.isRefreshing) ...[
+              const SizedBox(height: FluentSpacing.s),
+              state._buildRefreshProgress(theme),
+            ],
             const SizedBox(height: FluentSpacing.m),
+            state._buildSearchBar(theme),
+            const SizedBox(height: FluentSpacing.s),
+            state
+                ._buildFilterBar(theme, isDark)
+                .animate()
+                .fadeIn(
+                  duration: FluentDuration.slow,
+                  curve: FluentEasing.decelerate,
+                ),
+            const SizedBox(height: FluentSpacing.m),
+            Expanded(
+              child:
+                  refreshSnapshot.isRefreshing &&
+                      state._filteredMessages.isEmpty
+                  ? const Center(child: ProgressRing())
+                  : state._filteredMessages.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            FluentIcons.inbox,
+                            size: 48,
+                            color: theme.resources.textFillColorSecondary,
+                          ),
+                          const SizedBox(height: FluentSpacing.m),
+                          Text(
+                            '暂无消息',
+                            style: theme.typography.body?.copyWith(
+                              color: theme.resources.textFillColorSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: FluentSpacing.s),
+                          Text(
+                            '点击上方刷新按钮获取最新消息',
+                            style: theme.typography.caption?.copyWith(
+                              color: theme.resources.textFillColorSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : state._buildMessageList(theme, isDark),
+            ),
+            if (state._filteredMessages.isNotEmpty) ...[
+              const SizedBox(height: FluentSpacing.s),
+              state._buildPagination(theme),
+              const SizedBox(height: FluentSpacing.m),
+            ],
           ],
-        ],
+        ),
       ),
     ),
   );
@@ -78,8 +81,8 @@ Widget _buildInfoActionBar(_InfoPageState state, FluentThemeData theme) {
   );
 
   return Wrap(
-    spacing: 8,
-    runSpacing: 8,
+    spacing: FluentSpacing.s,
+    runSpacing: FluentSpacing.s,
     children: [
       FilledButton(
         onPressed: state._filteredMessages.isEmpty ? null : state._markAllRead,
@@ -148,7 +151,7 @@ Widget _buildInfoRefreshProgress(_InfoPageState state, FluentThemeData theme) {
     padding: const EdgeInsets.all(FluentSpacing.s),
     decoration: BoxDecoration(
       color: theme.inactiveColor.withValues(alpha: 0.04),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(FluentRadius.xLarge),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,8 +201,8 @@ Widget _buildInfoFilterBar(
   final availableCategories = state._getAvailableCategories();
 
   return Wrap(
-    spacing: 8,
-    runSpacing: 8,
+    spacing: FluentSpacing.s,
+    runSpacing: FluentSpacing.s,
     children: [
       state._buildFilterCombo<MessageSourceType>(
         label: '来源类型',
@@ -259,16 +262,23 @@ Widget _buildInfoFilterCombo<T>({
   required void Function(T?) onChanged,
   bool enabled = true,
 }) {
-  return ComboBox<T?>(
-    value: value,
-    placeholder: Text(label),
-    items: [
-      ComboBoxItem<T?>(value: null, child: Text('全部$label')),
-      ...items.map(
-        (item) => ComboBoxItem<T?>(value: item, child: Text(itemLabel(item))),
-      ),
-    ],
-    onChanged: enabled ? (selectedValue) => onChanged(selectedValue) : null,
+  return ConstrainedBox(
+    constraints: const BoxConstraints(minWidth: 180, maxWidth: 240),
+    child: ComboBox<T?>(
+      isExpanded: true,
+      value: value,
+      placeholder: Text(label),
+      items: [
+        ComboBoxItem<T?>(value: null, child: Text('全部$label')),
+        ...items.map(
+          (item) => ComboBoxItem<T?>(
+            value: item,
+            child: Text(itemLabel(item), overflow: TextOverflow.ellipsis),
+          ),
+        ),
+      ],
+      onChanged: enabled ? (selectedValue) => onChanged(selectedValue) : null,
+    ),
   );
 }
 
@@ -302,8 +312,11 @@ Widget _buildInfoMessageList(
 }
 
 Widget _buildInfoPagination(_InfoPageState state, FluentThemeData theme) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.center,
+  return Wrap(
+    alignment: WrapAlignment.center,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: FluentSpacing.s,
+    runSpacing: FluentSpacing.xs,
     children: [
       IconButton(
         icon: const Icon(FluentIcons.chevron_left, size: 12),
@@ -311,25 +324,27 @@ Widget _buildInfoPagination(_InfoPageState state, FluentThemeData theme) {
             ? () => state._setCurrentPage(state._currentPage - 1)
             : null,
       ),
-      const SizedBox(width: FluentSpacing.s),
       Tooltip(
         message: '点击跳转到指定页',
         child: HoverButton(
           onPressed: () => state._showPageJumpDialog(),
           builder: (context, states) {
-            return Text(
-              '第 ${state._currentPage + 1} / ${state._totalPages} 页  '
-              '(共 ${state._filteredMessages.length} 条)',
-              style: theme.typography.caption?.copyWith(
-                decoration: states.isHovered
-                    ? TextDecoration.underline
-                    : TextDecoration.none,
+            return ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
+              child: Text(
+                '第 ${state._currentPage + 1} / ${state._totalPages} 页 '
+                '(共 ${state._filteredMessages.length} 条)',
+                style: theme.typography.caption?.copyWith(
+                  decoration: states.isHovered
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             );
           },
         ),
       ),
-      const SizedBox(width: FluentSpacing.s),
       IconButton(
         icon: const Icon(FluentIcons.chevron_right, size: 12),
         onPressed: state._currentPage < state._totalPages - 1

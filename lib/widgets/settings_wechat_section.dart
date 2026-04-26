@@ -199,7 +199,9 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(FluentIcons.check_mark, size: 14),
-                              SizedBox(width: 6),
+                              SizedBox(
+                                width: FluentSpacing.xs + FluentSpacing.xxs,
+                              ),
                               Text('一键全开'),
                             ],
                           ),
@@ -212,7 +214,9 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(FluentIcons.blocked, size: 14),
-                              SizedBox(width: 6),
+                              SizedBox(
+                                width: FluentSpacing.xs + FluentSpacing.xxs,
+                              ),
                               Text('一键全关'),
                             ],
                           ),
@@ -233,11 +237,12 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                           onChanged: (value) =>
                               _controller.setManualFetchCount(value),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                        Wrap(
+                          spacing: FluentSpacing.xs,
+                          runSpacing: FluentSpacing.xs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text('启用自动刷新：', style: theme.typography.caption),
-                            const SizedBox(width: FluentSpacing.xs),
                             ToggleSwitch(
                               checked: _controller.wechatAutoRefreshEnabled,
                               onChanged: (value) =>
@@ -245,8 +250,10 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                             ),
                           ],
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                        Wrap(
+                          spacing: FluentSpacing.xs,
+                          runSpacing: FluentSpacing.xs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               '自动刷新频率：',
@@ -256,7 +263,6 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                                     : disabledColor,
                               ),
                             ),
-                            const SizedBox(width: FluentSpacing.xs),
                             ComboBox<int>(
                               value:
                                   kIntervalOptions.containsKey(
@@ -413,8 +419,8 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
             ),
             const SizedBox(height: FluentSpacing.m),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: FluentSpacing.s,
+              runSpacing: FluentSpacing.s,
               children: [
                 FilledButton(
                   onPressed: _openWxmpLogin,
@@ -422,7 +428,7 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(FluentIcons.q_r_code, size: 14),
-                      SizedBox(width: 6),
+                      SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
                       Text('扫码登录'),
                     ],
                   ),
@@ -443,7 +449,9 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(FluentIcons.shield, size: 14),
-                              SizedBox(width: 6),
+                              SizedBox(
+                                width: FluentSpacing.xs + FluentSpacing.xxs,
+                              ),
                               Text('校验有效性'),
                             ],
                           ),
@@ -454,7 +462,7 @@ class _SettingsWechatSectionState extends State<SettingsWechatSection> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(FluentIcons.edit, size: 14),
-                      SizedBox(width: 6),
+                      SizedBox(width: FluentSpacing.xs + FluentSpacing.xxs),
                       Text('编辑配置文件'),
                     ],
                   ),

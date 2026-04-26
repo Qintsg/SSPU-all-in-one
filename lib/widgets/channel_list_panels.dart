@@ -11,6 +11,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import '../models/channel_config.dart';
 import '../models/message_item.dart';
 import '../theme/fluent_tokens.dart';
+import 'responsive_layout.dart';
 import 'settings_widgets.dart';
 
 /// 分组级刷新设置面板。
@@ -52,7 +53,7 @@ class ChannelGroupRefreshPanel extends StatelessWidget {
       padding: const EdgeInsets.all(FluentSpacing.m),
       decoration: BoxDecoration(
         color: theme.inactiveColor.withValues(alpha: 0.035),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(FluentRadius.xLarge),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,8 +77,10 @@ class ChannelGroupRefreshPanel extends StatelessWidget {
                 enabled: hasImplementedChannel,
                 onChanged: onGroupManualCountChanged,
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              Wrap(
+                spacing: FluentSpacing.xs,
+                runSpacing: FluentSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     '自动刷新：',
@@ -85,7 +88,6 @@ class ChannelGroupRefreshPanel extends StatelessWidget {
                       color: hasImplementedChannel ? null : foreground,
                     ),
                   ),
-                  const SizedBox(width: FluentSpacing.xs),
                   ToggleSwitch(
                     checked: groupAutoRefreshEnabled,
                     onChanged: hasImplementedChannel
@@ -94,8 +96,10 @@ class ChannelGroupRefreshPanel extends StatelessWidget {
                   ),
                 ],
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              Wrap(
+                spacing: FluentSpacing.xs,
+                runSpacing: FluentSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     '自动刷新间隔：',
@@ -105,7 +109,6 @@ class ChannelGroupRefreshPanel extends StatelessWidget {
                           : foreground,
                     ),
                   ),
-                  const SizedBox(width: FluentSpacing.xs),
                   ComboBox<int>(
                     value: kIntervalOptions.containsKey(groupInterval)
                         ? groupInterval
@@ -174,36 +177,70 @@ class ChannelListItemCard extends StatelessWidget {
         padding: const EdgeInsets.all(FluentSpacing.m),
         decoration: BoxDecoration(
           color: theme.inactiveColor.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(FluentRadius.xLarge),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(channel.icon, size: 20),
-                const SizedBox(width: FluentSpacing.m),
-                Expanded(
-                  child: Column(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final shouldStack = shouldStackSettingsControls(constraints);
+                final description = Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(channel.icon, size: 20),
+                    const SizedBox(width: FluentSpacing.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            channel.name,
+                            style: theme.typography.bodyStrong,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: FluentSpacing.xxs),
+                          Text(
+                            subtitle,
+                            style: theme.typography.caption?.copyWith(
+                              color: enabled
+                                  ? null
+                                  : theme.resources.textFillColorSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+
+                if (shouldStack) {
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(channel.name, style: theme.typography.bodyStrong),
-                      const SizedBox(height: FluentSpacing.xxs),
-                      Text(
-                        subtitle,
-                        style: theme.typography.caption?.copyWith(
-                          color: enabled
-                              ? null
-                              : theme.resources.textFillColorSecondary,
+                      description,
+                      const SizedBox(height: FluentSpacing.s),
+                      Padding(
+                        padding: const EdgeInsets.only(left: FluentSpacing.xxl),
+                        child: ToggleSwitch(
+                          checked: enabled,
+                          onChanged: onToggled,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: FluentSpacing.s),
-                ToggleSwitch(checked: enabled, onChanged: onToggled),
-              ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: description),
+                    const SizedBox(width: FluentSpacing.s),
+                    ToggleSwitch(checked: enabled, onChanged: onToggled),
+                  ],
+                );
+              },
             ),
             if (channel.implemented &&
                 channelSubcategories.containsKey(channel.id)) ...[
@@ -218,7 +255,7 @@ class ChannelListItemCard extends StatelessWidget {
             if (!channel.implemented) ...[
               const SizedBox(height: FluentSpacing.s),
               Padding(
-                padding: const EdgeInsets.only(left: 32),
+                padding: const EdgeInsets.only(left: FluentSpacing.xxl),
                 child: Text(
                   '此渠道数据源尚未接入，开关仅作为预配置使用。',
                   style: theme.typography.caption?.copyWith(
@@ -256,7 +293,7 @@ class _ChannelSubcategoryButtons extends StatelessWidget {
         : theme.resources.textFillColorSecondary.withValues(alpha: 0.7);
 
     return Padding(
-      padding: const EdgeInsets.only(left: 32),
+      padding: const EdgeInsets.only(left: FluentSpacing.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -312,7 +349,10 @@ class _ChannelSubcategoryButton extends StatelessWidget {
         backgroundColor: WidgetStatePropertyAll(background),
         foregroundColor: const WidgetStatePropertyAll(Colors.white),
         padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          EdgeInsets.symmetric(
+            horizontal: FluentSpacing.l,
+            vertical: FluentSpacing.s,
+          ),
         ),
       ),
       onPressed: interactive ? onPressed : null,

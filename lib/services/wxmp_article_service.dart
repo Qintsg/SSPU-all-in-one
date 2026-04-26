@@ -54,6 +54,34 @@ WxmpAuthValidationResult debugValidationResultForRet(int ret) {
   return WxmpArticleService.validationResultForRet(ret);
 }
 
+@visibleForTesting
+String debugResolveWxmpAccountName(
+  Map<String, String> mpInfo,
+  String fakeid,
+) {
+  return WxmpArticleService.instance._resolveAccountName(mpInfo, fakeid);
+}
+
+@visibleForTesting
+String? debugResolveWxmpAccountDisplayId(Map<String, String> mpInfo) {
+  return WxmpArticleService.instance._resolveAccountDisplayId(mpInfo);
+}
+
+@visibleForTesting
+MessageItem? debugArticleToMessageItem(
+  Map<String, dynamic> article, {
+  required String mpName,
+  required String fakeid,
+  String? mpDisplayId,
+}) {
+  return WxmpArticleService.instance._articleToMessageItem(
+    article,
+    mpName,
+    fakeid,
+    mpDisplayId: mpDisplayId,
+  );
+}
+
 /// 微信公众号平台文章采集服务（单例）
 /// 通过 mp.weixin.qq.com 的 cgi-bin API 搜索公众号、获取文章列表
 class WxmpArticleService {
@@ -413,7 +441,8 @@ class WxmpArticleService {
     for (final entry in enabledEntries) {
       final fakeid = entry.key;
       final mpInfo = entry.value;
-      final mpName = mpInfo['name'] ?? fakeid;
+      final mpName = _resolveAccountName(mpInfo, fakeid);
+      final mpDisplayId = _resolveAccountDisplayId(mpInfo);
       final accountMessages = <MessageItem>[];
       final perRequestCount = maxCount > 0 && maxCount < perRequestLimit
           ? maxCount
@@ -432,7 +461,12 @@ class WxmpArticleService {
           if (articles.isEmpty) break;
 
           for (final article in articles) {
-            final msgItem = _articleToMessageItem(article, mpName, fakeid);
+            final msgItem = _articleToMessageItem(
+              article,
+              mpName,
+              fakeid,
+              mpDisplayId: mpDisplayId,
+            );
             if (msgItem == null) continue;
             if (storedMessageIds.contains(msgItem.id)) {
               reachedKnownMessage = true;
@@ -546,8 +580,9 @@ class WxmpArticleService {
   MessageItem? _articleToMessageItem(
     Map<String, dynamic> article,
     String mpName,
-    String fakeid,
-  ) {
+    String fakeid, {
+    String? mpDisplayId,
+  }) {
     final title = article['title']?.toString();
     if (title == null || title.isEmpty) return null;
 
@@ -585,8 +620,39 @@ class WxmpArticleService {
       category: MessageCategory.wechatArticle,
       mpBookId: fakeid,
       mpName: mpName,
+      mpDisplayId: _trimToNull(mpDisplayId),
       timestamp: timestampMs,
     );
+  }
+
+  String _resolveAccountName(Map<String, String> mpInfo, String fakeid) {
+    assert(fakeid.isNotEmpty, 'fakeid must not be empty');
+    return _firstNonEmpty([
+          mpInfo['recommended_name'],
+          mpInfo['name'],
+        ]) ??
+        '公众号名称未知';
+  }
+
+  String? _resolveAccountDisplayId(Map<String, String> mpInfo) {
+    return _firstNonEmpty([
+      mpInfo['recommended_wx_account'],
+      mpInfo['alias'],
+    ]);
+  }
+
+  String? _firstNonEmpty(Iterable<String?> values) {
+    for (final value in values) {
+      final trimmed = _trimToNull(value);
+      if (trimmed != null) return trimmed;
+    }
+    return null;
+  }
+
+  String? _trimToNull(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
   }
 }
 

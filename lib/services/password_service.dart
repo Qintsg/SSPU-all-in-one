@@ -27,4 +27,15 @@ class PasswordService {
 
   /// 移除密码保护
   static Future<void> removePassword() => StorageService.removePassword();
+
+  /// 检查是否已启用系统快速验证。
+  static Future<bool> isQuickAuthEnabled() =>
+      StorageService.isQuickAuthEnabled();
+
+  /// 设置系统快速验证开关。
+  static Future<void> setQuickAuthEnabled(bool enabled) =>
+      StorageService.setQuickAuthEnabled(enabled);
+
+  /// 清除系统快速验证配置。
+  static Future<void> clearQuickAuth() => StorageService.clearQuickAuth();
 }

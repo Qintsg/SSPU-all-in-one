@@ -1,6 +1,6 @@
 # SSPU All-in-One 设计文档
 
-> 版本：v0.2.2-alpha+3 | 最后更新：2026-04-24
+> 版本：v0.2.2-alpha+4 | 最后更新：2026-04-25
 
 ---
 
@@ -25,6 +25,7 @@ SSPU All-in-One 是面向上海第二工业大学（SSPU）师生的校园综合
 | UI 组件库 | fluent_ui | ^4.11.1 | 微软 Fluent Design 风格 Widget |
 | 本地存储 | shared_preferences / path_provider | ^2.5.3 / ^2.1.5 | 键值迁移与平台应用目录解析 |
 | 加密 | crypto / flutter_secure_storage | ^3.0.6 / ^8.1.0 | 应用锁密码哈希与可解密凭据安全存储 |
+| 系统认证 | local_auth | ^3.0.1 | 可选系统快速验证，作为应用锁密码的本机认证辅助入口 |
 | 网络请求 | dio | ^5.8.0+1 | 官网与公众号平台 HTTP 抓取 |
 | 桌面集成 | window_manager / tray_manager | ^0.5.1 | 桌面窗口控制与系统托盘 |
 | Windows WebView | flutter_inappwebview | ^6.1.5 | 文章页与公众号平台登录页 |
@@ -213,6 +214,7 @@ _initApp()
   - 开启时弹出"设置密码"对话框
   - 关闭时弹出"移除密码"对话框（需验证当前密码）
 - **修改密码**：仅在已设置密码时显示，需验证旧密码
+- **系统快速验证**：仅在密码保护已开启且 Android / iOS / macOS / Windows 设备支持系统认证时显示开关；不可用或未配置时显示密码兜底提示，不改变手动密码解锁语义
 - **立即上锁**：不退出应用，直接回到锁定页
 - **教务凭据**：保存学工号、OA 密码、体育部查询密码和邮箱密码，密码框回访时保持为空，仅显示“已填写 / 未填写”
 - **清理信息中心缓存**：只清理消息缓存与已读状态
@@ -256,6 +258,7 @@ _initApp()
 | 加载状态 | 验证中按钮显示 `ProgressRing` 并禁用 |
 | 错误恢复 | 密码错误后自动清空输入、重新聚焦 |
 | 主题适配 | 根据 `FluentTheme.brightness` 调整文字透明度 |
+| 系统快速验证 | 若用户启用且当前设备支持，进入锁定页后优先请求系统认证；失败、取消、超时或不可用时回到手动密码 |
 
 **抖动动画序列**：
 
@@ -277,7 +280,9 @@ PasswordService（核心服务）
       │
       ├──▶ LockPage（验证入口）
       │
-      └──▶ SettingsPage（管理入口）
+      ├──▶ SettingsPage（管理入口）
+      │
+      └──▶ SystemAuthService（可选系统认证封装）
 ```
 
 ### 5.2 PasswordService
@@ -285,14 +290,17 @@ PasswordService（核心服务）
 **文件**：`lib/services/password_service.dart`
 
 **存储机制**：
-- 后端：`shared_preferences`（键值对本地存储）
+- 后端：native 平台使用统一 JSON 状态文件，Web 平台使用 `shared_preferences` 浏览器存储保存同一份 JSON 状态；浏览器存储不可用时退回内存态保证启动
 - 键名：`app_password_hash`
+- 系统快速验证配置键名：`app_quick_auth_enabled`
 - 存储格式：SHA-256 哈希字符串（64 位十六进制）
 
 **安全设计**：
 - 明文密码不落盘，仅存储哈希值
 - 加盐哈希：`sspu_aio_salt_$<password>_$end`
 - 哈希算法：SHA-256（来自 `crypto` 包）
+- 系统快速验证只保存本地布尔开关，不保存、读取或记录 PIN、Face ID、Touch ID、生物识别模板等原始认证数据
+- 修改密码和移除密码保护会同步清除 `app_quick_auth_enabled`，避免旧密码上下文下的快速验证配置继续生效
 
 **API 接口**：
 
@@ -302,8 +310,25 @@ PasswordService（核心服务）
 | `setPassword` | `static Future<void> (String)` | 设置新密码 |
 | `verifyPassword` | `static Future<bool> (String)` | 验证密码是否正确 |
 | `removePassword` | `static Future<void>` | 移除密码保护 |
+| `isQuickAuthEnabled` | `static Future<bool>` | 检查系统快速验证开关 |
+| `setQuickAuthEnabled` | `static Future<void> (bool)` | 设置系统快速验证开关 |
+| `clearQuickAuth` | `static Future<void>` | 清除系统快速验证配置 |
 
-### 5.3 AcademicCredentialsService
+### 5.3 SystemAuthService
+
+**文件**：`lib/services/system_auth_service.dart`
+
+**平台支持**：
+- Android / iOS / macOS / Windows：通过 `local_auth` 调用系统认证能力
+- Linux / Web：直接返回不可用，不调用插件，设置入口隐藏且锁定页保留手动密码
+
+**认证策略**：
+- 不使用 `biometricOnly: true`，允许 Windows 和移动端按系统策略使用 PIN、密码或生物识别
+- 启用 quick auth 前必须先输入当前应用密码，再成功完成一次系统认证
+- 锁定页在 quick auth 启用且设备可用时自动优先请求系统认证，同时保留密码输入框和“解锁”按钮
+- 系统认证失败、取消、超时或插件不可用时不清空密码、不退出应用，只提示用户使用手动密码
+
+### 5.4 AcademicCredentialsService
 
 **文件**：`lib/services/academic_credentials_service.dart`
 
@@ -329,7 +354,7 @@ PasswordService（核心服务）
 | `clearSecret` | `Future<void> (AcademicCredentialSecret)` | 清除指定密码字段 |
 | `clearAll` | `Future<void>` | 清除全部教务凭据 |
 
-### 5.4 密码操作流程
+### 5.5 密码操作流程
 
 #### 设置密码
 
@@ -355,7 +380,7 @@ ContentDialog: 旧密码 + 新密码 + 确认新密码
   ├── 旧密码验证失败 → 错误提示
   ├── 新密码为空 → 错误提示
   ├── 两次不一致 → 错误提示
-  └── 全部通过 → PasswordService.setPassword() → 成功提示
+  └── 全部通过 → PasswordService.setPassword() → 清除 quick auth → 成功提示
 ```
 
 #### 移除密码
@@ -367,7 +392,37 @@ ContentDialog: 旧密码 + 新密码 + 确认新密码
 ContentDialog: 输入当前密码
   │
   ├── 验证失败 → 错误提示
-  └── 验证通过 → PasswordService.removePassword() → 成功提示
+  └── 验证通过 → PasswordService.removePassword() → 清除 quick auth → 成功提示
+```
+
+#### 启用系统快速验证
+
+```
+用户点击“系统快速验证”开关
+  │
+  ▼
+检查密码保护已开启且 SystemAuthService.isAvailable() 为 true
+  │
+  ▼
+ContentDialog: 输入当前密码
+  │
+  ├── 密码错误 / 取消 → 不启用
+  └── 密码正确 → local_auth 系统认证
+                      │
+                      ├── 认证成功 → app_quick_auth_enabled = true
+                      └── 失败 / 取消 / 超时 / 不可用 → app_quick_auth_enabled 清除，保留手动密码
+```
+
+#### 锁定页解锁
+
+```
+进入 LockPage
+  │
+  ├── quick auth 未启用或不可用 → 显示手动密码
+  └── quick auth 已启用且可用 → 自动请求系统认证
+                                  │
+                                  ├── 成功 → AppShell
+                                  └── 失败 / 取消 / 超时 → 手动密码仍可用
 ```
 
 ---
@@ -452,8 +507,9 @@ lib/
 1. **应用锁密码不以明文存储**：始终使用 SHA-256 哈希
 2. **加盐防御**：防止彩虹表攻击
 3. **可解密凭据使用系统安全存储**：教务凭据不写入统一 JSON 状态文件，按平台使用 Keychain / Keystore / Credential Locker / libsecret 等能力
-4. **状态文件本地化**：桌面端保存在用户目录，移动端保存在系统分配的应用支持目录
-5. **网络请求仅用于内容抓取**：当前版本会访问学校官网与微信公众平台，不上传用户业务数据到自建服务
-6. **认证材料最小暴露**：公众号平台 Cookie / Token 仅保存在本地状态文件，不进入仓库
-7. **发布签名不入库**：Android release keystore 通过本地文件或 CI Secrets 注入
-8. **无敏感信息调试日志**：密码、教务凭据与微信认证敏感字段不输出到控制台
+4. **系统快速验证不保存原始认证数据**：仅保存本地布尔配置，真实认证由操作系统和 `local_auth` 完成
+5. **状态文件本地化**：桌面端保存在用户目录，移动端保存在系统分配的应用支持目录
+6. **网络请求仅用于内容抓取**：当前版本会访问学校官网与微信公众平台，不上传用户业务数据到自建服务
+7. **认证材料最小暴露**：公众号平台 Cookie / Token 仅保存在本地状态文件，不进入仓库
+8. **发布签名不入库**：Android release keystore 通过本地文件或 CI Secrets 注入
+9. **无敏感信息调试日志**：密码、教务凭据与微信认证敏感字段不输出到控制台

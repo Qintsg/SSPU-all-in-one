@@ -7,8 +7,11 @@
  * @Date : 2026-04-18
  */
 
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import '../services/password_service.dart';
+import '../services/system_auth_service.dart';
 import '../theme/fluent_tokens.dart';
 
 /// 锁定页面
@@ -33,6 +36,15 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
 
   /// 是否正在验证中
   bool _isVerifying = false;
+
+  /// 是否已启用且当前设备可用系统快速验证。
+  bool _isSystemAuthEnabled = false;
+
+  /// 是否正在请求系统认证。
+  bool _isSystemAuthenticating = false;
+
+  /// 防止系统认证与密码验证重复触发解锁回调。
+  bool _hasCompletedUnlock = false;
 
   /// 抖动动画控制器，密码错误时触发
   late AnimationController _shakeController;
@@ -87,6 +99,8 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
         _focusNode.requestFocus();
       }
     });
+
+    unawaited(_loadAndTrySystemAuth());
   }
 
   @override
@@ -100,6 +114,7 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
 
   /// 执行密码验证
   Future<void> _handleUnlock() async {
+    if (_hasCompletedUnlock) return;
     final inputPassword = _passwordController.text;
 
     // 空密码直接提示
@@ -120,11 +135,7 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
 
     if (isCorrect) {
       // 密码正确，播放解锁动画后回调
-      _unlockController.forward().then((_) {
-        if (mounted) {
-          widget.onUnlocked();
-        }
-      });
+      _completeUnlock();
     } else {
       // 密码错误，显示错误提示并触发抖动动画
       setState(() {
@@ -135,6 +146,56 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
       _triggerShake();
       _focusNode.requestFocus();
     }
+  }
+
+  /// 加载系统快速验证配置，并在可用时优先尝试系统认证。
+  Future<void> _loadAndTrySystemAuth() async {
+    final quickAuthEnabled = await PasswordService.isQuickAuthEnabled();
+    if (!quickAuthEnabled) return;
+
+    final systemAuthAvailable = await SystemAuthService.instance.isAvailable();
+    if (!mounted || !systemAuthAvailable) return;
+
+    setState(() => _isSystemAuthEnabled = true);
+    await _handleSystemUnlock(autoTriggered: true);
+  }
+
+  /// 执行系统认证解锁。失败、取消、超时或不可用时保留手动密码路径。
+  Future<void> _handleSystemUnlock({bool autoTriggered = false}) async {
+    if (_hasCompletedUnlock || _isSystemAuthenticating) return;
+
+    setState(() {
+      _isSystemAuthenticating = true;
+      if (!autoTriggered) _errorMessage = null;
+    });
+
+    final result = await SystemAuthService.instance.authenticate(
+      localizedReason: '验证身份以解锁 SSPU All-in-One',
+    );
+
+    if (!mounted || _hasCompletedUnlock) return;
+
+    if (result == SystemAuthResult.success) {
+      _completeUnlock();
+      return;
+    }
+
+    setState(() {
+      _isSystemAuthenticating = false;
+      _errorMessage = '系统认证未完成，请输入密码解锁';
+    });
+    _focusNode.requestFocus();
+  }
+
+  /// 播放解锁动画并通知上层进入主界面。
+  void _completeUnlock() {
+    if (_hasCompletedUnlock) return;
+    _hasCompletedUnlock = true;
+    _unlockController.forward().then((_) {
+      if (mounted) {
+        widget.onUnlocked();
+      }
+    });
   }
 
   /// 触发密码输入框抖动效果
@@ -234,6 +295,32 @@ class _LockPageState extends State<LockPage> with TickerProviderStateMixin {
                                 : const Text('解锁'),
                           ),
                         ),
+                        if (_isSystemAuthEnabled) ...[
+                          const SizedBox(height: FluentSpacing.s),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Button(
+                              onPressed: _isSystemAuthenticating
+                                  ? null
+                                  : () => _handleSystemUnlock(),
+                              child: _isSystemAuthenticating
+                                  ? const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          height: 16,
+                                          width: 16,
+                                          child: ProgressRing(strokeWidth: 2),
+                                        ),
+                                        SizedBox(width: FluentSpacing.s),
+                                        Text('等待系统认证'),
+                                      ],
+                                    )
+                                  : const Text('使用系统认证'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

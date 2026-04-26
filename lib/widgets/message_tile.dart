@@ -70,106 +70,143 @@ class MessageTile extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(FluentRadius.large),
           ),
-          child: Row(
-            children: [
-              // 未读指示点
-              Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.only(
-                  right: FluentSpacing.s + FluentSpacing.xxs,
-                ),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isRead
-                      ? Colors.transparent
-                      : (isDark
-                            ? FluentDarkColors.unreadIndicator
-                            : FluentLightColors.unreadIndicator),
-                ),
-              ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow =
+                  FluentBreakpoints.fromWidth(constraints.maxWidth) ==
+                  DeviceType.phone;
+              final content = _buildMessageContent(titleStyle);
+              final actions = _buildDateAndActions(isNarrow: isNarrow);
 
-              // 标题 + 标签区域
-              Expanded(
-                child: Column(
+              if (isNarrow) {
+                return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 消息标题
-                    Text(
-                      message.title,
-                      style: titleStyle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(
-                      height: FluentSpacing.xs + FluentSpacing.xxs,
-                    ),
-                    // 标签行：tag1 来源类型 + tag2 来源名称 + tag3 内容分类 + 公众号名称
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        _buildTag(message.sourceType.label, Colors.blue),
-                        _buildTag(message.sourceName.label, Colors.teal),
-                        _buildTag(message.category.label, Colors.orange),
-                        if (message.mpName != null &&
-                            message.mpName!.isNotEmpty)
-                          _buildTag(message.mpName!, Colors.magenta),
-                      ],
+                    _buildUnreadIndicator(),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          content,
+                          const SizedBox(height: FluentSpacing.s),
+                          actions,
+                        ],
+                      ),
                     ),
                   ],
-                ),
-              ),
+                );
+              }
 
-              const SizedBox(width: FluentSpacing.m),
-
-              // 右侧：日期 + 操作按钮
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
+              return Row(
                 children: [
-                  // 日期时间；旧缓存中 date 为空时从 timestamp 兜底恢复日期。
-                  Text(
-                    _formatDisplayDateTime(message),
-                    style: theme.typography.caption?.copyWith(
-                      color: theme.resources.textFillColorSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
-                  // 操作按钮行
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 跳转按钮
-                      Tooltip(
-                        message: '在浏览器中打开',
-                        child: IconButton(
-                          icon: const Icon(
-                            FluentIcons.open_in_new_window,
-                            size: 14,
-                          ),
-                          onPressed: onTap,
-                        ),
-                      ),
-                      const SizedBox(width: FluentSpacing.xs),
-                      // 标为已读按钮
-                      if (!isRead)
-                        Tooltip(
-                          message: '标为已读',
-                          child: IconButton(
-                            icon: const Icon(FluentIcons.read, size: 14),
-                            onPressed: onMarkRead,
-                          ),
-                        ),
-                    ],
-                  ),
+                  _buildUnreadIndicator(),
+                  Expanded(child: content),
+                  const SizedBox(width: FluentSpacing.m),
+                  actions,
                 ],
-              ),
-            ],
+              );
+            },
           ),
         );
       },
     );
+  }
+
+  Widget _buildUnreadIndicator() {
+    return Container(
+      width: FluentSpacing.s,
+      height: FluentSpacing.s,
+      margin: const EdgeInsets.only(
+        top: FluentSpacing.xs,
+        right: FluentSpacing.s + FluentSpacing.xxs,
+      ),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isRead
+            ? Colors.transparent
+            : (isDark
+                  ? FluentDarkColors.unreadIndicator
+                  : FluentLightColors.unreadIndicator),
+      ),
+    );
+  }
+
+  Widget _buildMessageContent(TextStyle? titleStyle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          message.title,
+          style: titleStyle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
+        Wrap(
+          spacing: FluentSpacing.xs + FluentSpacing.xxs,
+          runSpacing: FluentSpacing.xs,
+          children: _buildMetadataTags(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateAndActions({required bool isNarrow}) {
+    final dateText = Text(
+      _formatDisplayDateTime(message),
+      style: theme.typography.caption?.copyWith(
+        color: theme.resources.textFillColorSecondary,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    final buttons = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: _actionButtons,
+    );
+
+    if (isNarrow) {
+      return Wrap(
+        spacing: FluentSpacing.s,
+        runSpacing: FluentSpacing.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [dateText, buttons],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 160),
+          child: dateText,
+        ),
+        const SizedBox(height: FluentSpacing.xs + FluentSpacing.xxs),
+        buttons,
+      ],
+    );
+  }
+
+  List<Widget> get _actionButtons {
+    return [
+      Tooltip(
+        message: '在浏览器中打开',
+        child: IconButton(
+          icon: const Icon(FluentIcons.open_in_new_window, size: 14),
+          onPressed: onTap,
+        ),
+      ),
+      const SizedBox(width: FluentSpacing.xs),
+      if (!isRead)
+        Tooltip(
+          message: '标为已读',
+          child: IconButton(
+            icon: const Icon(FluentIcons.read, size: 14),
+            onPressed: onMarkRead,
+          ),
+        ),
+    ];
   }
 
   /// 格式化消息展示日期时间，保证当天官网消息不会只显示时间。
@@ -206,18 +243,114 @@ class MessageTile extends StatelessWidget {
   /// [color] 标签颜色
   Widget _buildTag(String text, AccentColor color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: FluentSpacing.xs + FluentSpacing.xxs,
+        vertical: FluentSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(FluentRadius.medium),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          color: isDark ? color.lighter : color.dark,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: FluentTypographySize.caption - 1,
+            color: isDark ? color.lighter : color.dark,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMetadataTags() {
+    final tags = <Widget>[];
+    final seenSourceLabels = <String>{};
+
+    void addSourceTag(String text, AccentColor color) {
+      final trimmed = text.trim();
+      if (trimmed.isEmpty || !seenSourceLabels.add(trimmed)) return;
+      tags.add(_buildTag(trimmed, color));
+    }
+
+    addSourceTag(message.sourceType.label, Colors.blue);
+    addSourceTag(message.sourceName.label, Colors.teal);
+    addSourceTag(message.category.label, Colors.orange);
+
+    if (_isWechatMessage) {
+      tags.add(_buildWechatAccountIdentity());
+    } else {
+      final mpName = message.mpName?.trim();
+      if (mpName != null && mpName.isNotEmpty) {
+        tags.add(_buildTag(mpName, Colors.magenta));
+      }
+    }
+
+    return tags;
+  }
+
+  /// 微信账号身份使用主次层级展示，避免账号名与微信号看起来像两个同级来源标签。
+  Widget _buildWechatAccountIdentity() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: FluentSpacing.xs + FluentSpacing.xxs,
+        vertical: FluentSpacing.xxs,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.magenta.withValues(alpha: isDark ? 0.18 : 0.08),
+        borderRadius: BorderRadius.circular(FluentRadius.medium),
+        border: Border.all(
+          color: Colors.magenta.withValues(alpha: isDark ? 0.28 : 0.16),
+        ),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _wechatAccountName,
+              style: TextStyle(
+                fontSize: FluentTypographySize.caption - 1,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.magenta.lighter : Colors.magenta.dark,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              _wechatAccountDisplayId,
+              style: theme.typography.caption?.copyWith(
+                fontSize: FluentTypographySize.caption - 2,
+                color: theme.resources.textFillColorSecondary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool get _isWechatMessage {
+    return message.sourceType == MessageSourceType.wechatPublic ||
+        message.sourceType == MessageSourceType.wechatService;
+  }
+
+  String get _wechatAccountName {
+    final mpName = message.mpName?.trim();
+    if (mpName == null || mpName.isEmpty) return '公众号名称未知';
+    return mpName;
+  }
+
+  String get _wechatAccountDisplayId {
+    final mpDisplayId = message.mpDisplayId?.trim();
+    if (mpDisplayId == null || mpDisplayId.isEmpty) return '微信号未知';
+    return '微信号：$mpDisplayId';
   }
 }
