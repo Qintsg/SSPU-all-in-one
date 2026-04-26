@@ -323,9 +323,13 @@ jobs:
             exit 1
           }
 
+          # Flutter/Xcode 可能在最终签名中残留 sandbox 相关 entitlement，打包前统一剥离。
+          codesign --force --deep --sign - "$macos_app_bundle"
           codesign --verify --deep --strict --verbose=2 "$macos_app_bundle"
 
-          if codesign -d --entitlements :- "$macos_app_bundle" 2>/dev/null | grep -Eq 'com\.apple\.security\.|keychain-access-groups'; then
+          app_entitlements="$(codesign -d --entitlements :- "$macos_app_bundle" 2>/dev/null || true)"
+          if printf '%s\n' "$app_entitlements" | grep -Eq 'com\.apple\.security\.|keychain-access-groups'; then
+            printf '%s\n' "$app_entitlements" >&2
             echo "unsigned macOS 产物不得携带 App Sandbox 或 Keychain Access Groups 等受限 entitlement。" >&2
             exit 1
           fi

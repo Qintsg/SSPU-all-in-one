@@ -20,4 +20,19 @@ void main() {
     expect(releaseEntitlements, isNot(contains('com.apple.security.')));
     expect(releaseEntitlements, isNot(contains('keychain-access-groups')));
   });
+
+  test('macOS DMG 打包前重新 ad-hoc 签名清理残留 entitlement', () {
+    final releaseWorkflow = File('.github/workflows/release.yml').readAsStringSync();
+
+    // Release workflow 必须先剥离构建产物签名中的残留权限，再执行发布前拦截。
+    final adHocSigningIndex = releaseWorkflow.indexOf(
+      'codesign --force --deep --sign -',
+    );
+    final entitlementCheckIndex = releaseWorkflow.indexOf(
+      'unsigned macOS 产物不得携带',
+    );
+
+    expect(adHocSigningIndex, greaterThanOrEqualTo(0));
+    expect(entitlementCheckIndex, greaterThan(adHocSigningIndex));
+  });
 }
