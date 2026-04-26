@@ -284,6 +284,7 @@ SSPU-All-in-One-v0.2.0+1-web-universal-static.zip
 3. 若必须提供未签名产物，命名应使用 `unsigned`
 4. 当前仓库自动化默认产出未签名 DMG，因此公开 Release 资产使用：
    `SSPU-All-in-One-v{version}-macos-universal-unsigned.dmg`
+5. unsigned DMG 的 Release 构建不得携带 App Sandbox、Keychain Access Groups 等受限 entitlement；若改为 Developer ID 签名与公证，必须同步调整签名配置、产物命名和发布说明
 
 ### 7.4 Linux
 
