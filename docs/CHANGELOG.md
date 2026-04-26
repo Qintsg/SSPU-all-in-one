@@ -6,6 +6,20 @@
 
 ---
 
+## [0.2.3-alpha+1] - 2026-04-26
+
+### 修复
+
+- macOS unsigned Release 移除受限 entitlement，并在打包前校验签名状态，修复 ad-hoc 签名 DMG 被 AMFI 拒绝启动的问题
+
+### 文档
+
+- 补充 alpha 版本自动发布流程、Release PR 要求和失败后递增构建号重发规则
+
+### 发布
+
+- 以 `0.2.3-alpha+1` 发布 alpha 构建批次，使用 `v0.2.3-alpha` Tag，并通过完整版本号区分发布产物
+
 ## [0.2.2-alpha+4] - 2026-04-25
 
 ### 新增
@@ -14,7 +28,6 @@
 
 ### 修复
 
-- macOS unsigned Release 移除受限 entitlement，并在打包前校验签名状态，修复 ad-hoc 签名 DMG 被 AMFI 拒绝启动的问题
 - macOS 启动阶段托盘初始化失败时降级为无托盘模式，避免托盘异常中断主窗口启动导致应用无法打开
 - macOS 托盘图标路径补充 App.framework 与 Resources 下的 Flutter assets 候选路径，并保留跨平台回退路径
 

@@ -71,6 +71,21 @@ version: MAJOR.MINOR.PATCH[-CHANNEL]+BUILD
 4. 紧急修复优先使用 `hotfix/*`，修复完成后同时回合到 `main` 与 `develop`
 5. 公开 Release 由目标分支满足上述规则、且带 `release` 标签的 PR merge 自动触发
 
+### 3.3 Alpha 版本自动发布流程
+
+Alpha 版本默认从 `develop` 发起，并通过 Release PR merge 后自动触发公开 Release：
+
+1. 确认 `develop` 已同步远端且工作区干净
+2. 从 `develop` 签出 `release/v{version}` 分支，例如 `release/v0.2.3-alpha+1`
+3. 将 `pubspec.yaml` 中的 `version` 修改为不带前缀 `v` 的完整版本号，例如 `0.2.3-alpha+1`
+4. 在 `docs/CHANGELOG.md` 顶部新增对应版本章节，写清新增、修复、文档和发布说明
+5. 提交版本与文档变更，并推送 `release/v{version}` 分支到远端
+6. 使用 `.github/PULL_REQUEST_TEMPLATE/release.md` 创建目标分支为 `develop` 的 Release PR
+7. 在 Release PR 正文中完整填写 `## 发布说明` 下的真实内容，不保留模板占位文本
+8. 给 Release PR 添加 `release` 标签，等待 CI 通过后再 merge
+9. Release PR merge 后，`Build & Release` workflow 自动开始构建并发布 alpha Release，通常需要 10 到 15 分钟
+10. 若 workflow 失败，则本轮不会发布 GitHub Release；根据失败内容修复后，将版本号的 `+BUILD` 递增 1，并重新走完整 Release PR 流程
+
 ---
 
 ## 4. 发布类型
