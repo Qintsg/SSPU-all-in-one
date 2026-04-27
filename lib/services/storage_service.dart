@@ -33,6 +33,10 @@ class StorageKeys {
   /// 关闭行为偏好（ask / minimize / exit）。
   static const String closeBehavior = 'close_behavior';
 
+  /// 校园网 / VPN 状态检测间隔（分钟，0 = 关闭自动检测）。
+  static const String campusNetworkDetectionIntervalMinutes =
+      'campus_network_detection_interval_minutes';
+
   /// 结构化数据前缀（JSON 序列化存储）。
   static const String dataPrefix = 'data_';
 }

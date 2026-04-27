@@ -9,9 +9,11 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/campus_network_status.dart';
 import 'http_service.dart';
+import 'storage_service.dart';
 
 /// 校园网检测探针签名。
 /// 后续若需要区分直连校园网与 VPN，只需替换探针实现，不影响调用方。
@@ -37,7 +39,7 @@ class CampusNetworkProbeResult {
 }
 
 /// 校园网 / VPN 前置检测服务。
-class CampusNetworkStatusService {
+class CampusNetworkStatusService extends ChangeNotifier {
   CampusNetworkStatusService({
     CampusNetworkProbe? probe,
     Uri? probeUri,
@@ -52,6 +54,9 @@ class CampusNetworkStatusService {
 
   /// 默认检测目标：本专科教务系统域名。
   static final Uri defaultProbeUri = Uri.parse('https://tygl.sspu.edu.cn/');
+
+  /// 默认检测间隔，兼顾状态新鲜度与校园站点访问频率。
+  static const int defaultDetectionIntervalMinutes = 15;
 
   /// 实际检测目标地址。
   final Uri probeUri;
@@ -81,6 +86,29 @@ class CampusNetworkStatusService {
         detail: '校园网检测失败：$error',
       );
     }
+  }
+
+  /// 读取校园网 / VPN 状态自动检测间隔。
+  Future<int> getDetectionIntervalMinutes() async {
+    final stored = await StorageService.getInt(
+      StorageKeys.campusNetworkDetectionIntervalMinutes,
+    );
+    return _normalizeInterval(stored ?? defaultDetectionIntervalMinutes);
+  }
+
+  /// 保存校园网 / VPN 状态自动检测间隔并通知现有徽标立即重排定时器。
+  Future<void> setDetectionIntervalMinutes(int minutes) async {
+    final normalized = _normalizeInterval(minutes);
+    await StorageService.setInt(
+      StorageKeys.campusNetworkDetectionIntervalMinutes,
+      normalized,
+    );
+    notifyListeners();
+  }
+
+  /// 间隔只接受非负分钟数；0 表示关闭自动检测但保留手动点击刷新。
+  int _normalizeInterval(int minutes) {
+    return minutes < 0 ? 0 : minutes;
   }
 
   /// 默认探针只发起只读 GET 请求；任何非 5xx HTTP 响应都表示内网域名可达。

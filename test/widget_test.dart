@@ -18,6 +18,7 @@ import 'package:sspu_all_in_one/pages/webview_page.dart';
 import 'package:sspu_all_in_one/services/campus_network_status_service.dart';
 import 'package:sspu_all_in_one/services/storage_service.dart';
 import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
+import 'package:sspu_all_in_one/widgets/settings_auto_refresh_section.dart';
 import 'package:sspu_all_in_one/widgets/settings_wechat_section.dart';
 
 /// 等待目标组件出现，避免页面异步加载尚未完成时提前断言。
@@ -76,6 +77,8 @@ void main() {
   });
 
   testWidgets('桌面导航在设置上方显示校园网状态徽标', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    StorageService.debugUseSharedPreferencesStorageForTesting(true);
     final previousTargetPlatform = debugDefaultTargetPlatformOverride;
     final service = CampusNetworkStatusService(
       probe: (uri, timeout) async {
@@ -116,10 +119,42 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     } finally {
       debugDefaultTargetPlatformOverride = previousTargetPlatform;
+      StorageService.debugUseSharedPreferencesStorageForTesting(null);
+      SharedPreferences.setMockInitialValues({});
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
       await tester.binding.setSurfaceSize(null);
     }
+  });
+
+  testWidgets('自动刷新设置分区显示校园网检测和快捷入口', (WidgetTester tester) async {
+    var selectedShortcut = 0;
+    await tester.pumpWidget(
+      FluentApp(
+        home: ScaffoldPage(
+          content: SingleChildScrollView(
+            child: SettingsAutoRefreshSection(
+              campusNetworkDetectionIntervalMinutes: 15,
+              onCampusNetworkDetectionIntervalChanged: (_) async {},
+              onOpenDepartmentRefreshSettings: () => selectedShortcut = 3,
+              onOpenTeachingRefreshSettings: () => selectedShortcut = 4,
+              onOpenWechatRefreshSettings: () => selectedShortcut = 5,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('校园网 / VPN 状态检测'), findsOneWidget);
+    expect(find.text('15 分钟'), findsOneWidget);
+    expect(find.text('职能部门'), findsOneWidget);
+    expect(find.text('教学单位'), findsOneWidget);
+    expect(find.text('微信推文'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(Button, '前往设置').first);
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(selectedShortcut, 3);
   });
 
   testWidgets('WebView 遇到无效链接时显示错误页', (WidgetTester tester) async {
@@ -247,10 +282,11 @@ class _NarrowSettingsNavigation extends StatelessWidget {
             isExpanded: true,
             items: const [
               ComboBoxItem(value: 0, child: Text('常规设置')),
-              ComboBoxItem(value: 1, child: Text('安全设置')),
-              ComboBoxItem(value: 2, child: Text('职能部门')),
-              ComboBoxItem(value: 3, child: Text('教学单位')),
-              ComboBoxItem(value: 4, child: Text('微信推文')),
+              ComboBoxItem(value: 1, child: Text('自动刷新设置')),
+              ComboBoxItem(value: 2, child: Text('安全设置')),
+              ComboBoxItem(value: 3, child: Text('职能部门')),
+              ComboBoxItem(value: 4, child: Text('教学单位')),
+              ComboBoxItem(value: 5, child: Text('微信推文')),
             ],
             onChanged: (_) {},
           ),

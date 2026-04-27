@@ -14,6 +14,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/channel_config.dart';
 import '../services/app_exit_service.dart';
 import '../services/academic_credentials_service.dart';
+import '../services/campus_network_status_service.dart';
 import '../services/message_state_service.dart';
 import '../services/password_service.dart';
 import '../services/storage_service.dart';
@@ -22,6 +23,7 @@ import '../theme/fluent_tokens.dart';
 import '../widgets/channel_list_section.dart';
 import '../widgets/password_dialogs.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/settings_auto_refresh_section.dart';
 import '../widgets/settings_general_section.dart';
 import '../widgets/settings_security_section.dart';
 import '../widgets/settings_wechat_section.dart';
@@ -73,8 +75,12 @@ class _SettingsPageState extends State<SettingsPage> {
   int _dndEndHour = 7;
   int _dndEndMinute = 0;
 
+  /// 校园网 / VPN 状态自动检测间隔，单位分钟。
+  int _campusNetworkDetectionIntervalMinutes =
+      CampusNetworkStatusService.defaultDetectionIntervalMinutes;
+
   /// 当前选中的设置分区索引。
-  /// 0=常规设置 1=安全设置 2=职能部门 3=教学单位 4=微信推文
+  /// 0=常规设置 1=自动刷新设置 2=安全设置 3=职能部门 4=教学单位 5=微信推文
   int _selectedTab = 0;
 
   /// 消息状态服务引用。
@@ -100,6 +106,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final dndStartMinute = await _messageState.getDndStartMinute();
     final dndEndHour = await _messageState.getDndEndHour();
     final dndEndMinute = await _messageState.getDndEndMinute();
+    final campusNetworkDetectionInterval = await CampusNetworkStatusService
+        .instance
+        .getDetectionIntervalMinutes();
 
     if (!mounted) return;
     setState(() {
@@ -113,6 +122,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _dndStartMinute = dndStartMinute;
       _dndEndHour = dndEndHour;
       _dndEndMinute = dndEndMinute;
+      _campusNetworkDetectionIntervalMinutes = campusNetworkDetectionInterval;
       _isLoading = false;
     });
   }
@@ -184,6 +194,15 @@ class _SettingsPageState extends State<SettingsPage> {
       _dndEndHour = hour;
       _dndEndMinute = minute;
     });
+  }
+
+  /// 修改校园网 / VPN 状态检测间隔。
+  Future<void> _onCampusNetworkDetectionIntervalChanged(int minutes) async {
+    await CampusNetworkStatusService.instance.setDetectionIntervalMinutes(
+      minutes,
+    );
+    if (!mounted) return;
+    setState(() => _campusNetworkDetectionIntervalMinutes = minutes);
   }
 
   /// 切换密码保护。
@@ -447,9 +466,18 @@ class _SettingsPageState extends State<SettingsPage> {
           context: context,
           index: 1,
           selectedIndex: _selectedTab,
+          icon: FluentIcons.sync,
+          label: '自动刷新设置',
+          onTap: () => setState(() => _selectedTab = 1),
+        ),
+        const SizedBox(height: FluentSpacing.xxs),
+        buildSettingsNavItem(
+          context: context,
+          index: 2,
+          selectedIndex: _selectedTab,
           icon: FluentIcons.lock,
           label: '安全设置',
-          onTap: () => setState(() => _selectedTab = 1),
+          onTap: () => setState(() => _selectedTab = 2),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -461,19 +489,10 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         buildSettingsNavItem(
           context: context,
-          index: 2,
+          index: 3,
           selectedIndex: _selectedTab,
           icon: FluentIcons.education,
           label: '职能部门',
-          onTap: () => setState(() => _selectedTab = 2),
-        ),
-        const SizedBox(height: FluentSpacing.xxs),
-        buildSettingsNavItem(
-          context: context,
-          index: 3,
-          selectedIndex: _selectedTab,
-          icon: FluentIcons.library,
-          label: '教学单位',
           onTap: () => setState(() => _selectedTab = 3),
         ),
         const SizedBox(height: FluentSpacing.xxs),
@@ -481,9 +500,18 @@ class _SettingsPageState extends State<SettingsPage> {
           context: context,
           index: 4,
           selectedIndex: _selectedTab,
+          icon: FluentIcons.library,
+          label: '教学单位',
+          onTap: () => setState(() => _selectedTab = 4),
+        ),
+        const SizedBox(height: FluentSpacing.xxs),
+        buildSettingsNavItem(
+          context: context,
+          index: 5,
+          selectedIndex: _selectedTab,
           icon: FluentIcons.chat,
           label: '微信推文',
-          onTap: () => setState(() => _selectedTab = 4),
+          onTap: () => setState(() => _selectedTab = 5),
         ),
       ],
     );
@@ -502,10 +530,11 @@ class _SettingsPageState extends State<SettingsPage> {
             isExpanded: true,
             items: const [
               ComboBoxItem(value: 0, child: Text('常规设置')),
-              ComboBoxItem(value: 1, child: Text('安全设置')),
-              ComboBoxItem(value: 2, child: Text('职能部门')),
-              ComboBoxItem(value: 3, child: Text('教学单位')),
-              ComboBoxItem(value: 4, child: Text('微信推文')),
+              ComboBoxItem(value: 1, child: Text('自动刷新设置')),
+              ComboBoxItem(value: 2, child: Text('安全设置')),
+              ComboBoxItem(value: 3, child: Text('职能部门')),
+              ComboBoxItem(value: 4, child: Text('教学单位')),
+              ComboBoxItem(value: 5, child: Text('微信推文')),
             ],
             onChanged: (value) {
               if (value != null) setState(() => _selectedTab = value);
@@ -546,6 +575,17 @@ class _SettingsPageState extends State<SettingsPage> {
           onDndEndChanged: _onDndEndChanged,
         );
       case 1:
+        return SettingsAutoRefreshSection(
+          campusNetworkDetectionIntervalMinutes:
+              _campusNetworkDetectionIntervalMinutes,
+          onCampusNetworkDetectionIntervalChanged:
+              _onCampusNetworkDetectionIntervalChanged,
+          onOpenDepartmentRefreshSettings: () =>
+              setState(() => _selectedTab = 3),
+          onOpenTeachingRefreshSettings: () => setState(() => _selectedTab = 4),
+          onOpenWechatRefreshSettings: () => setState(() => _selectedTab = 5),
+        );
+      case 2:
         return SettingsSecuritySection(
           isPasswordEnabled: _isPasswordEnabled,
           onPasswordProtectionChanged: (value) =>
@@ -559,19 +599,19 @@ class _SettingsPageState extends State<SettingsPage> {
           onClearMessageCache: _showClearMessageCacheDialog,
           onClearAllData: _showClearAllDataDialog,
         );
-      case 2:
+      case 3:
         return ChannelListSection(
           key: const ValueKey('department'),
           title: '职能部门',
           channels: departmentChannels,
         );
-      case 3:
+      case 4:
         return ChannelListSection(
           key: const ValueKey('teaching'),
           title: '教学单位',
           channels: teachingChannels,
         );
-      case 4:
+      case 5:
         return const SettingsWechatSection();
       default:
         return const SizedBox.shrink();

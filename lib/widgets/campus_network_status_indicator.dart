@@ -30,6 +30,13 @@ class _CampusNetworkStatusIndicatorState
     extends State<CampusNetworkStatusIndicator> {
   late CampusNetworkStatus _status;
 
+  /// 当前自动检测间隔；0 表示只允许手动点击刷新。
+  int _detectionIntervalMinutes =
+      CampusNetworkStatusService.defaultDetectionIntervalMinutes;
+
+  /// 自动检测定时器，按设置页配置重排。
+  Timer? _refreshTimer;
+
   /// 防止用户连续点击刷新造成重复探测。
   bool _isChecking = false;
 
@@ -41,26 +48,67 @@ class _CampusNetworkStatusIndicatorState
   void initState() {
     super.initState();
     _status = CampusNetworkStatus.unknown(probeUri: _service.probeUri);
-    unawaited(_refreshStatus());
+    _service.addListener(_onServiceSettingsChanged);
+    unawaited(_loadIntervalAndRefresh());
   }
 
   @override
   void didUpdateWidget(CampusNetworkStatusIndicator oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.service != widget.service) {
+      final oldService =
+          oldWidget.service ?? CampusNetworkStatusService.instance;
+      oldService.removeListener(_onServiceSettingsChanged);
+      _service.addListener(_onServiceSettingsChanged);
       _status = CampusNetworkStatus.unknown(probeUri: _service.probeUri);
-      unawaited(_refreshStatus());
+      unawaited(_loadIntervalAndRefresh());
     }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _service.removeListener(_onServiceSettingsChanged);
+    super.dispose();
+  }
+
+  void _onServiceSettingsChanged() {
+    unawaited(_reloadDetectionInterval());
+  }
+
+  Future<void> _loadIntervalAndRefresh() async {
+    final interval = await _service.getDetectionIntervalMinutes();
+    if (!mounted) return;
+    setState(() => _detectionIntervalMinutes = interval);
+    await _refreshStatus();
+  }
+
+  Future<void> _reloadDetectionInterval() async {
+    final interval = await _service.getDetectionIntervalMinutes();
+    if (!mounted) return;
+    setState(() => _detectionIntervalMinutes = interval);
+    _scheduleNextRefresh();
   }
 
   Future<void> _refreshStatus() async {
     if (_isChecking) return;
+    _refreshTimer?.cancel();
     setState(() => _isChecking = true);
     final nextStatus = await _service.checkStatus();
     if (!mounted) return;
     setState(() {
       _status = nextStatus;
       _isChecking = false;
+    });
+    _scheduleNextRefresh();
+  }
+
+  void _scheduleNextRefresh() {
+    _refreshTimer?.cancel();
+    if (_detectionIntervalMinutes <= 0) return;
+
+    _refreshTimer = Timer(Duration(minutes: _detectionIntervalMinutes), () {
+      unawaited(_refreshStatus());
     });
   }
 
@@ -174,6 +222,10 @@ class _CampusNetworkStatusIndicatorState
               ':${checkedAt.minute.toString().padLeft(2, '0')}'
               ':${checkedAt.second.toString().padLeft(2, '0')}';
 
-    return '${_status.description}\n${_status.detail}\n$checkedAtLabel\n点击可重新检测';
+    final intervalLabel = _detectionIntervalMinutes <= 0
+        ? '自动检测：已关闭'
+        : '自动检测：每 $_detectionIntervalMinutes 分钟';
+
+    return '${_status.description}\n${_status.detail}\n$checkedAtLabel\n$intervalLabel\n点击可重新检测';
   }
 }

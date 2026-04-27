@@ -7,11 +7,23 @@
  */
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/models/campus_network_status.dart';
 import 'package:sspu_all_in_one/services/campus_network_status_service.dart';
+import 'package:sspu_all_in_one/services/storage_service.dart';
 
 void main() {
   final probeUri = Uri.parse('https://tygl.sspu.edu.cn/');
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    StorageService.debugUseSharedPreferencesStorageForTesting(true);
+  });
+
+  tearDown(() {
+    StorageService.debugUseSharedPreferencesStorageForTesting(null);
+    SharedPreferences.setMockInitialValues({});
+  });
 
   test('探针可达时返回校园网或 VPN 可用状态', () async {
     final service = CampusNetworkStatusService(
@@ -63,5 +75,20 @@ void main() {
 
     expect(status.accessMode, CampusNetworkAccessMode.unavailable);
     expect(status.detail, contains('probe failed'));
+  });
+
+  test('检测间隔默认 15 分钟并支持关闭自动检测', () async {
+    final service = CampusNetworkStatusService(probeUri: probeUri);
+
+    expect(
+      await service.getDetectionIntervalMinutes(),
+      CampusNetworkStatusService.defaultDetectionIntervalMinutes,
+    );
+
+    await service.setDetectionIntervalMinutes(30);
+    expect(await service.getDetectionIntervalMinutes(), 30);
+
+    await service.setDetectionIntervalMinutes(-1);
+    expect(await service.getDetectionIntervalMinutes(), 0);
   });
 }
