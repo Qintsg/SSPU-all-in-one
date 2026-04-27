@@ -52,8 +52,8 @@ SSPU All-in-One 是面向上海第二工业大学（SSPU）师生的校园综合
 │  HomePage   │ AcademicPage│  InfoPage   │QuickLinks   │ ... │
 │  最新消息    │ 教务预览页   │ 官网/微信聚合 │ YAML 快捷跳转 │     │
 ├─────────────┴─────────────┴─────────────┴─────────────┴─────┤
-│ Services: Password / MessageState / InfoRefresh / Wxmp /    │
-│ AutoRefresh / Notification / Storage / AppExit / AppInfo    │
+│ Services: Password / MessageState / CampusNetwork / Wxmp /  │
+│ InfoRefresh / AutoRefresh / Notification / Storage / AppInfo│
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -118,6 +118,8 @@ _initApp()
 | 快速跳转 | `FluentIcons.link` | 主区域 | `QuickLinksPage` |
 | 设置 | `FluentIcons.settings` | 底部 footer | `SettingsPage` |
 | 关于 | `FluentIcons.info_solid` | 底部 footer | `AboutPage` |
+
+应用桌面 / 平板侧边导航在“设置”上方显示校园网 / VPN 状态徽标，启动后自动检测一次，点击徽标可重新检测。当前默认通过只读访问 `https://tygl.sspu.edu.cn/` 判断校园受限资源是否可达。
 
 ### 3.2 显示模式
 
