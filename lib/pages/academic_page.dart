@@ -17,6 +17,8 @@ class AcademicPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
+
     return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('教务中心')),
       children: [
@@ -24,7 +26,7 @@ class AcademicPage extends StatelessWidget {
         _buildServiceCard(
               context,
               icon: FluentIcons.education,
-              color: Colors.blue,
+              color: theme.accentColor,
               title: '课表查询',
               description: '查看本学期课程表，支持按周次、课程名筛选',
               items: ['本周课程', '完整课表', '课程搜索'],
@@ -39,7 +41,7 @@ class AcademicPage extends StatelessWidget {
         _buildServiceCard(
               context,
               icon: FluentIcons.certificate,
-              color: Colors.teal,
+              color: theme.resources.systemFillColorSuccess,
               title: '成绩查询',
               description: '查看历史成绩与绩点统计，支持按学期筛选',
               items: ['本学期成绩', '历史成绩', 'GPA 统计'],
@@ -54,7 +56,7 @@ class AcademicPage extends StatelessWidget {
         _buildServiceCard(
               context,
               icon: FluentIcons.calendar,
-              color: Colors.orange,
+              color: theme.resources.systemFillColorCaution,
               title: '考试安排',
               description: '查看即将到来的考试时间、地点、座位号',
               items: ['近期考试', '所有考试'],
@@ -69,7 +71,7 @@ class AcademicPage extends StatelessWidget {
         _buildServiceCard(
               context,
               icon: FluentIcons.feedback,
-              color: Colors.purple,
+              color: theme.resources.systemFillColorSolidNeutral,
               title: '教学评价',
               description: '在线完成教学评价，查看评价状态',
               items: ['待评价课程', '已完成评价'],
@@ -98,7 +100,7 @@ class AcademicPage extends StatelessWidget {
   Widget _buildServiceCard(
     BuildContext context, {
     required IconData icon,
-    required AccentColor color,
+    required Color color,
     required String title,
     required String description,
     required List<String> items,

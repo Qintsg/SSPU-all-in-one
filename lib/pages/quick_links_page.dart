@@ -78,14 +78,14 @@ class _QuickLinksContentState extends State<_QuickLinksContent> {
 
   String _searchQuery = '';
 
-  static final List<AccentColor> _groupColors = [
-    Colors.blue,
-    Colors.teal,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.magenta,
-    Colors.red,
+  static const List<_QuickLinkColorRole> _groupColorRoles = [
+    _QuickLinkColorRole.brand,
+    _QuickLinkColorRole.info,
+    _QuickLinkColorRole.success,
+    _QuickLinkColorRole.caution,
+    _QuickLinkColorRole.neutral,
+    _QuickLinkColorRole.brandAlt,
+    _QuickLinkColorRole.critical,
   ];
 
   static const Map<String, IconData> _iconByKey = {
@@ -255,10 +255,11 @@ class _QuickLinksContentState extends State<_QuickLinksContent> {
                 label: result.item.name,
                 subtitle: result.group.category,
                 color: _resolveColor(
+                  theme,
                   result.group.category,
                   result.item,
-                  _groupColors[widget.groups.indexOf(result.group) %
-                      _groupColors.length],
+                  _groupColorRoles[widget.groups.indexOf(result.group) %
+                      _groupColorRoles.length],
                 ),
                 url: result.item.url,
                 onTap: widget.onOpenUrl,
@@ -279,7 +280,8 @@ class _QuickLinksContentState extends State<_QuickLinksContent> {
     int groupIndex,
     double tileWidth,
   ) {
-    final groupColor = _groupColors[groupIndex % _groupColors.length];
+    final groupColorRole =
+        _groupColorRoles[groupIndex % _groupColorRoles.length];
     return [
       if (groupIndex > 0) const SizedBox(height: FluentSpacing.l),
       Text(group.category, style: theme.typography.bodyStrong),
@@ -291,7 +293,12 @@ class _QuickLinksContentState extends State<_QuickLinksContent> {
               return _LinkTile(
                 icon: _resolveIcon(group.category, item),
                 label: item.name,
-                color: _resolveColor(group.category, item, groupColor),
+                color: _resolveColor(
+                  theme,
+                  group.category,
+                  item,
+                  groupColorRole,
+                ),
                 url: item.url,
                 onTap: widget.onOpenUrl,
                 width: tileWidth,
@@ -361,31 +368,58 @@ class _QuickLinksContentState extends State<_QuickLinksContent> {
     return FluentIcons.globe;
   }
 
-  AccentColor _resolveColor(
+  Color _resolveColor(
+    FluentThemeData theme,
     String category,
     QuickLinkItemConfig item,
-    AccentColor fallback,
+    _QuickLinkColorRole fallback,
   ) {
     final searchableText = '${item.name} $category';
     if (searchableText.contains('财务') || searchableText.contains('保卫')) {
-      return Colors.red;
+      return _resolveColorRole(theme, _QuickLinkColorRole.critical);
     }
     if (searchableText.contains('国际') || searchableText.contains('留学生')) {
-      return Colors.teal;
+      return _resolveColorRole(theme, _QuickLinkColorRole.info);
     }
     if (searchableText.contains('学习') || searchableText.contains('教学')) {
-      return Colors.blue;
+      return _resolveColorRole(theme, _QuickLinkColorRole.brand);
     }
     if (searchableText.contains('图书') || searchableText.contains('档案')) {
-      return Colors.orange;
+      return _resolveColorRole(theme, _QuickLinkColorRole.caution);
     }
     if (searchableText.contains('党') ||
         searchableText.contains('团') ||
         searchableText.contains('工会')) {
-      return Colors.magenta;
+      return _resolveColorRole(theme, _QuickLinkColorRole.brandAlt);
     }
-    return fallback;
+    return _resolveColorRole(theme, fallback);
   }
+
+  Color _resolveColorRole(FluentThemeData theme, _QuickLinkColorRole role) {
+    final isDark = theme.brightness == Brightness.dark;
+    return switch (role) {
+      _QuickLinkColorRole.brand => theme.accentColor,
+      _QuickLinkColorRole.brandAlt =>
+        isDark ? FluentDarkColors.brandHover : FluentLightColors.brandHover,
+      _QuickLinkColorRole.info =>
+        isDark ? FluentDarkColors.statusInfo : FluentLightColors.statusInfo,
+      _QuickLinkColorRole.success => theme.resources.systemFillColorSuccess,
+      _QuickLinkColorRole.caution => theme.resources.systemFillColorCaution,
+      _QuickLinkColorRole.neutral =>
+        theme.resources.systemFillColorSolidNeutral,
+      _QuickLinkColorRole.critical => theme.resources.systemFillColorCritical,
+    };
+  }
+}
+
+enum _QuickLinkColorRole {
+  brand,
+  brandAlt,
+  info,
+  success,
+  caution,
+  neutral,
+  critical,
 }
 
 /// 快捷链接砖块组件。
@@ -393,7 +427,7 @@ class _LinkTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? subtitle;
-  final AccentColor color;
+  final Color color;
   final String url;
   final Future<void> Function(String) onTap;
 
@@ -430,7 +464,7 @@ class _LinkTile extends StatelessWidget {
                 ? color.withValues(alpha: isDark ? 0.15 : 0.08)
                 : isDark
                 ? FluentDarkColors.hoverFill
-                : Colors.white,
+                : theme.resources.cardBackgroundFillColorDefault,
             borderRadius: BorderRadius.circular(FluentRadius.xLarge),
             border: Border.all(
               color: isHovered

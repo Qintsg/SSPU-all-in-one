@@ -339,15 +339,20 @@ class _ChannelSubcategoryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
     final background = !interactive
-        ? theme.inactiveColor.withValues(alpha: 0.18)
+        ? theme.resources.controlFillColorDisabled
         : enabled
-        ? Colors.green
-        : theme.inactiveColor.withValues(alpha: 0.7);
+        ? theme.resources.systemFillColorSuccessBackground
+        : theme.resources.systemFillColorNeutralBackground;
+    final foreground = !interactive
+        ? theme.resources.textFillColorDisabled
+        : enabled
+        ? theme.resources.systemFillColorSuccess
+        : theme.resources.textFillColorSecondary;
 
     return Button(
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(background),
-        foregroundColor: const WidgetStatePropertyAll(Colors.white),
+        foregroundColor: WidgetStatePropertyAll(foreground),
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(
             horizontal: FluentSpacing.l,

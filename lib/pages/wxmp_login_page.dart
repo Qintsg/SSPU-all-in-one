@@ -308,6 +308,17 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
 
   Widget _buildContent(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final successColor = isDark
+        ? FluentDarkColors.statusSuccess
+        : FluentLightColors.statusSuccess;
+    final errorColor = isDark
+        ? FluentDarkColors.statusError
+        : FluentLightColors.statusError;
+    final infoColor = isDark
+        ? FluentDarkColors.statusInfo
+        : FluentLightColors.statusInfo;
+    final resultColor = _result?.success == true ? successColor : errorColor;
 
     if (_initFailed) {
       return Center(
@@ -337,16 +348,10 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
               horizontal: FluentSpacing.l,
               vertical: FluentSpacing.s,
             ),
-            color: _result!.success
-                ? FluentLightColors.statusSuccess.withValues(alpha: 0.12)
-                : FluentLightColors.statusError.withValues(alpha: 0.12),
+            color: resultColor.withValues(alpha: isDark ? 0.18 : 0.12),
             child: Text(
               _result!.message,
-              style: theme.typography.body?.copyWith(
-                color: _result!.success
-                    ? FluentLightColors.statusSuccess
-                    : FluentLightColors.statusError,
-              ),
+              style: theme.typography.body?.copyWith(color: resultColor),
             ),
           ),
         // 提示信息
@@ -357,11 +362,11 @@ class _WxmpLoginPageState extends State<WxmpLoginPage> {
               horizontal: FluentSpacing.l,
               vertical: FluentSpacing.s,
             ),
-            color: FluentLightColors.statusInfo.withValues(alpha: 0.08),
+            color: infoColor.withValues(alpha: isDark ? 0.14 : 0.08),
             child: Text(
               '请使用拥有公众号的微信账号扫码登录。'
               '个人订阅号即可（mp.weixin.qq.com 免费注册）。',
-              style: theme.typography.caption,
+              style: theme.typography.caption?.copyWith(color: infoColor),
             ),
           ),
         // WebView
