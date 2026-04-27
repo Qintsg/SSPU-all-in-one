@@ -198,7 +198,10 @@ Widget _buildInfoFilterBar(
   bool isDark,
 ) {
   final availableSourceNames = state._getAvailableSourceNames();
+  final availableWechatMpNames = state._getAvailableWechatMpNames();
   final availableCategories = state._getAvailableCategories();
+  final wechatSourceSelected =
+      state._filterSourceType == MessageSourceType.wechatPublic;
 
   return Wrap(
     spacing: FluentSpacing.s,
@@ -215,28 +218,43 @@ Widget _buildInfoFilterBar(
         onChanged: (value) {
           state._filterSourceType = value;
           state._filterSourceName = null;
+          state._filterWechatMpName = null;
           state._filterCategory = null;
           state._applyFilters();
         },
       ),
-      state._buildFilterCombo<MessageSourceName>(
-        label: '来源名称',
-        value: state._filterSourceName,
-        items: availableSourceNames,
-        itemLabel: (item) => item.label,
-        enabled: state._filterSourceType != null,
-        onChanged: (value) {
-          state._filterSourceName = value;
-          state._filterCategory = null;
-          state._applyFilters();
-        },
-      ),
+      if (wechatSourceSelected)
+        state._buildFilterCombo<String>(
+          label: '公众号名称',
+          value: state._filterWechatMpName,
+          items: availableWechatMpNames,
+          itemLabel: (item) => item,
+          enabled: state._filterSourceType != null,
+          onChanged: (value) {
+            state._filterWechatMpName = value;
+            state._filterCategory = null;
+            state._applyFilters();
+          },
+        )
+      else
+        state._buildFilterCombo<MessageSourceName>(
+          label: '来源名称',
+          value: state._filterSourceName,
+          items: availableSourceNames,
+          itemLabel: (item) => item.label,
+          enabled: state._filterSourceType != null,
+          onChanged: (value) {
+            state._filterSourceName = value;
+            state._filterCategory = null;
+            state._applyFilters();
+          },
+        ),
       state._buildFilterCombo<MessageCategory>(
         label: '内容分类',
         value: state._filterCategory,
         items: availableCategories,
         itemLabel: (item) => item.label,
-        enabled: state._filterSourceName != null,
+        enabled: !wechatSourceSelected && state._filterSourceName != null,
         onChanged: (value) {
           state._filterCategory = value;
           state._applyFilters();

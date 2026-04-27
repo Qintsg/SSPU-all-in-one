@@ -195,6 +195,10 @@ void _applyInfoPageFilters(_InfoPageState state) {
         msg.sourceName != state._filterSourceName) {
       return false;
     }
+    if (state._filterWechatMpName != null &&
+        _infoWechatMpName(msg) != state._filterWechatMpName) {
+      return false;
+    }
     if (state._filterCategory != null &&
         msg.category != state._filterCategory) {
       return false;
@@ -207,6 +211,12 @@ void _applyInfoPageFilters(_InfoPageState state) {
 
   state._currentPage = 0;
   state._refreshView();
+}
+
+String _infoWechatMpName(MessageItem message) {
+  final mpName = message.mpName?.trim();
+  if (mpName == null || mpName.isEmpty) return '公众号名称未知';
+  return mpName;
 }
 
 List<MessageItem> _getPagedInfoMessages(_InfoPageState state) {
@@ -277,6 +287,16 @@ List<MessageSourceName> _getInfoAvailableSourceNames(_InfoPageState state) {
     case MessageSourceType.wechatService:
       return [MessageSourceName.wechatServicePlaceholder];
   }
+}
+
+List<String> _getInfoAvailableWechatMpNames(_InfoPageState state) {
+  final mpNames = state._allMessages
+      .where((message) => message.sourceType == MessageSourceType.wechatPublic)
+      .map(_infoWechatMpName)
+      .toSet()
+      .toList();
+  mpNames.sort();
+  return mpNames;
 }
 
 List<MessageCategory> _getInfoAvailableCategories(_InfoPageState state) {

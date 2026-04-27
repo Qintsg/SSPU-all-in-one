@@ -255,7 +255,7 @@ class MessageTile extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 220),
         child: Text(
           text,
-          style: TextStyle(
+          style: theme.typography.caption?.copyWith(
             fontSize: FluentTypographySize.caption - 1,
             color: isDark ? color.lighter : color.dark,
           ),
@@ -276,13 +276,14 @@ class MessageTile extends StatelessWidget {
       tags.add(_buildTag(trimmed, color));
     }
 
-    addSourceTag(message.sourceType.label, Colors.blue);
-    addSourceTag(message.sourceName.label, Colors.teal);
-    addSourceTag(message.category.label, Colors.orange);
-
     if (_isWechatMessage) {
-      tags.add(_buildWechatAccountIdentity());
+      addSourceTag(message.sourceType.label, Colors.blue);
+      addSourceTag(_wechatAccountName, Colors.magenta);
     } else {
+      addSourceTag(message.sourceType.label, Colors.blue);
+      addSourceTag(message.sourceName.label, Colors.teal);
+      addSourceTag(message.category.label, Colors.orange);
+
       final mpName = message.mpName?.trim();
       if (mpName != null && mpName.isNotEmpty) {
         tags.add(_buildTag(mpName, Colors.magenta));
@@ -290,51 +291,6 @@ class MessageTile extends StatelessWidget {
     }
 
     return tags;
-  }
-
-  /// 微信账号身份使用主次层级展示，避免账号名与微信号看起来像两个同级来源标签。
-  Widget _buildWechatAccountIdentity() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: FluentSpacing.xs + FluentSpacing.xxs,
-        vertical: FluentSpacing.xxs,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.magenta.withValues(alpha: isDark ? 0.18 : 0.08),
-        borderRadius: BorderRadius.circular(FluentRadius.medium),
-        border: Border.all(
-          color: Colors.magenta.withValues(alpha: isDark ? 0.28 : 0.16),
-        ),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 220),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _wechatAccountName,
-              style: TextStyle(
-                fontSize: FluentTypographySize.caption - 1,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.magenta.lighter : Colors.magenta.dark,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              _wechatAccountDisplayId,
-              style: theme.typography.caption?.copyWith(
-                fontSize: FluentTypographySize.caption - 2,
-                color: theme.resources.textFillColorSecondary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   bool get _isWechatMessage {
@@ -346,11 +302,5 @@ class MessageTile extends StatelessWidget {
     final mpName = message.mpName?.trim();
     if (mpName == null || mpName.isEmpty) return '公众号名称未知';
     return mpName;
-  }
-
-  String get _wechatAccountDisplayId {
-    final mpDisplayId = message.mpDisplayId?.trim();
-    if (mpDisplayId == null || mpDisplayId.isEmpty) return '微信号未知';
-    return '微信号：$mpDisplayId';
   }
 }
