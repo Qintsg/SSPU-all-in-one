@@ -9,6 +9,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sspu_all_in_one/models/academic_credentials.dart';
+import 'package:sspu_all_in_one/models/academic_login_validation.dart';
 import 'package:sspu_all_in_one/services/academic_credentials_service.dart';
 
 void main() {
@@ -90,6 +91,28 @@ void main() {
       await service.readSecret(AcademicCredentialSecret.sportsQueryPassword),
       isNull,
     );
+  });
+
+  test('OA 账号或密码变化时清除旧登录会话', () async {
+    await service.saveCredentials(oaAccount: '20260001', oaPassword: 'oa-pass');
+    await service.saveOaLoginSession(
+      AcademicLoginSessionSnapshot(
+        cookieHeadersByHost: const {
+          'oa.sspu.edu.cn': 'ecology_JSessionid=fake-session',
+        },
+        authenticatedAt: DateTime(2026, 4, 27),
+        entranceUri: Uri.parse(
+          'https://oa.sspu.edu.cn/interface/Entrance.jsp?id=bzkjw',
+        ),
+        finalUri: Uri.parse(
+          'https://oa.sspu.edu.cn/interface/Entrance.jsp?id=bzkjw',
+        ),
+      ),
+    );
+
+    await service.saveCredentials(oaAccount: '20260002');
+
+    expect(await service.readOaLoginSession(), isNull);
   });
 
   test('清除所有教务凭据时逐项删除安全存储键', () async {

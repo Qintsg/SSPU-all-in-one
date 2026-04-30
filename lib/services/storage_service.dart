@@ -37,6 +37,14 @@ class StorageKeys {
   static const String campusNetworkDetectionIntervalMinutes =
       'campus_network_detection_interval_minutes';
 
+  /// 体育部课外活动考勤自动刷新开关。
+  static const String sportsAttendanceAutoRefreshEnabled =
+      'sports_attendance_auto_refresh_enabled';
+
+  /// 体育部课外活动考勤自动刷新间隔（分钟）。
+  static const String sportsAttendanceAutoRefreshIntervalMinutes =
+      'sports_attendance_auto_refresh_interval_minutes';
+
   /// 结构化数据前缀（JSON 序列化存储）。
   static const String dataPrefix = 'data_';
 }

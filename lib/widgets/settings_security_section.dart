@@ -9,7 +9,9 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
 import '../models/academic_credentials.dart';
+import '../models/academic_login_validation.dart';
 import '../services/academic_credentials_service.dart';
+import '../services/academic_login_validation_service.dart';
 import '../theme/fluent_tokens.dart';
 import 'settings_widgets.dart';
 
@@ -45,6 +47,9 @@ class SettingsSecuritySection extends StatefulWidget {
   /// 清除所有数据回调。
   final VoidCallback onClearAllData;
 
+  /// 可替换的 OA 登录校验服务，便于测试中使用 fake 网关。
+  final AcademicLoginValidationService? academicLoginValidationService;
+
   const SettingsSecuritySection({
     super.key,
     required this.isPasswordEnabled,
@@ -57,6 +62,7 @@ class SettingsSecuritySection extends StatefulWidget {
     required this.onLock,
     required this.onClearMessageCache,
     required this.onClearAllData,
+    this.academicLoginValidationService,
   });
 
   @override
@@ -76,8 +82,15 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
 
   AcademicCredentialsStatus _credentialsStatus =
       const AcademicCredentialsStatus.empty();
+  AcademicLoginValidationResult? _loginValidationResult;
   bool _isCredentialsLoading = true;
   bool _isSavingCredentials = false;
+  bool _isValidatingAcademicLogin = false;
+
+  AcademicLoginValidationService get _academicLoginValidationService {
+    return widget.academicLoginValidationService ??
+        AcademicLoginValidationService.instance;
+  }
 
   @override
   void initState() {
@@ -164,6 +177,23 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
       setState(() => _isSavingCredentials = false);
       _showCredentialInfoBar('清除失败，请确认系统安全存储可用', InfoBarSeverity.error);
     }
+  }
+
+  /// 使用已保存账号密码执行一次只读 OA 登录校验。
+  Future<void> _validateAcademicLogin() async {
+    if (_isSavingCredentials || _isValidatingAcademicLogin) return;
+    setState(() {
+      _isValidatingAcademicLogin = true;
+      _loginValidationResult = null;
+    });
+
+    final result = await _academicLoginValidationService
+        .validateSavedCredentials();
+    if (!mounted) return;
+    setState(() {
+      _loginValidationResult = result;
+      _isValidatingAcademicLogin = false;
+    });
   }
 
   /// 空输入表示不修改当前密码。
@@ -399,27 +429,90 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
           secret: AcademicCredentialSecret.emailPassword,
         ),
         const SizedBox(height: FluentSpacing.l),
-        FilledButton(
-          onPressed: _isSavingCredentials ? null : _saveAcademicCredentials,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isSavingCredentials) ...[
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: ProgressRing(strokeWidth: 2),
-                ),
-              ] else ...[
-                const Icon(FluentIcons.save, size: 14),
-              ],
-              const SizedBox(width: 6),
-              const Text('保存教务凭据'),
-            ],
-          ),
+        Wrap(
+          spacing: FluentSpacing.s,
+          runSpacing: FluentSpacing.s,
+          children: [
+            FilledButton(
+              onPressed: _isSavingCredentials ? null : _saveAcademicCredentials,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_isSavingCredentials) ...[
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: ProgressRing(strokeWidth: 2),
+                    ),
+                  ] else ...[
+                    const Icon(FluentIcons.save, size: 14),
+                  ],
+                  const SizedBox(width: 6),
+                  const Text('保存教务凭据'),
+                ],
+              ),
+            ),
+            Button(
+              onPressed: _isSavingCredentials || _isValidatingAcademicLogin
+                  ? null
+                  : _validateAcademicLogin,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_isValidatingAcademicLogin) ...[
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: ProgressRing(strokeWidth: 2),
+                    ),
+                  ] else ...[
+                    const Icon(FluentIcons.plug_connected, size: 14),
+                  ],
+                  const SizedBox(width: 6),
+                  const Text('验证 OA 登录'),
+                ],
+              ),
+            ),
+          ],
         ),
+        if (_loginValidationResult != null) ...[
+          const SizedBox(height: FluentSpacing.m),
+          _buildAcademicLoginValidationResult(_loginValidationResult!),
+        ],
       ],
     );
+  }
+
+  /// 构建 OA 登录校验结果提示，不展示任何敏感凭据。
+  Widget _buildAcademicLoginValidationResult(
+    AcademicLoginValidationResult result,
+  ) {
+    return InfoBar(
+      title: Text(result.message),
+      content: Text(result.detail),
+      severity: _loginValidationSeverity(result.status),
+      isLong: true,
+    );
+  }
+
+  /// 将登录校验状态映射为 Fluent 提示等级。
+  InfoBarSeverity _loginValidationSeverity(
+    AcademicLoginValidationStatus status,
+  ) {
+    return switch (status) {
+      AcademicLoginValidationStatus.success => InfoBarSeverity.success,
+      AcademicLoginValidationStatus.missingOaAccount ||
+      AcademicLoginValidationStatus.missingOaPassword ||
+      AcademicLoginValidationStatus.campusNetworkUnavailable ||
+      AcademicLoginValidationStatus.captchaRequired ||
+      AcademicLoginValidationStatus.additionalVerificationRequired =>
+        InfoBarSeverity.warning,
+      AcademicLoginValidationStatus.loginPageUnavailable ||
+      AcademicLoginValidationStatus.credentialsRejected ||
+      AcademicLoginValidationStatus.webFlowChanged ||
+      AcademicLoginValidationStatus.networkError ||
+      AcademicLoginValidationStatus.unexpectedError => InfoBarSeverity.error,
+    };
   }
 
   /// 构建单个密码输入框和填写状态。

@@ -63,6 +63,9 @@ dependencies:
   # HTML 解析，用于网页内容提取
   html: ^0.15.5
 
+  # GBK / GB2312 解码，用于体育部查询系统旧版页面
+  gbk_codec: ^0.4.0
+
   # 声明式动画，用于页面入场与交互微动效
   flutter_animate: ^4.5.2
 

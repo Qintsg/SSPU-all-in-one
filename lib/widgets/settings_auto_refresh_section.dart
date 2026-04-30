@@ -16,9 +16,23 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   /// 校园网 / VPN 状态检测间隔，单位分钟。
   final int campusNetworkDetectionIntervalMinutes;
 
+  /// 体育部课外活动考勤自动刷新开关。
+  final bool sportsAttendanceAutoRefreshEnabled;
+
+  /// 体育部课外活动考勤自动刷新间隔，单位分钟。
+  final int sportsAttendanceAutoRefreshIntervalMinutes;
+
   /// 校园网 / VPN 状态检测间隔修改回调。
   final Future<void> Function(int minutes)
   onCampusNetworkDetectionIntervalChanged;
+
+  /// 体育部课外活动考勤自动刷新开关修改回调。
+  final Future<void> Function(bool enabled)
+  onSportsAttendanceAutoRefreshChanged;
+
+  /// 体育部课外活动考勤自动刷新间隔修改回调。
+  final Future<void> Function(int minutes)
+  onSportsAttendanceAutoRefreshIntervalChanged;
 
   /// 跳转职能部门自动刷新设置。
   final VoidCallback onOpenDepartmentRefreshSettings;
@@ -32,7 +46,11 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   const SettingsAutoRefreshSection({
     super.key,
     required this.campusNetworkDetectionIntervalMinutes,
+    required this.sportsAttendanceAutoRefreshEnabled,
+    required this.sportsAttendanceAutoRefreshIntervalMinutes,
     required this.onCampusNetworkDetectionIntervalChanged,
+    required this.onSportsAttendanceAutoRefreshChanged,
+    required this.onSportsAttendanceAutoRefreshIntervalChanged,
     required this.onOpenDepartmentRefreshSettings,
     required this.onOpenTeachingRefreshSettings,
     required this.onOpenWechatRefreshSettings,
@@ -70,6 +88,8 @@ class SettingsAutoRefreshSection extends StatelessWidget {
               ),
               trailing: _buildIntervalComboBox(),
             ),
+            const SizedBox(height: FluentSpacing.m),
+            _buildSportsAttendanceAutoRefreshRow(context),
           ],
         ),
       ),
@@ -144,6 +164,64 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             onCampusNetworkDetectionIntervalChanged(value);
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildSportsAttendanceAutoRefreshRow(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return buildResponsiveSettingsRow(
+      context: context,
+      icon: FluentIcons.running,
+      title: Text('体育查询自动刷新', style: theme.typography.bodyStrong),
+      subtitle: Text(
+        '控制教务中心课外活动考勤卡片的自动读取；体育查询需要校园网或学校 VPN，关闭后仍可在卡片右上角手动刷新',
+        style: theme.typography.caption,
+      ),
+      trailing: Wrap(
+        spacing: FluentSpacing.s,
+        runSpacing: FluentSpacing.s,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          ToggleSwitch(
+            checked: sportsAttendanceAutoRefreshEnabled,
+            onChanged: (value) => onSportsAttendanceAutoRefreshChanged(value),
+          ),
+          _buildSportsAttendanceIntervalComboBox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSportsAttendanceIntervalComboBox() {
+    final enabledIntervalOptions = Map<int, String>.fromEntries(
+      kIntervalOptions.entries.where((entry) => entry.key > 0),
+    );
+    final selectedValue =
+        enabledIntervalOptions.containsKey(
+          sportsAttendanceAutoRefreshIntervalMinutes,
+        )
+        ? sportsAttendanceAutoRefreshIntervalMinutes
+        : 30;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: ComboBox<int>(
+        isExpanded: true,
+        value: selectedValue,
+        items: enabledIntervalOptions.entries
+            .map(
+              (entry) =>
+                  ComboBoxItem<int>(value: entry.key, child: Text(entry.value)),
+            )
+            .toList(),
+        onChanged: sportsAttendanceAutoRefreshEnabled
+            ? (value) {
+                if (value != null) {
+                  onSportsAttendanceAutoRefreshIntervalChanged(value);
+                }
+              }
+            : null,
       ),
     );
   }
