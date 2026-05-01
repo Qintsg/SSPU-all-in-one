@@ -1,5 +1,5 @@
 /*
- * 教务凭据模型 — 描述 OA 账号及外部系统密码填写状态
+ * 教务凭据模型 — 描述 OA / 邮箱账号及外部系统密码填写状态
  * @Project : SSPU-all-in-one
  * @File : academic_credentials.dart
  * @Author : Qintsg
@@ -23,6 +23,9 @@ class AcademicCredentialsStatus {
   /// OA 账号，也就是学工号。
   final String oaAccount;
 
+  /// 学校邮箱账号，可为完整邮箱地址或邮箱用户名。
+  final String emailAccount;
+
   /// 是否已保存 OA 账号密码。
   final bool hasOaPassword;
 
@@ -34,6 +37,7 @@ class AcademicCredentialsStatus {
 
   const AcademicCredentialsStatus({
     required this.oaAccount,
+    required this.emailAccount,
     required this.hasOaPassword,
     required this.hasSportsQueryPassword,
     required this.hasEmailPassword,
@@ -42,6 +46,7 @@ class AcademicCredentialsStatus {
   /// 空状态，用于页面初始值和存储不可用时的保守展示。
   const AcademicCredentialsStatus.empty()
     : oaAccount = '',
+      emailAccount = '',
       hasOaPassword = false,
       hasSportsQueryPassword = false,
       hasEmailPassword = false;

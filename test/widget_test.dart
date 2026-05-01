@@ -139,11 +139,19 @@ void main() {
               sportsAttendanceAutoRefreshIntervalMinutes: 30,
               campusCardAutoRefreshEnabled: true,
               campusCardAutoRefreshIntervalMinutes: 60,
+              emailAutoRefreshEnabled: true,
+              emailAutoRefreshIntervalMinutes: 30,
+              studentReportAutoRefreshEnabled: true,
+              studentReportAutoRefreshIntervalMinutes: 30,
               onCampusNetworkDetectionIntervalChanged: (_) async {},
               onSportsAttendanceAutoRefreshChanged: (_) async {},
               onSportsAttendanceAutoRefreshIntervalChanged: (_) async {},
               onCampusCardAutoRefreshChanged: (_) async {},
               onCampusCardAutoRefreshIntervalChanged: (_) async {},
+              onEmailAutoRefreshChanged: (_) async {},
+              onEmailAutoRefreshIntervalChanged: (_) async {},
+              onStudentReportAutoRefreshChanged: (_) async {},
+              onStudentReportAutoRefreshIntervalChanged: (_) async {},
               onOpenDepartmentRefreshSettings: () => selectedShortcut = 3,
               onOpenTeachingRefreshSettings: () => selectedShortcut = 4,
               onOpenWechatRefreshSettings: () => selectedShortcut = 5,
@@ -157,8 +165,10 @@ void main() {
     expect(find.text('校园网 / VPN 状态检测'), findsOneWidget);
     expect(find.text('体育查询自动刷新'), findsOneWidget);
     expect(find.text('校园卡余额自动刷新'), findsOneWidget);
+    expect(find.text('学校邮箱自动刷新'), findsOneWidget);
+    expect(find.text('第二课堂学分自动刷新'), findsOneWidget);
     expect(find.text('15 分钟'), findsOneWidget);
-    expect(find.text('30 分钟'), findsOneWidget);
+    expect(find.text('30 分钟'), findsNWidgets(3));
     expect(find.text('1 小时'), findsOneWidget);
     expect(find.text('职能部门'), findsOneWidget);
     expect(find.text('教学单位'), findsOneWidget);

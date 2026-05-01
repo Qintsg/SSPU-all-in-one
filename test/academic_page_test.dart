@@ -9,10 +9,12 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sspu_all_in_one/models/sports_attendance.dart';
+import 'package:sspu_all_in_one/models/student_report.dart';
 import 'package:sspu_all_in_one/pages/academic_page.dart';
 import 'package:sspu_all_in_one/services/sports_attendance_service.dart';
+import 'package:sspu_all_in_one/services/student_report_service.dart';
 
-/// 等待异步考勤卡片加载完成。
+/// 等待异步卡片加载完成。
 Future<void> pumpUntilFound(WidgetTester tester, Finder finder) async {
   for (var attempt = 0; attempt < 40; attempt++) {
     await tester.pump(const Duration(milliseconds: 50));
@@ -35,13 +37,15 @@ void main() {
           sportsAttendanceService: _FakeSportsAttendanceClient(
             result: _successResult,
           ),
+          studentReportService: _FakeStudentReportClient(result: _creditResult),
           sportsAttendanceAutoRefreshEnabledOverride: false,
+          studentReportAutoRefreshEnabledOverride: false,
         ),
       ),
     );
 
-    expect(find.textContaining('自动刷新未开启'), findsOneWidget);
-    await tester.tap(find.byIcon(FluentIcons.refresh));
+    expect(find.textContaining('自动刷新未开启'), findsWidgets);
+    await tester.tap(find.byIcon(FluentIcons.refresh).first);
     await pumpUntilFound(tester, find.text('8'));
 
     expect(find.text('课外活动考勤'), findsOneWidget);
@@ -75,12 +79,14 @@ void main() {
               entranceUri: Uri.parse('https://tygl.sspu.edu.cn/sportscore/'),
             ),
           ),
+          studentReportService: _FakeStudentReportClient(result: _creditResult),
           sportsAttendanceAutoRefreshEnabledOverride: false,
+          studentReportAutoRefreshEnabledOverride: false,
         ),
       ),
     );
 
-    await tester.tap(find.byIcon(FluentIcons.refresh));
+    await tester.tap(find.byIcon(FluentIcons.refresh).first);
     await pumpUntilFound(tester, find.text('请先保存体育部查询密码'));
 
     expect(find.text('请先保存体育部查询密码'), findsOneWidget);
@@ -96,8 +102,10 @@ void main() {
           sportsAttendanceService: _FakeSportsAttendanceClient(
             result: _successResult,
           ),
+          studentReportService: _FakeStudentReportClient(result: _creditResult),
           sportsAttendanceAutoRefreshEnabledOverride: true,
           sportsAttendanceAutoRefreshIntervalOverride: 30,
+          studentReportAutoRefreshEnabledOverride: false,
         ),
       ),
     );
@@ -121,15 +129,70 @@ void main() {
               entranceUri: Uri.parse('https://tygl.sspu.edu.cn/sportscore/'),
             ),
           ),
+          studentReportService: _FakeStudentReportClient(result: _creditResult),
           sportsAttendanceAutoRefreshEnabledOverride: false,
+          studentReportAutoRefreshEnabledOverride: false,
         ),
       ),
     );
 
-    await tester.tap(find.byIcon(FluentIcons.refresh));
+    await tester.tap(find.byIcon(FluentIcons.refresh).first);
     await pumpUntilFound(tester, find.textContaining('校园网 / VPN 不可用'));
 
     expect(find.textContaining('无法访问体育部查询系统'), findsOneWidget);
+    await disposeAcademicPage(tester);
+  });
+
+  testWidgets('教务中心展示第二课堂学分并可进入明细页', (tester) async {
+    await tester.pumpWidget(
+      FluentApp(
+        home: AcademicPage(
+          sportsAttendanceService: _FakeSportsAttendanceClient(
+            result: _successResult,
+          ),
+          studentReportService: _FakeStudentReportClient(result: _creditResult),
+          sportsAttendanceAutoRefreshEnabledOverride: false,
+          studentReportAutoRefreshEnabledOverride: false,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(FluentIcons.refresh).last);
+    await pumpUntilFound(tester, find.text('3.5'));
+
+    expect(find.text('第二课堂学分'), findsOneWidget);
+    expect(find.text('总学分'), findsOneWidget);
+    expect(find.text('思想成长 1.5 学分'), findsOneWidget);
+    expect(find.text('创新创业 2 学分'), findsOneWidget);
+    expect(find.text('上次刷新：2026-05-01 00:00'), findsOneWidget);
+
+    await tester.tap(find.text('查看学分明细'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('第二课堂学分明细'), findsOneWidget);
+    expect(find.textContaining('明细 2 条'), findsOneWidget);
+    expect(find.textContaining('创新训练项目'), findsWidgets);
+    await disposeAcademicPage(tester);
+  });
+
+  testWidgets('教务中心自动刷新开启时会主动读取第二课堂学分', (tester) async {
+    await tester.pumpWidget(
+      FluentApp(
+        home: AcademicPage(
+          sportsAttendanceService: _FakeSportsAttendanceClient(
+            result: _successResult,
+          ),
+          studentReportService: _FakeStudentReportClient(result: _creditResult),
+          sportsAttendanceAutoRefreshEnabledOverride: false,
+          studentReportAutoRefreshEnabledOverride: true,
+          studentReportAutoRefreshIntervalOverride: 30,
+        ),
+      ),
+    );
+
+    await pumpUntilFound(tester, find.text('3.5'));
+
+    expect(find.text('总学分'), findsOneWidget);
     await disposeAcademicPage(tester);
   });
 }
@@ -141,6 +204,22 @@ class _FakeSportsAttendanceClient implements SportsAttendanceClient {
 
   @override
   Future<SportsAttendanceQueryResult> fetchAttendanceSummary() async {
+    return result;
+  }
+}
+
+class _FakeStudentReportClient implements StudentReportClient {
+  const _FakeStudentReportClient({required this.result});
+
+  final StudentReportQueryResult result;
+
+  @override
+  Future<StudentReportQueryResult> fetchSecondClassroomCredits() async {
+    return result;
+  }
+
+  @override
+  Future<StudentReportQueryResult> validateLoginStatus() async {
     return result;
   }
 }
@@ -179,6 +258,45 @@ final SportsAttendanceQueryResult _successResult = SportsAttendanceQueryResult(
         project: '长廊学习',
         location: '体育长廊',
         cells: ['2026-04-05', '体育长廊', '长廊学习', '体育长廊', '4次'],
+      ),
+    ],
+  ),
+);
+
+final StudentReportQueryResult _creditResult = StudentReportQueryResult(
+  status: StudentReportQueryStatus.success,
+  message: '第二课堂学分查询成功',
+  detail: '已读取第二课堂学分明细，并按类别统计总分。',
+  checkedAt: DateTime(2026, 5, 1),
+  entranceUri: Uri.parse(
+    'https://oa.sspu.edu.cn/interface/Entrance.jsp?id=xgreport',
+  ),
+  finalUri: Uri.parse(
+    'https://xgbb.sspu.edu.cn/sharedc/core/home/secondClassroom.do',
+  ),
+  summary: SecondClassroomCreditSummary(
+    totalCredit: 3.5,
+    creditsByCategory: const {'思想成长': 1.5, '创新创业': 2},
+    fetchedAt: DateTime(2026, 5, 1),
+    sourceUri: Uri.parse(
+      'https://xgbb.sspu.edu.cn/sharedc/core/home/secondClassroom.do',
+    ),
+    records: const [
+      SecondClassroomCreditRecord(
+        category: '思想成长',
+        itemName: '主题团日',
+        credit: 1.5,
+        occurredAt: '2026-04-20',
+        status: '已认定',
+        rawCells: ['思想成长', '主题团日', '2026-04-20', '已认定', '1.5'],
+      ),
+      SecondClassroomCreditRecord(
+        category: '创新创业',
+        itemName: '创新训练项目',
+        credit: 2,
+        occurredAt: '2026-04-25',
+        status: '通过',
+        rawCells: ['创新创业', '创新训练项目', '2026-04-25', '通过', '2'],
       ),
     ],
   ),

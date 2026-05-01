@@ -28,6 +28,18 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   /// 校园卡余额自动刷新间隔，单位分钟。
   final int campusCardAutoRefreshIntervalMinutes;
 
+  /// 学校邮箱自动刷新开关。
+  final bool emailAutoRefreshEnabled;
+
+  /// 学校邮箱自动刷新间隔，单位分钟。
+  final int emailAutoRefreshIntervalMinutes;
+
+  /// 第二课堂学分自动刷新开关。
+  final bool studentReportAutoRefreshEnabled;
+
+  /// 第二课堂学分自动刷新间隔，单位分钟。
+  final int studentReportAutoRefreshIntervalMinutes;
+
   /// 校园网 / VPN 状态检测间隔修改回调。
   final Future<void> Function(int minutes)
   onCampusNetworkDetectionIntervalChanged;
@@ -47,6 +59,19 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   final Future<void> Function(int minutes)
   onCampusCardAutoRefreshIntervalChanged;
 
+  /// 学校邮箱自动刷新开关修改回调。
+  final Future<void> Function(bool enabled) onEmailAutoRefreshChanged;
+
+  /// 学校邮箱自动刷新间隔修改回调。
+  final Future<void> Function(int minutes) onEmailAutoRefreshIntervalChanged;
+
+  /// 第二课堂学分自动刷新开关修改回调。
+  final Future<void> Function(bool enabled) onStudentReportAutoRefreshChanged;
+
+  /// 第二课堂学分自动刷新间隔修改回调。
+  final Future<void> Function(int minutes)
+  onStudentReportAutoRefreshIntervalChanged;
+
   /// 跳转职能部门自动刷新设置。
   final VoidCallback onOpenDepartmentRefreshSettings;
 
@@ -63,11 +88,19 @@ class SettingsAutoRefreshSection extends StatelessWidget {
     required this.sportsAttendanceAutoRefreshIntervalMinutes,
     required this.campusCardAutoRefreshEnabled,
     required this.campusCardAutoRefreshIntervalMinutes,
+    required this.emailAutoRefreshEnabled,
+    required this.emailAutoRefreshIntervalMinutes,
+    required this.studentReportAutoRefreshEnabled,
+    required this.studentReportAutoRefreshIntervalMinutes,
     required this.onCampusNetworkDetectionIntervalChanged,
     required this.onSportsAttendanceAutoRefreshChanged,
     required this.onSportsAttendanceAutoRefreshIntervalChanged,
     required this.onCampusCardAutoRefreshChanged,
     required this.onCampusCardAutoRefreshIntervalChanged,
+    required this.onEmailAutoRefreshChanged,
+    required this.onEmailAutoRefreshIntervalChanged,
+    required this.onStudentReportAutoRefreshChanged,
+    required this.onStudentReportAutoRefreshIntervalChanged,
     required this.onOpenDepartmentRefreshSettings,
     required this.onOpenTeachingRefreshSettings,
     required this.onOpenWechatRefreshSettings,
@@ -109,6 +142,10 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             _buildSportsAttendanceAutoRefreshRow(context),
             const SizedBox(height: FluentSpacing.m),
             _buildCampusCardAutoRefreshRow(context),
+            const SizedBox(height: FluentSpacing.m),
+            _buildEmailAutoRefreshRow(context),
+            const SizedBox(height: FluentSpacing.m),
+            _buildStudentReportAutoRefreshRow(context),
           ],
         ),
       ),
@@ -294,6 +331,120 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             ? (value) {
                 if (value != null) {
                   onCampusCardAutoRefreshIntervalChanged(value);
+                }
+              }
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildEmailAutoRefreshRow(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return buildResponsiveSettingsRow(
+      context: context,
+      icon: FluentIcons.mail,
+      title: Text('学校邮箱自动刷新', style: theme.typography.bodyStrong),
+      subtitle: Text(
+        '控制学校邮箱页面的自动收信；邮箱系统不要求校园网或 VPN，关闭后仍可在邮箱页手动读取',
+        style: theme.typography.caption,
+      ),
+      trailing: Wrap(
+        spacing: FluentSpacing.s,
+        runSpacing: FluentSpacing.s,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          ToggleSwitch(
+            checked: emailAutoRefreshEnabled,
+            onChanged: (value) => onEmailAutoRefreshChanged(value),
+          ),
+          _buildEmailIntervalComboBox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmailIntervalComboBox() {
+    final enabledIntervalOptions = Map<int, String>.fromEntries(
+      kIntervalOptions.entries.where((entry) => entry.key > 0),
+    );
+    final selectedValue =
+        enabledIntervalOptions.containsKey(emailAutoRefreshIntervalMinutes)
+        ? emailAutoRefreshIntervalMinutes
+        : 30;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: ComboBox<int>(
+        isExpanded: true,
+        value: selectedValue,
+        items: enabledIntervalOptions.entries
+            .map(
+              (entry) =>
+                  ComboBoxItem<int>(value: entry.key, child: Text(entry.value)),
+            )
+            .toList(),
+        onChanged: emailAutoRefreshEnabled
+            ? (value) {
+                if (value != null) {
+                  onEmailAutoRefreshIntervalChanged(value);
+                }
+              }
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildStudentReportAutoRefreshRow(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return buildResponsiveSettingsRow(
+      context: context,
+      icon: FluentIcons.education,
+      title: Text('第二课堂学分自动刷新', style: theme.typography.bodyStrong),
+      subtitle: Text(
+        '控制教务中心第二课堂学分卡片的自动读取；需要校园网或学校 VPN 与 OA 登录，关闭后仍可在卡片右上角手动刷新',
+        style: theme.typography.caption,
+      ),
+      trailing: Wrap(
+        spacing: FluentSpacing.s,
+        runSpacing: FluentSpacing.s,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          ToggleSwitch(
+            checked: studentReportAutoRefreshEnabled,
+            onChanged: (value) => onStudentReportAutoRefreshChanged(value),
+          ),
+          _buildStudentReportIntervalComboBox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentReportIntervalComboBox() {
+    final enabledIntervalOptions = Map<int, String>.fromEntries(
+      kIntervalOptions.entries.where((entry) => entry.key > 0),
+    );
+    final selectedValue =
+        enabledIntervalOptions.containsKey(
+          studentReportAutoRefreshIntervalMinutes,
+        )
+        ? studentReportAutoRefreshIntervalMinutes
+        : 30;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: ComboBox<int>(
+        isExpanded: true,
+        value: selectedValue,
+        items: enabledIntervalOptions.entries
+            .map(
+              (entry) =>
+                  ComboBoxItem<int>(value: entry.key, child: Text(entry.value)),
+            )
+            .toList(),
+        onChanged: studentReportAutoRefreshEnabled
+            ? (value) {
+                if (value != null) {
+                  onStudentReportAutoRefreshIntervalChanged(value);
                 }
               }
             : null,

@@ -53,6 +53,21 @@ class StorageKeys {
   static const String campusCardAutoRefreshIntervalMinutes =
       'campus_card_auto_refresh_interval_minutes';
 
+  /// 学校邮箱自动刷新开关。
+  static const String emailAutoRefreshEnabled = 'email_auto_refresh_enabled';
+
+  /// 学校邮箱自动刷新间隔（分钟）。
+  static const String emailAutoRefreshIntervalMinutes =
+      'email_auto_refresh_interval_minutes';
+
+  /// 第二课堂学分自动刷新开关。
+  static const String studentReportAutoRefreshEnabled =
+      'student_report_auto_refresh_enabled';
+
+  /// 第二课堂学分自动刷新间隔（分钟）。
+  static const String studentReportAutoRefreshIntervalMinutes =
+      'student_report_auto_refresh_interval_minutes';
+
   /// 结构化数据前缀（JSON 序列化存储）。
   static const String dataPrefix = 'data_';
 }

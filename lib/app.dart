@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 
 import 'pages/about_page.dart';
 import 'pages/academic_page.dart';
+import 'pages/email_page.dart';
 import 'pages/home_page.dart';
 import 'pages/info_page.dart';
 import 'pages/quick_links_page.dart';
@@ -66,6 +67,11 @@ class _AppShellState extends State<AppShell> {
       body: InfoPage(),
     ),
     const _AppDestination(
+      title: '邮箱',
+      icon: FluentIcons.mail,
+      body: EmailPage(),
+    ),
+    const _AppDestination(
       title: '跳转',
       icon: FluentIcons.link,
       body: QuickLinksPage(),
@@ -112,7 +118,7 @@ class _AppShellState extends State<AppShell> {
           onChanged: (index) => setState(() => _selectedIndex = index),
           // 自动响应屏幕宽度切换显示模式
           displayMode: PaneDisplayMode.auto,
-          items: destinations.take(4).map(_buildPaneItem).toList(),
+          items: destinations.take(5).map(_buildPaneItem).toList(),
           footerItems: _buildFooterItems(destinations),
         ),
       ),
@@ -133,7 +139,7 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
       ),
-      ...destinations.skip(4).map(_buildPaneItem),
+      ...destinations.skip(5).map(_buildPaneItem),
     ];
   }
 
