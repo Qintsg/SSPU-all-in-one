@@ -158,19 +158,32 @@ void main() {
     );
 
     await tester.tap(find.byIcon(FluentIcons.refresh).last);
-    await pumpUntilFound(tester, find.text('3.5'));
+    await pumpUntilFound(tester, find.text('2'));
 
     expect(find.text('第二课堂学分'), findsOneWidget);
-    expect(find.text('总学分'), findsOneWidget);
-    expect(find.text('思想成长 1.5 学分'), findsOneWidget);
-    expect(find.text('创新创业 2 学分'), findsOneWidget);
+    expect(find.text('项得分记录'), findsOneWidget);
+    expect(find.text('总学分'), findsNothing);
+    expect(find.text('主题团日'), findsOneWidget);
+    expect(find.text('创新训练项目'), findsOneWidget);
+    expect(find.text('1.5'), findsOneWidget);
     expect(find.text('上次刷新：2026-05-01 00:00'), findsOneWidget);
 
-    await tester.tap(find.text('查看学分明细'));
+    await tester.tap(find.text('主题团日'));
     await tester.pumpAndSettle();
 
-    expect(find.text('第二课堂学分明细'), findsOneWidget);
-    expect(find.textContaining('明细 2 条'), findsOneWidget);
+    expect(find.text('得分详情'), findsOneWidget);
+    expect(find.text('原始记录'), findsOneWidget);
+    await tester.tap(find.text('关闭'));
+    await tester.pumpAndSettle();
+
+    final detailButton = find.text('查看全部得分记录');
+    await tester.ensureVisible(detailButton);
+    await tester.pumpAndSettle();
+    await tester.tap(detailButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('第二课堂得分明细'), findsOneWidget);
+    expect(find.textContaining('得分记录 2 项'), findsOneWidget);
     expect(find.textContaining('创新训练项目'), findsWidgets);
     await disposeAcademicPage(tester);
   });
@@ -190,9 +203,9 @@ void main() {
       ),
     );
 
-    await pumpUntilFound(tester, find.text('3.5'));
+    await pumpUntilFound(tester, find.text('2'));
 
-    expect(find.text('总学分'), findsOneWidget);
+    expect(find.text('项得分记录'), findsOneWidget);
     await disposeAcademicPage(tester);
   });
 }
@@ -266,7 +279,7 @@ final SportsAttendanceQueryResult _successResult = SportsAttendanceQueryResult(
 final StudentReportQueryResult _creditResult = StudentReportQueryResult(
   status: StudentReportQueryStatus.success,
   message: '第二课堂学分查询成功',
-  detail: '已读取第二课堂学分明细，并按类别统计总分。',
+  detail: '已读取第二课堂逐项得分明细，未将单项分值合并为总学分。',
   checkedAt: DateTime(2026, 5, 1),
   entranceUri: Uri.parse(
     'https://oa.sspu.edu.cn/interface/Entrance.jsp?id=xgreport',
@@ -275,8 +288,6 @@ final StudentReportQueryResult _creditResult = StudentReportQueryResult(
     'https://xgbb.sspu.edu.cn/sharedc/core/home/secondClassroom.do',
   ),
   summary: SecondClassroomCreditSummary(
-    totalCredit: 3.5,
-    creditsByCategory: const {'思想成长': 1.5, '创新创业': 2},
     fetchedAt: DateTime(2026, 5, 1),
     sourceUri: Uri.parse(
       'https://xgbb.sspu.edu.cn/sharedc/core/home/secondClassroom.do',

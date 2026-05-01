@@ -187,7 +187,7 @@ class StudentReportPageNavigator {
   ];
 }
 
-/// 第二课堂学分页面解析器，按明细记录聚合类别学分。
+/// 第二课堂学分页面解析器，逐项提取得分明细。
 class StudentReportPageParser {
   StudentReportPageParser._();
 
@@ -206,20 +206,7 @@ class StudentReportPageParser {
     final uniqueRecords = _deduplicateRecords(records);
     if (uniqueRecords.isEmpty) return null;
 
-    final creditsByCategory = <String, double>{};
-    var totalCredit = 0.0;
-    for (final record in uniqueRecords) {
-      totalCredit += record.credit;
-      creditsByCategory.update(
-        record.category,
-        (value) => value + record.credit,
-        ifAbsent: () => record.credit,
-      );
-    }
-
     return SecondClassroomCreditSummary(
-      totalCredit: totalCredit,
-      creditsByCategory: Map.unmodifiable(creditsByCategory),
       records: List.unmodifiable(uniqueRecords),
       fetchedAt: DateTime.now(),
       sourceUri: snapshots.last.finalUri,

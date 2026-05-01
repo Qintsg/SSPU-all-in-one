@@ -106,8 +106,8 @@ void main() {
     expect(refreshCount, 1);
     expect(gateway.openCount, 2);
     expect(gateway.resetCookieHeaders.last['oa.sspu.edu.cn'], contains('OA='));
-    expect(result.summary?.totalCredit, 3.5);
-    expect(result.summary?.creditsByCategory['思想成长'], 1.5);
+    expect(result.summary?.records.first.credit, 1.5);
+    expect(result.summary?.records.first.category, '思想成长');
     expect(result.summary?.records.last.itemName, '创新训练项目');
   });
 

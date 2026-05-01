@@ -74,20 +74,12 @@ class SecondClassroomCreditRecord {
 /// 第二课堂学分统计快照。
 class SecondClassroomCreditSummary {
   const SecondClassroomCreditSummary({
-    required this.totalCredit,
-    required this.creditsByCategory,
     required this.records,
     required this.fetchedAt,
     required this.sourceUri,
   });
 
-  /// 明细记录累计总学分。
-  final double totalCredit;
-
-  /// 按类别聚合的学分。
-  final Map<String, double> creditsByCategory;
-
-  /// 第二课堂学分明细。
+  /// 第二课堂逐项得分明细；不将明细分值相加作为官方总学分。
   final List<SecondClassroomCreditRecord> records;
 
   /// 本地解析完成时间。

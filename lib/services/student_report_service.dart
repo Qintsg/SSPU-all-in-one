@@ -32,7 +32,7 @@ abstract class StudentReportClient {
   /// 校验学工报表系统登录状态，不读取学分明细。
   Future<StudentReportQueryResult> validateLoginStatus();
 
-  /// 读取第二课堂学分明细与统计。
+  /// 读取第二课堂逐项得分明细。
   Future<StudentReportQueryResult> fetchSecondClassroomCredits();
 }
 
@@ -344,7 +344,7 @@ class StudentReportService implements StudentReportClient {
     return _buildResult(
       StudentReportQueryStatus.success,
       message: '第二课堂学分查询成功',
-      detail: '已读取第二课堂学分明细，并按类别统计总分。',
+      detail: '已读取第二课堂逐项得分明细，未将单项分值合并为总学分。',
       finalUri: snapshots.last.finalUri,
       campusNetworkStatus: campusNetworkStatus,
       summary: summary,

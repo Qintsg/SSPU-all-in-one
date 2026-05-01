@@ -173,6 +173,7 @@ class _SecondClassroomSummaryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final previewRecords = summary.records.take(4).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -180,7 +181,7 @@ class _SecondClassroomSummaryView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              _formatCredit(summary.totalCredit),
+              summary.records.length.toString(),
               style: theme.typography.display?.copyWith(
                 color: theme.accentColor,
                 fontWeight: FontWeight.w700,
@@ -189,18 +190,35 @@ class _SecondClassroomSummaryView extends StatelessWidget {
             const SizedBox(width: FluentSpacing.s),
             Padding(
               padding: const EdgeInsets.only(bottom: FluentSpacing.xs),
-              child: Text('总学分', style: theme.typography.bodyStrong),
+              child: Text('项得分记录', style: theme.typography.bodyStrong),
             ),
           ],
         ),
-        const SizedBox(height: FluentSpacing.m),
-        Wrap(
-          spacing: FluentSpacing.s,
-          runSpacing: FluentSpacing.s,
-          children: summary.creditsByCategory.entries
-              .map((entry) => _SecondClassroomCreditPill(entry: entry))
-              .toList(),
+        const SizedBox(height: FluentSpacing.xs),
+        Text(
+          '逐项展示学工报表返回的具体得分，不再将单项分值相加作为总学分。',
+          style: theme.typography.caption?.copyWith(
+            color: theme.resources.textFillColorSecondary,
+          ),
         ),
+        const SizedBox(height: FluentSpacing.m),
+        ...previewRecords.map(
+          (record) => _SecondClassroomScoreTile(
+            record: record,
+            onTap: () =>
+                unawaited(_showSecondClassroomRecordDialog(context, record)),
+          ),
+        ),
+        if (summary.records.length > previewRecords.length)
+          Padding(
+            padding: const EdgeInsets.only(top: FluentSpacing.xs),
+            child: Text(
+              '还有 ${summary.records.length - previewRecords.length} 项得分记录，点击下方按钮查看全部。',
+              style: theme.typography.caption?.copyWith(
+                color: theme.resources.textFillColorSecondary,
+              ),
+            ),
+          ),
         const SizedBox(height: FluentSpacing.l),
         FilledButton(
           onPressed: () => Navigator.of(context).push(
@@ -213,7 +231,7 @@ class _SecondClassroomSummaryView extends StatelessWidget {
             children: [
               Icon(FluentIcons.list, size: 14),
               SizedBox(width: 6),
-              Text('查看学分明细'),
+              Text('查看全部得分记录'),
             ],
           ),
         ),
@@ -222,30 +240,177 @@ class _SecondClassroomSummaryView extends StatelessWidget {
   }
 }
 
-class _SecondClassroomCreditPill extends StatelessWidget {
-  const _SecondClassroomCreditPill({required this.entry});
+class _SecondClassroomScoreTile extends StatelessWidget {
+  const _SecondClassroomScoreTile({required this.record, required this.onTap});
 
-  final MapEntry<String, double> entry;
+  final SecondClassroomCreditRecord record;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: FluentSpacing.m,
-        vertical: FluentSpacing.s,
+    final meta = [
+      record.category,
+      if (record.occurredAt != null) record.occurredAt!,
+      if (record.status != null) record.status!,
+    ].join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FluentSpacing.s),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(FluentSpacing.m),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(record.itemName, style: theme.typography.bodyStrong),
+                      if (meta.isNotEmpty) ...[
+                        const SizedBox(height: FluentSpacing.xxs),
+                        Text(
+                          meta,
+                          style: theme.typography.caption?.copyWith(
+                            color: theme.resources.textFillColorSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: FluentSpacing.m),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _formatCredit(record.credit),
+                      style: theme.typography.bodyLarge?.copyWith(
+                        color: theme.accentColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      '得分',
+                      style: theme.typography.caption?.copyWith(
+                        color: theme.resources.textFillColorSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.16)),
-      ),
-      child: Text('${entry.key} ${_formatCredit(entry.value)} 学分'),
     );
   }
 }
 
-/// 第二课堂学分明细二级页面。
+Future<void> _showSecondClassroomRecordDialog(
+  BuildContext context,
+  SecondClassroomCreditRecord record,
+) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => ContentDialog(
+      title: const Text('得分详情'),
+      content: _SecondClassroomRecordDetailCard(record: record),
+      actions: [
+        Button(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('关闭'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SecondClassroomRecordDetailCard extends StatelessWidget {
+  const _SecondClassroomRecordDetailCard({required this.record});
+
+  final SecondClassroomCreditRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    final detailRows = [
+      _DetailRow(label: '项目', value: record.itemName),
+      _DetailRow(label: '类别', value: record.category),
+      _DetailRow(label: '得分', value: _formatCredit(record.credit)),
+      if (record.occurredAt != null)
+        _DetailRow(label: '时间', value: record.occurredAt!),
+      if (record.status != null) _DetailRow(label: '状态', value: record.status!),
+      if (record.rawCells.isNotEmpty)
+        _DetailRow(label: '原始记录', value: record.rawCells.join(' / ')),
+    ];
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: SingleChildScrollView(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(FluentSpacing.l),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatCredit(record.credit),
+                  style: theme.typography.display?.copyWith(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: FluentSpacing.s),
+                ...detailRows.map((row) => _buildDetailRow(context, row)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(BuildContext context, _DetailRow row) {
+    final theme = FluentTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: FluentSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            row.label,
+            style: theme.typography.caption?.copyWith(
+              color: theme.resources.textFillColorSecondary,
+            ),
+          ),
+          const SizedBox(height: FluentSpacing.xxs),
+          Text(row.value),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+}
+
+/// 第二课堂得分明细二级页面。
 class StudentReportDetailPage extends StatelessWidget {
   /// 已读取的第二课堂学分汇总与明细。
   final SecondClassroomCreditSummary summary;
@@ -257,7 +422,7 @@ class StudentReportDetailPage extends StatelessWidget {
     final theme = FluentTheme.of(context);
     return ScaffoldPage.scrollable(
       header: PageHeader(
-        title: const Text('第二课堂学分明细'),
+        title: const Text('第二课堂得分明细'),
         commandBar: Button(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('返回'),
@@ -272,53 +437,25 @@ class StudentReportDetailPage extends StatelessWidget {
               children: [
                 Text('汇总', style: theme.typography.bodyStrong),
                 const SizedBox(height: FluentSpacing.s),
-                Text(
-                  '总学分 ${_formatCredit(summary.totalCredit)}，明细 ${summary.records.length} 条。',
-                ),
+                Text('得分记录 ${summary.records.length} 项。点击任一记录可查看得分详情。'),
               ],
             ),
           ),
         ),
         const SizedBox(height: FluentSpacing.m),
-        ...summary.records.map(_buildRecordCard),
+        ...summary.records.map((record) => _buildRecordCard(context, record)),
       ],
     );
   }
 
-  /// 构建单条第二课堂学分记录卡片，未知字段使用原始单元格兜底。
-  Widget _buildRecordCard(SecondClassroomCreditRecord record) {
-    final titleParts = [
-      record.category,
-      record.itemName,
-      if (record.occurredAt != null) record.occurredAt!,
-    ];
-    final details = [
-      if (record.status != null) '状态：${record.status}',
-      if (record.rawCells.isNotEmpty) '原始记录：${record.rawCells.join(' / ')}',
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: FluentSpacing.s),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(FluentSpacing.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: Text(titleParts.join(' · '))),
-                  Text('${_formatCredit(record.credit)} 学分'),
-                ],
-              ),
-              if (details.isNotEmpty) ...[
-                const SizedBox(height: FluentSpacing.xs),
-                Text(details.join('\n')),
-              ],
-            ],
-          ),
-        ),
-      ),
+  /// 构建单条第二课堂得分记录，点击后弹出完整详情卡片。
+  Widget _buildRecordCard(
+    BuildContext context,
+    SecondClassroomCreditRecord record,
+  ) {
+    return _SecondClassroomScoreTile(
+      record: record,
+      onTap: () => unawaited(_showSecondClassroomRecordDialog(context, record)),
     );
   }
 }
