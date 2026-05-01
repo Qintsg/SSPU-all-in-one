@@ -35,7 +35,7 @@ enum EmailQueryStatus {
   /// 操作成功。
   success,
 
-  /// 未保存学校邮箱账号。
+  /// 未保存用于派生学校邮箱账号的学工号。
   missingEmailAccount,
 
   /// 未保存学校邮箱密码。

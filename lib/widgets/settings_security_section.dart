@@ -76,7 +76,6 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
   final AcademicCredentialsService _academicCredentials =
       AcademicCredentialsService.instance;
   final TextEditingController _oaAccountController = TextEditingController();
-  final TextEditingController _emailAccountController = TextEditingController();
   final TextEditingController _oaPasswordController = TextEditingController();
   final TextEditingController _sportsPasswordController =
       TextEditingController();
@@ -104,7 +103,6 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
   @override
   void dispose() {
     _oaAccountController.dispose();
-    _emailAccountController.dispose();
     _oaPasswordController.dispose();
     _sportsPasswordController.dispose();
     _emailPasswordController.dispose();
@@ -117,7 +115,6 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
       final status = await _academicCredentials.getStatus();
       if (!mounted) return;
       _oaAccountController.text = status.oaAccount;
-      _emailAccountController.text = status.emailAccount;
       _clearPasswordInputs();
       setState(() {
         _credentialsStatus = status;
@@ -140,7 +137,6 @@ class _SettingsSecuritySectionState extends State<SettingsSecuritySection> {
     try {
       await _academicCredentials.saveCredentials(
         oaAccount: _oaAccountController.text,
-        emailAccount: _emailAccountController.text,
         oaPassword: _nullablePassword(_oaPasswordController.text),
         sportsQueryPassword: _nullablePassword(_sportsPasswordController.text),
         emailPassword: _nullablePassword(_emailPasswordController.text),

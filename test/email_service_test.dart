@@ -42,7 +42,7 @@ void main() {
     expect(await service.getAutoRefreshIntervalMinutes(), 60);
   });
 
-  test('未保存邮箱账号时不访问邮箱协议网关', () async {
+  test('未保存学工号时不访问邮箱协议网关', () async {
     final gateway = _FakeEmailGateway();
     final service = EmailService(gateway: gateway);
 
@@ -55,7 +55,6 @@ void main() {
   test('未保存邮箱密码时停止只读收信', () async {
     await AcademicCredentialsService.instance.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student',
     );
     final gateway = _FakeEmailGateway();
     final service = EmailService(gateway: gateway);
@@ -66,10 +65,9 @@ void main() {
     expect(gateway.fetchPopCount, 0);
   });
 
-  test('IMAP 只读收信会规范化邮箱账号并返回邮件快照', () async {
+  test('IMAP 只读收信会由学工号派生邮箱账号并返回邮件快照', () async {
     await AcademicCredentialsService.instance.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student',
       emailPassword: 'mail-pass',
     );
     final gateway = _FakeEmailGateway(messages: [_mailSnapshot]);
@@ -79,14 +77,13 @@ void main() {
 
     expect(result.status, EmailQueryStatus.success);
     expect(gateway.fetchImapCount, 1);
-    expect(gateway.lastAccount, 'student@sspu.edu.cn');
+    expect(gateway.lastAccount, '20260001@sspu.edu.cn');
     expect(result.snapshot?.messages.single.subject, '教务通知');
   });
 
   test('SMTP 仅允许登录校验不允许收信', () async {
     await AcademicCredentialsService.instance.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student@sspu.edu.cn',
       emailPassword: 'mail-pass',
     );
     final gateway = _FakeEmailGateway();

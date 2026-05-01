@@ -1,5 +1,5 @@
 /*
- * 教务凭据模型 — 描述 OA / 邮箱账号及外部系统密码填写状态
+ * 教务凭据模型 — 描述 OA 账号及外部系统密码填写状态
  * @Project : SSPU-all-in-one
  * @File : academic_credentials.dart
  * @Author : Qintsg
@@ -23,7 +23,7 @@ class AcademicCredentialsStatus {
   /// OA 账号，也就是学工号。
   final String oaAccount;
 
-  /// 学校邮箱账号，可为完整邮箱地址或邮箱用户名。
+  /// 由学工号派生的学校邮箱账号，格式为“学工号@sspu.edu.cn”。
   final String emailAccount;
 
   /// 是否已保存 OA 账号密码。

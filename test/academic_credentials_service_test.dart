@@ -22,7 +22,6 @@ void main() {
   test('保存教务凭据后返回账号与密码填写状态', () async {
     await service.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student@sspu.edu.cn',
       oaPassword: 'oa-pass',
       sportsQueryPassword: 'sports-pass',
       emailPassword: 'mail-pass',
@@ -31,7 +30,7 @@ void main() {
     final status = await service.getStatus();
 
     expect(status.oaAccount, '20260001');
-    expect(status.emailAccount, 'student@sspu.edu.cn');
+    expect(status.emailAccount, '20260001@sspu.edu.cn');
     expect(status.hasOaPassword, isTrue);
     expect(status.hasSportsQueryPassword, isTrue);
     expect(status.hasEmailPassword, isTrue);
@@ -44,7 +43,6 @@ void main() {
   test('空密码输入不会覆盖已有密码', () async {
     await service.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student@sspu.edu.cn',
       oaPassword: 'oa-pass',
       sportsQueryPassword: 'sports-pass',
       emailPassword: 'mail-pass',
@@ -52,7 +50,6 @@ void main() {
 
     await service.saveCredentials(
       oaAccount: '20260002',
-      emailAccount: null,
       oaPassword: null,
       sportsQueryPassword: null,
       emailPassword: null,
@@ -61,7 +58,7 @@ void main() {
     final status = await service.getStatus();
 
     expect(status.oaAccount, '20260002');
-    expect(status.emailAccount, 'student@sspu.edu.cn');
+    expect(status.emailAccount, '20260002@sspu.edu.cn');
     expect(status.hasOaPassword, isTrue);
     expect(
       await service.readSecret(AcademicCredentialSecret.oaPassword),
@@ -80,7 +77,6 @@ void main() {
   test('可以单独清除指定密码字段', () async {
     await service.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student@sspu.edu.cn',
       oaPassword: 'oa-pass',
       sportsQueryPassword: 'sports-pass',
       emailPassword: 'mail-pass',
@@ -124,7 +120,6 @@ void main() {
   test('清除所有教务凭据时逐项删除安全存储键', () async {
     await service.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student@sspu.edu.cn',
       oaPassword: 'oa-pass',
       sportsQueryPassword: 'sports-pass',
       emailPassword: 'mail-pass',

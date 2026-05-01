@@ -1,5 +1,5 @@
 /*
- * 教务凭据安全存储服务 — 保存 OA / 邮箱账号及外部系统密码
+ * 教务凭据安全存储服务 — 保存 OA 账号及外部系统密码
  * @Project : SSPU-all-in-one
  * @File : academic_credentials_service.dart
  * @Author : Qintsg
@@ -28,8 +28,9 @@ class AcademicCredentialsService {
   /// OA 账号密码存储键。
   static const String _oaPasswordKey = 'academic_credentials_oa_password';
 
-  /// 学校邮箱账号存储键。
-  static const String _emailAccountKey = 'academic_credentials_email_account';
+  /// 旧版学校邮箱账号存储键；当前邮箱账号固定由学工号派生，仅用于清理遗留数据。
+  static const String _legacyEmailAccountKey =
+      'academic_credentials_email_account';
 
   /// 体育部查询密码存储键。
   static const String _sportsQueryPasswordKey =
@@ -50,14 +51,13 @@ class AcademicCredentialsService {
   /// 获取设置页展示所需的凭据状态。
   Future<AcademicCredentialsStatus> getStatus() async {
     final oaAccount = await _readValue(_oaAccountKey);
-    final emailAccount = await _readValue(_emailAccountKey);
     final oaPassword = await _readValue(_oaPasswordKey);
     final sportsQueryPassword = await _readValue(_sportsQueryPasswordKey);
     final emailPassword = await _readValue(_emailPasswordKey);
 
     return AcademicCredentialsStatus(
       oaAccount: oaAccount ?? '',
-      emailAccount: emailAccount ?? '',
+      emailAccount: _buildEmailAccount(oaAccount ?? ''),
       hasOaPassword: oaPassword != null && oaPassword.isNotEmpty,
       hasSportsQueryPassword:
           sportsQueryPassword != null && sportsQueryPassword.isNotEmpty,
@@ -69,22 +69,18 @@ class AcademicCredentialsService {
   /// 密码参数为 null 时表示不修改既有值，便于页面回访时保持密码框为空。
   Future<void> saveCredentials({
     required String oaAccount,
-    String? emailAccount,
     String? oaPassword,
     String? sportsQueryPassword,
     String? emailPassword,
   }) async {
     final normalizedOaAccount = oaAccount.trim();
-    final normalizedEmailAccount = emailAccount?.trim();
     final previousOaAccount = await _readValue(_oaAccountKey) ?? '';
     final shouldClearOaSession =
         previousOaAccount != normalizedOaAccount ||
         (oaPassword != null && oaPassword.isNotEmpty);
 
     await _writeOrDeleteWhenBlank(_oaAccountKey, normalizedOaAccount);
-    if (normalizedEmailAccount != null) {
-      await _writeOrDeleteWhenBlank(_emailAccountKey, normalizedEmailAccount);
-    }
+    await _secureStorage.delete(key: _legacyEmailAccountKey);
     await _writeWhenPresent(_oaPasswordKey, oaPassword);
     await _writeWhenPresent(_sportsQueryPasswordKey, sportsQueryPassword);
     await _writeWhenPresent(_emailPasswordKey, emailPassword);
@@ -150,7 +146,7 @@ class AcademicCredentialsService {
   /// 当前服务管理的全部安全存储键。
   static List<String> get _allKeys => const [
     _oaAccountKey,
-    _emailAccountKey,
+    _legacyEmailAccountKey,
     _oaPasswordKey,
     _sportsQueryPasswordKey,
     _emailPasswordKey,
@@ -184,5 +180,12 @@ class AcademicCredentialsService {
       AcademicCredentialSecret.sportsQueryPassword => _sportsQueryPasswordKey,
       AcademicCredentialSecret.emailPassword => _emailPasswordKey,
     };
+  }
+
+  /// 学校邮箱账号固定为“学工号@sspu.edu.cn”，不再单独保存账号字段。
+  String _buildEmailAccount(String oaAccount) {
+    final normalizedOaAccount = oaAccount.trim();
+    if (normalizedOaAccount.isEmpty) return '';
+    return '$normalizedOaAccount@sspu.edu.cn';
   }
 }

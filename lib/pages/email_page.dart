@@ -187,7 +187,7 @@ class _EmailPageState extends State<EmailPage> {
                       Text('SSPU 邮箱只读收件箱', style: theme.typography.bodyStrong),
                       const SizedBox(height: FluentSpacing.xxs),
                       Text(
-                        '在设置页保存学校邮箱账号和邮箱密码后，可通过 IMAP 或 POP 读取最近邮件。',
+                        '在设置页保存学工号和邮箱密码后，可通过 IMAP 或 POP 读取最近邮件。',
                         style: theme.typography.caption?.copyWith(
                           color: theme.resources.textFillColorSecondary,
                         ),

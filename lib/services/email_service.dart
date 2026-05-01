@@ -167,14 +167,14 @@ class EmailService implements EmailMailboxClient {
     );
   }
 
-  /// 将邮箱用户名规范化为完整地址；已填写域名时保持原值。
-  static String normalizeEmailAccount(String account) {
-    final trimmedAccount = account.trim();
-    if (trimmedAccount.isEmpty || trimmedAccount.contains('@')) {
-      return trimmedAccount;
+  /// 将学工号规范化为固定学校邮箱地址。
+  static String normalizeEmailAccount(String studentId) {
+    final trimmedStudentId = studentId.trim();
+    if (trimmedStudentId.isEmpty || trimmedStudentId.contains('@')) {
+      return trimmedStudentId;
     }
 
-    return '$trimmedAccount@$defaultDomain';
+    return '$trimmedStudentId@$defaultDomain';
   }
 
   @override
@@ -359,12 +359,12 @@ class EmailService implements EmailMailboxClient {
 
   Future<_EmailCredentials> _readCredentials() async {
     final status = await _credentialsService.getStatus();
-    final account = normalizeEmailAccount(status.emailAccount);
+    final account = normalizeEmailAccount(status.oaAccount);
     if (account.isEmpty) {
       return const _EmailCredentials.failure(
         status: EmailQueryStatus.missingEmailAccount,
-        message: '请先保存学校邮箱账号',
-        detail: '学校邮箱可填写完整地址，也可只填写 @sspu.edu.cn 前的用户名。',
+        message: '请先保存学工号',
+        detail: '学校邮箱账号固定为“学工号@sspu.edu.cn”，需先保存学工号。',
       );
     }
 

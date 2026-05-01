@@ -37,7 +37,7 @@ class EnoughMailGateway implements EmailGateway {
 
       return _buildSnapshots(
         protocol: EmailProtocol.imap,
-        messages: fetchResult.messages.reversed,
+        messages: fetchResult.messages.reversed.take(messageCount),
       );
     } finally {
       await _logoutImapSilently(client);

@@ -37,7 +37,6 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
     await AcademicCredentialsService.instance.saveCredentials(
       oaAccount: '20260001',
-      emailAccount: 'student@sspu.edu.cn',
       oaPassword: 'oa-pass',
       sportsQueryPassword: 'sports-pass',
       emailPassword: 'mail-pass',
@@ -69,8 +68,7 @@ void main() {
     expect(find.text('数据均加密存储在本地，不会上传至云端；密码框留空时不修改已保存密码。'), findsOneWidget);
     expect(find.text('验证 OA 登录'), findsOneWidget);
     expect(find.text('20260001'), findsOneWidget);
-    expect(find.text('学校邮箱账号'), findsOneWidget);
-    expect(find.text('student@sspu.edu.cn'), findsOneWidget);
+    expect(find.text('学校邮箱账号：20260001@sspu.edu.cn'), findsOneWidget);
     expect(find.text('已填写'), findsNWidgets(3));
     expect(find.text('oa-pass'), findsNothing);
     expect(find.text('sports-pass'), findsNothing);

@@ -33,12 +33,13 @@ extension _SettingsSecurityCredentialsSection on _SettingsSecuritySectionState {
             placeholder: '请输入学工号',
           ),
         ),
-        const SizedBox(height: FluentSpacing.m),
-        InfoLabel(
-          label: '学校邮箱账号',
-          child: TextBox(
-            controller: _emailAccountController,
-            placeholder: '请输入完整邮箱地址或邮箱用户名',
+        const SizedBox(height: FluentSpacing.xs),
+        Text(
+          _credentialsStatus.emailAccount.isEmpty
+              ? '学校邮箱账号将自动使用“学工号@sspu.edu.cn”。'
+              : '学校邮箱账号：${_credentialsStatus.emailAccount}',
+          style: theme.typography.caption?.copyWith(
+            color: theme.resources.textFillColorSecondary,
           ),
         ),
         const SizedBox(height: FluentSpacing.m),
