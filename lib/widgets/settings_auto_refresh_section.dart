@@ -22,6 +22,12 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   /// 体育部课外活动考勤自动刷新间隔，单位分钟。
   final int sportsAttendanceAutoRefreshIntervalMinutes;
 
+  /// 校园卡余额自动刷新开关。
+  final bool campusCardAutoRefreshEnabled;
+
+  /// 校园卡余额自动刷新间隔，单位分钟。
+  final int campusCardAutoRefreshIntervalMinutes;
+
   /// 校园网 / VPN 状态检测间隔修改回调。
   final Future<void> Function(int minutes)
   onCampusNetworkDetectionIntervalChanged;
@@ -33,6 +39,13 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   /// 体育部课外活动考勤自动刷新间隔修改回调。
   final Future<void> Function(int minutes)
   onSportsAttendanceAutoRefreshIntervalChanged;
+
+  /// 校园卡余额自动刷新开关修改回调。
+  final Future<void> Function(bool enabled) onCampusCardAutoRefreshChanged;
+
+  /// 校园卡余额自动刷新间隔修改回调。
+  final Future<void> Function(int minutes)
+  onCampusCardAutoRefreshIntervalChanged;
 
   /// 跳转职能部门自动刷新设置。
   final VoidCallback onOpenDepartmentRefreshSettings;
@@ -48,9 +61,13 @@ class SettingsAutoRefreshSection extends StatelessWidget {
     required this.campusNetworkDetectionIntervalMinutes,
     required this.sportsAttendanceAutoRefreshEnabled,
     required this.sportsAttendanceAutoRefreshIntervalMinutes,
+    required this.campusCardAutoRefreshEnabled,
+    required this.campusCardAutoRefreshIntervalMinutes,
     required this.onCampusNetworkDetectionIntervalChanged,
     required this.onSportsAttendanceAutoRefreshChanged,
     required this.onSportsAttendanceAutoRefreshIntervalChanged,
+    required this.onCampusCardAutoRefreshChanged,
+    required this.onCampusCardAutoRefreshIntervalChanged,
     required this.onOpenDepartmentRefreshSettings,
     required this.onOpenTeachingRefreshSettings,
     required this.onOpenWechatRefreshSettings,
@@ -90,6 +107,8 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             ),
             const SizedBox(height: FluentSpacing.m),
             _buildSportsAttendanceAutoRefreshRow(context),
+            const SizedBox(height: FluentSpacing.m),
+            _buildCampusCardAutoRefreshRow(context),
           ],
         ),
       ),
@@ -219,6 +238,62 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             ? (value) {
                 if (value != null) {
                   onSportsAttendanceAutoRefreshIntervalChanged(value);
+                }
+              }
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildCampusCardAutoRefreshRow(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return buildResponsiveSettingsRow(
+      context: context,
+      icon: FluentIcons.payment_card,
+      title: Text('校园卡余额自动刷新', style: theme.typography.bodyStrong),
+      subtitle: Text(
+        '控制主页校园卡余额卡片的自动读取；需要校园网或学校 VPN 与 OA 登录，关闭后仍可在卡片右下角手动刷新',
+        style: theme.typography.caption,
+      ),
+      trailing: Wrap(
+        spacing: FluentSpacing.s,
+        runSpacing: FluentSpacing.s,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          ToggleSwitch(
+            checked: campusCardAutoRefreshEnabled,
+            onChanged: (value) => onCampusCardAutoRefreshChanged(value),
+          ),
+          _buildCampusCardIntervalComboBox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCampusCardIntervalComboBox() {
+    final enabledIntervalOptions = Map<int, String>.fromEntries(
+      kIntervalOptions.entries.where((entry) => entry.key > 0),
+    );
+    final selectedValue =
+        enabledIntervalOptions.containsKey(campusCardAutoRefreshIntervalMinutes)
+        ? campusCardAutoRefreshIntervalMinutes
+        : 30;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: ComboBox<int>(
+        isExpanded: true,
+        value: selectedValue,
+        items: enabledIntervalOptions.entries
+            .map(
+              (entry) =>
+                  ComboBoxItem<int>(value: entry.key, child: Text(entry.value)),
+            )
+            .toList(),
+        onChanged: campusCardAutoRefreshEnabled
+            ? (value) {
+                if (value != null) {
+                  onCampusCardAutoRefreshIntervalChanged(value);
                 }
               }
             : null,

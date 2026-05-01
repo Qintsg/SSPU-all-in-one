@@ -14,6 +14,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/channel_config.dart';
 import '../services/app_exit_service.dart';
 import '../services/academic_credentials_service.dart';
+import '../services/campus_card_service.dart';
 import '../services/campus_network_status_service.dart';
 import '../services/message_state_service.dart';
 import '../services/password_service.dart';
@@ -87,6 +88,13 @@ class _SettingsPageState extends State<SettingsPage> {
   int _sportsAttendanceAutoRefreshIntervalMinutes =
       SportsAttendanceService.defaultAutoRefreshIntervalMinutes;
 
+  /// 校园卡余额自动刷新开关。
+  bool _campusCardAutoRefreshEnabled = false;
+
+  /// 校园卡余额自动刷新间隔，单位分钟。
+  int _campusCardAutoRefreshIntervalMinutes =
+      CampusCardService.defaultAutoRefreshIntervalMinutes;
+
   /// 当前选中的设置分区索引。
   /// 0=常规设置 1=自动刷新设置 2=安全设置 3=职能部门 4=教学单位 5=微信推文
   int _selectedTab = 0;
@@ -123,6 +131,10 @@ class _SettingsPageState extends State<SettingsPage> {
     final sportsAttendanceAutoRefreshInterval = await SportsAttendanceService
         .instance
         .getAutoRefreshIntervalMinutes();
+    final campusCardAutoRefreshEnabled = await CampusCardService.instance
+        .isAutoRefreshEnabled();
+    final campusCardAutoRefreshInterval = await CampusCardService.instance
+        .getAutoRefreshIntervalMinutes();
 
     if (!mounted) return;
     setState(() {
@@ -140,6 +152,8 @@ class _SettingsPageState extends State<SettingsPage> {
       _sportsAttendanceAutoRefreshEnabled = sportsAttendanceAutoRefreshEnabled;
       _sportsAttendanceAutoRefreshIntervalMinutes =
           sportsAttendanceAutoRefreshInterval;
+      _campusCardAutoRefreshEnabled = campusCardAutoRefreshEnabled;
+      _campusCardAutoRefreshIntervalMinutes = campusCardAutoRefreshInterval;
       _isLoading = false;
     });
   }
@@ -238,6 +252,20 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (!mounted) return;
     setState(() => _sportsAttendanceAutoRefreshIntervalMinutes = minutes);
+  }
+
+  /// 修改校园卡余额自动刷新开关。
+  Future<void> _onCampusCardAutoRefreshChanged(bool enabled) async {
+    await CampusCardService.instance.setAutoRefreshEnabled(enabled);
+    if (!mounted) return;
+    setState(() => _campusCardAutoRefreshEnabled = enabled);
+  }
+
+  /// 修改校园卡余额自动刷新间隔。
+  Future<void> _onCampusCardAutoRefreshIntervalChanged(int minutes) async {
+    await CampusCardService.instance.setAutoRefreshIntervalMinutes(minutes);
+    if (!mounted) return;
+    setState(() => _campusCardAutoRefreshIntervalMinutes = minutes);
   }
 
   /// 切换密码保护。
@@ -623,6 +651,12 @@ class _SettingsPageState extends State<SettingsPage> {
               _onSportsAttendanceAutoRefreshChanged,
           onSportsAttendanceAutoRefreshIntervalChanged:
               _onSportsAttendanceAutoRefreshIntervalChanged,
+          campusCardAutoRefreshEnabled: _campusCardAutoRefreshEnabled,
+          campusCardAutoRefreshIntervalMinutes:
+              _campusCardAutoRefreshIntervalMinutes,
+          onCampusCardAutoRefreshChanged: _onCampusCardAutoRefreshChanged,
+          onCampusCardAutoRefreshIntervalChanged:
+              _onCampusCardAutoRefreshIntervalChanged,
           onOpenDepartmentRefreshSettings: () =>
               setState(() => _selectedTab = 3),
           onOpenTeachingRefreshSettings: () => setState(() => _selectedTab = 4),

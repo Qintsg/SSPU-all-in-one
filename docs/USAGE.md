@@ -213,6 +213,33 @@ flutter test --coverage
 
 登录与解析规则探索记录见 [SPORTS_ATTENDANCE_RULES.md](SPORTS_ATTENDANCE_RULES.md)。
 
+## 6.7 校园卡余额与交易记录调试
+
+主页提供“校园卡余额”卡片，展示当前账户余额、非正常卡状态提示和最近交易记录。
+
+刷新方式：
+
+- 默认不自动访问校园卡系统，避免未连接校园网或学校 VPN 时进入主页就发起受限请求
+- 可点击卡片右下角刷新图标手动读取最新余额、卡状态和交易记录，旁边会显示上次刷新时间
+- 可在设置页“自动刷新设置”中开启“校园卡余额自动刷新”并选择刷新间隔；开启后进入主页会主动读取一次，并按设置间隔刷新
+- 每次读取前都会重新执行校园网 / VPN 前置检测；不可访问受限校园站点时不进入 OA / 校园卡登录链路
+
+查询流程：
+
+- 使用 `https://oa.sspu.edu.cn//interface/Entrance.jsp?id=xykxt` 作为 OA 校园卡入口
+- 复用已保存的 OA/CAS Cookie 会话；会话失效时调用现有 OA 登录校验刷新会话
+- 校园卡业务入口为 `https://card.sspu.edu.cn/epay/`，CAS 回调服务为 `https://card.sspu.edu.cn/epay/j_spring_cas_security_check`
+- 读取余额 / 状态页面和交易记录页面后解析余额、卡状态、最近交易记录
+- 详情页支持按日期范围查询交易记录；该操作仅访问交易查询接口，不执行充值、支付或其它写入操作
+
+已知交互限制：
+
+- 缺少学工号或 OA 密码时不会访问校园卡系统
+- OA/CAS 要求验证码、MFA 或安全验证时，需要先在安全设置中完成 OA 登录校验
+- 页面结构变化时，主页和详情页会展示明确错误状态，不会伪造余额或交易记录
+
+登录与解析规则探索记录见 [CAMPUS_CARD_RULES.md](CAMPUS_CARD_RULES.md)。
+
 ## 7. 构建发布包
 
 发布版本号、Tag、GitHub Release 资产命名、Release Notes 模板与平台清单，统一以 [docs/RELEASE.md](RELEASE.md) 为准。

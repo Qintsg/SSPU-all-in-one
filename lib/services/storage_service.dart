@@ -45,6 +45,14 @@ class StorageKeys {
   static const String sportsAttendanceAutoRefreshIntervalMinutes =
       'sports_attendance_auto_refresh_interval_minutes';
 
+  /// 校园卡余额自动刷新开关。
+  static const String campusCardAutoRefreshEnabled =
+      'campus_card_auto_refresh_enabled';
+
+  /// 校园卡余额自动刷新间隔（分钟）。
+  static const String campusCardAutoRefreshIntervalMinutes =
+      'campus_card_auto_refresh_interval_minutes';
+
   /// 结构化数据前缀（JSON 序列化存储）。
   static const String dataPrefix = 'data_';
 }

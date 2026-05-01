@@ -137,9 +137,13 @@ void main() {
               campusNetworkDetectionIntervalMinutes: 15,
               sportsAttendanceAutoRefreshEnabled: true,
               sportsAttendanceAutoRefreshIntervalMinutes: 30,
+              campusCardAutoRefreshEnabled: true,
+              campusCardAutoRefreshIntervalMinutes: 60,
               onCampusNetworkDetectionIntervalChanged: (_) async {},
               onSportsAttendanceAutoRefreshChanged: (_) async {},
               onSportsAttendanceAutoRefreshIntervalChanged: (_) async {},
+              onCampusCardAutoRefreshChanged: (_) async {},
+              onCampusCardAutoRefreshIntervalChanged: (_) async {},
               onOpenDepartmentRefreshSettings: () => selectedShortcut = 3,
               onOpenTeachingRefreshSettings: () => selectedShortcut = 4,
               onOpenWechatRefreshSettings: () => selectedShortcut = 5,
@@ -152,8 +156,10 @@ void main() {
 
     expect(find.text('校园网 / VPN 状态检测'), findsOneWidget);
     expect(find.text('体育查询自动刷新'), findsOneWidget);
+    expect(find.text('校园卡余额自动刷新'), findsOneWidget);
     expect(find.text('15 分钟'), findsOneWidget);
     expect(find.text('30 分钟'), findsOneWidget);
+    expect(find.text('1 小时'), findsOneWidget);
     expect(find.text('职能部门'), findsOneWidget);
     expect(find.text('教学单位'), findsOneWidget);
     expect(find.text('微信推文'), findsOneWidget);
