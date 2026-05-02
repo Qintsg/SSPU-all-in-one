@@ -233,7 +233,8 @@ flutter test --coverage
 
 - 使用 `https://oa.sspu.edu.cn//interface/Entrance.jsp?id=xykxt` 作为 OA 校园卡入口
 - 复用已保存的 OA/CAS Cookie 会话；会话失效时调用现有 OA 登录校验刷新会话
-- 校园卡业务入口为 `https://card.sspu.edu.cn/epay/`，CAS 回调服务为 `https://card.sspu.edu.cn/epay/j_spring_cas_security_check`
+- OA 门户页会先脚本跳转到 `https://card.sspu.edu.cn?sysadmin=...`，业务页面实际继续进入 `http://card.sspu.edu.cn/epay/`
+- 校园卡业务入口按 `http://card.sspu.edu.cn/epay/`、`/epay/myepay/index`、`/epay/consume/index`、`/epay/consume/query` 这一组只读候选路径访问，CAS 回调服务为 `http://card.sspu.edu.cn/epay/j_spring_cas_security_check`
 - 读取余额 / 状态页面和交易记录页面后解析余额、卡状态、最近交易记录
 - 详情页支持按日期范围查询交易记录；该操作仅访问交易查询接口，不执行充值、支付或其它写入操作
 

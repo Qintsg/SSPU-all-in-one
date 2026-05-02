@@ -6,14 +6,15 @@
 
 - OA 校园卡入口为 `https://oa.sspu.edu.cn//interface/Entrance.jsp?id=xykxt`。
 - 未认证访问 OA 入口时，会先跳转到 `https://oa.sspu.edu.cn/sso/login.jsp`，再跳转到 `https://id.sspu.edu.cn/cas/login`。
-- 校园卡业务入口为 `https://card.sspu.edu.cn/epay/`。
-- 未认证访问校园卡业务入口时，会跳转到 CAS，`service` 为 `https://card.sspu.edu.cn/epay/j_spring_cas_security_check`。
+- OA 入口返回的门户页会通过脚本跳转到 `https://card.sspu.edu.cn?sysadmin=...`，随后由业务站点继续跳转到 `http://card.sspu.edu.cn/epay/`。
+- 未认证访问校园卡业务入口时，会跳转到 CAS，`service` 为 `http://card.sspu.edu.cn/epay/j_spring_cas_security_check`。
 - OA 入口中的 `{base64}Ly9pbnRlcmZhY2UvRW50cmFuY2UuanNwP2lkPXh5a3h0` 解码后为 `//interface/Entrance.jsp?id=xykxt`。
 - 实现中复用已保存的 OA/CAS Cookie 会话；若会话失效，则调用现有 OA 登录校验刷新会话后重试校园卡入口。
 
 ## 页面与接口线索
 
 - 已确认 `card.sspu.edu.cn/epay/` 和 `/epay/j_spring_cas_security_check` 属于校园卡 CAS 业务链路。
+- 当前真实链路中，业务页面候选路径使用 `http://card.sspu.edu.cn/epay/...` 更稳定；直接请求 `https://card.sspu.edu.cn/epay/...` 在 Dart / Dio Windows TLS 栈下可能出现握手中断。
 - 未认证请求无法确认业务页 DOM 结构；未认证访问任意候选业务路径都会先进入 CAS，因此不能仅凭跳转判断路径真实存在。
 - 同类 `epay` 系统常见只读候选路径包括：
   - 余额 / 个人页：`/epay/myepay/index`
