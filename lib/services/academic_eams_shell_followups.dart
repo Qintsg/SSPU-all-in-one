@@ -60,10 +60,9 @@ extension _AcademicEamsShellFollowups on AcademicEamsService {
     AcademicEamsHttpSnapshot shellSnapshot,
     List<String> warnings,
   ) async {
-    final actionUri = _extractRelativeActionUri(
-      shellSnapshot,
-      const ['courseTableForStd!courseTable.action'],
-    );
+    final actionUri = _extractRelativeActionUri(shellSnapshot, const [
+      'courseTableForStd!courseTable.action',
+    ]);
     if (actionUri == null) return shellSnapshot;
 
     final form = _parseShellForm(shellSnapshot, '#courseTableForm');
@@ -104,10 +103,9 @@ extension _AcademicEamsShellFollowups on AcademicEamsService {
     AcademicEamsHttpSnapshot shellSnapshot,
     List<String> warnings,
   ) async {
-    final searchUri = _extractRelativeActionUri(
-      shellSnapshot,
-      const ['/eams/teach/grade/course/person!search.action'],
-    );
+    final searchUri = _extractRelativeActionUri(shellSnapshot, const [
+      '/eams/teach/grade/course/person!search.action',
+    ]);
     if (searchUri == null) return shellSnapshot;
 
     try {
@@ -125,10 +123,9 @@ extension _AcademicEamsShellFollowups on AcademicEamsService {
     AcademicEamsHttpSnapshot shellSnapshot,
     List<String> warnings,
   ) async {
-    final actionUri = _extractRelativeActionUri(
-      shellSnapshot,
-      const ['stdExamTable!examTable.action'],
-    );
+    final actionUri = _extractRelativeActionUri(shellSnapshot, const [
+      'stdExamTable!examTable.action',
+    ]);
     if (actionUri == null) return shellSnapshot;
 
     final semesterId = _resolveAcademicSemesterId(shellSnapshot.body);
@@ -218,7 +215,10 @@ extension _AcademicEamsShellFollowups on AcademicEamsService {
     final value =
         _extractRegexValue(body, RegExp(r'value:"(\d+)"')) ??
         _extractRegexValue(body, RegExp(r'semesterId=(\d+)')) ??
-        _extractRegexValue(body, RegExp(r'name="semester\.id"\s+value="(\d+)"'));
+        _extractRegexValue(
+          body,
+          RegExp(r'name="semester\.id"\s+value="(\d+)"'),
+        );
     return value ?? '';
   }
 
@@ -228,7 +228,10 @@ extension _AcademicEamsShellFollowups on AcademicEamsService {
           body,
           RegExp(r'<option value="(\d+)"[^>]*selected', caseSensitive: false),
         ) ??
-        _extractRegexValue(body, RegExp(r'<option value="(\d+)"', caseSensitive: false));
+        _extractRegexValue(
+          body,
+          RegExp(r'<option value="(\d+)"', caseSensitive: false),
+        );
     return value ?? '1';
   }
 

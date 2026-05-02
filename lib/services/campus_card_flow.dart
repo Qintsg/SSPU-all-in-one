@@ -12,7 +12,8 @@ extension _CampusCardFlow on CampusCardService {
   Future<CampusCardHttpSnapshot> _resolveBusinessEntrySnapshot(
     CampusCardHttpSnapshot entrySnapshot,
   ) async {
-    if (entrySnapshot.finalUri.host.toLowerCase() == homeUri.host.toLowerCase()) {
+    if (entrySnapshot.finalUri.host.toLowerCase() ==
+        homeUri.host.toLowerCase()) {
       return entrySnapshot;
     }
 
@@ -162,9 +163,11 @@ extension _CampusCardFlow on CampusCardService {
 
     return values
         .map(snapshot.finalUri.resolve)
-        .map((uri) => uri.host.toLowerCase() == 'card.sspu.edu.cn'
-            ? uri.replace(scheme: 'http')
-            : uri)
+        .map(
+          (uri) => uri.host.toLowerCase() == 'card.sspu.edu.cn'
+              ? uri.replace(scheme: 'http')
+              : uri,
+        )
         .where((uri) => uri.host.toLowerCase() == 'card.sspu.edu.cn')
         .toSet()
         .toList();

@@ -332,5 +332,4 @@ class CampusCardService implements CampusCardBalanceClient {
       snapshot: snapshot,
     );
   }
-
 }

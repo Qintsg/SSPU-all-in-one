@@ -271,7 +271,8 @@ String _extractCellText(html_dom.Element cell) {
 List<AcademicCourseTableEntry> _parseCourseTableActivities(String body) {
   final unitCount =
       int.tryParse(
-        RegExp(r'var\s+unitCount\s*=\s*(\d+);').firstMatch(body)?.group(1) ?? '',
+        RegExp(r'var\s+unitCount\s*=\s*(\d+);').firstMatch(body)?.group(1) ??
+            '',
       ) ??
       0;
   if (unitCount <= 0) return const <AcademicCourseTableEntry>[];
@@ -401,7 +402,8 @@ String _formatWeekBits(String validWeeksBits) {
 
   final isOddWeeks = activeWeeks.every((week) => week.isOdd);
   final isEvenWeeks = activeWeeks.every((week) => week.isEven);
-  final contiguous = activeWeeks.last - activeWeeks.first + 1 == activeWeeks.length;
+  final contiguous =
+      activeWeeks.last - activeWeeks.first + 1 == activeWeeks.length;
   if (contiguous) {
     return activeWeeks.length == 1
         ? '${activeWeeks.first}周'
