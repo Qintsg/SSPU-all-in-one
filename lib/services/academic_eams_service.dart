@@ -33,6 +33,7 @@ part 'academic_eams_page_parser_overview.dart';
 part 'academic_eams_page_parser_profile.dart';
 part 'academic_eams_page_parser_tables.dart';
 part 'academic_eams_search_flow.dart';
+part 'academic_eams_shell_followups.dart';
 
 /// 教务中心与课程表页可依赖的只读接口。
 abstract class AcademicEamsClient {

@@ -268,9 +268,173 @@ String _extractCellText(html_dom.Element cell) {
       .trim();
 }
 
+List<AcademicCourseTableEntry> _parseCourseTableActivities(String body) {
+  final unitCount =
+      int.tryParse(
+        RegExp(r'var\s+unitCount\s*=\s*(\d+);').firstMatch(body)?.group(1) ?? '',
+      ) ??
+      0;
+  if (unitCount <= 0) return const <AcademicCourseTableEntry>[];
+
+  final entries = <AcademicCourseTableEntry>[];
+  _CapturedTaskActivity? currentActivity;
+  final currentIndexes = <int>[];
+  final lines = body.split('\n');
+
+  void flushCurrentActivity() {
+    if (currentActivity == null || currentIndexes.isEmpty) return;
+
+    final groupedIndexes = <int, List<int>>{};
+    for (final absoluteIndex in currentIndexes) {
+      final weekday = absoluteIndex ~/ unitCount + 1;
+      final unit = absoluteIndex % unitCount + 1;
+      groupedIndexes.putIfAbsent(weekday, () => []).add(unit);
+    }
+
+    for (final entry in groupedIndexes.entries) {
+      final sortedUnits = entry.value.toList()..sort();
+      var startUnit = sortedUnits.first;
+      var previousUnit = startUnit;
+      for (final unit in sortedUnits.skip(1)) {
+        if (unit == previousUnit + 1) {
+          previousUnit = unit;
+          continue;
+        }
+        entries.add(
+          _buildCourseTableEntry(
+            activity: currentActivity!,
+            weekday: entry.key,
+            startUnit: startUnit,
+            endUnit: previousUnit,
+          ),
+        );
+        startUnit = unit;
+        previousUnit = unit;
+      }
+      entries.add(
+        _buildCourseTableEntry(
+          activity: currentActivity!,
+          weekday: entry.key,
+          startUnit: startUnit,
+          endUnit: previousUnit,
+        ),
+      );
+    }
+
+    currentActivity = null;
+    currentIndexes.clear();
+  }
+
+  for (final line in lines) {
+    final activityMatch = RegExp(
+      r'new TaskActivity\("([^"]*)","([^"]*)","([^"]*)","([^"]*)","([^"]*)","([^"]*)","([^"]*)","([^"]*)","([^"]*)"\)',
+    ).firstMatch(line);
+    if (activityMatch != null) {
+      flushCurrentActivity();
+      currentActivity = _CapturedTaskActivity(
+        teacher: activityMatch.group(2)?.trim() ?? '',
+        courseCodeText: activityMatch.group(3)?.trim() ?? '',
+        courseNameText: activityMatch.group(4)?.trim() ?? '',
+        location: activityMatch.group(6)?.trim() ?? '',
+        validWeeksBits: activityMatch.group(7)?.trim() ?? '',
+      );
+      continue;
+    }
+
+    final indexMatch = RegExp(
+      r'index\s*=\s*(\d+)\*unitCount\+(\d+);',
+    ).firstMatch(line);
+    if (indexMatch != null && currentActivity != null) {
+      final dayOffset = int.tryParse(indexMatch.group(1) ?? '');
+      final unitOffset = int.tryParse(indexMatch.group(2) ?? '');
+      if (dayOffset != null && unitOffset != null) {
+        currentIndexes.add(dayOffset * unitCount + unitOffset);
+      }
+    }
+  }
+  flushCurrentActivity();
+  return entries;
+}
+
+AcademicCourseTableEntry _buildCourseTableEntry({
+  required _CapturedTaskActivity activity,
+  required int weekday,
+  required int startUnit,
+  required int endUnit,
+}) {
+  final courseName = activity.courseNameText.replaceFirst(
+    RegExp(r'\(\d+\)$'),
+    '',
+  );
+  final teacher = activity.teacher.replaceAll(',', ' ').trim();
+  final location = activity.location.trim();
+  final weekDescription = _formatWeekBits(activity.validWeeksBits);
+  final rawSegments = [
+    if (teacher.isNotEmpty) teacher,
+    if (activity.courseCodeText.isNotEmpty) activity.courseCodeText,
+    activity.courseNameText,
+    if (location.isNotEmpty) location,
+    if (weekDescription.isNotEmpty) weekDescription,
+  ];
+  return AcademicCourseTableEntry(
+    courseName: courseName.trim(),
+    weekday: weekday,
+    startUnit: startUnit,
+    endUnit: endUnit,
+    timeText: '${_weekdayLabel(weekday)} 第$startUnit-$endUnit节',
+    teacher: teacher.isEmpty ? null : teacher,
+    location: location.isEmpty ? null : location,
+    weekDescription: weekDescription.isEmpty ? null : weekDescription,
+    rawText: rawSegments.join(' / '),
+  );
+}
+
+String _formatWeekBits(String validWeeksBits) {
+  if (validWeeksBits.isEmpty) return '';
+  final activeWeeks = <int>[];
+  for (var index = 0; index < validWeeksBits.length; index++) {
+    if (validWeeksBits[index] == '1') {
+      activeWeeks.add(index + 1);
+    }
+  }
+  if (activeWeeks.isEmpty) return '';
+
+  final isOddWeeks = activeWeeks.every((week) => week.isOdd);
+  final isEvenWeeks = activeWeeks.every((week) => week.isEven);
+  final contiguous = activeWeeks.last - activeWeeks.first + 1 == activeWeeks.length;
+  if (contiguous) {
+    return activeWeeks.length == 1
+        ? '${activeWeeks.first}周'
+        : '${activeWeeks.first}-${activeWeeks.last}周';
+  }
+  if (isOddWeeks) {
+    return '${activeWeeks.first}-${activeWeeks.last}单周';
+  }
+  if (isEvenWeeks) {
+    return '${activeWeeks.first}-${activeWeeks.last}双周';
+  }
+  return '${activeWeeks.join(',')}周';
+}
+
 class _PendingGridCell {
   _PendingGridCell({required this.cell, required this.remainingRows});
 
   final _GridCell cell;
   int remainingRows;
+}
+
+class _CapturedTaskActivity {
+  const _CapturedTaskActivity({
+    required this.teacher,
+    required this.courseCodeText,
+    required this.courseNameText,
+    required this.location,
+    required this.validWeeksBits,
+  });
+
+  final String teacher;
+  final String courseCodeText;
+  final String courseNameText;
+  final String location;
+  final String validWeeksBits;
 }

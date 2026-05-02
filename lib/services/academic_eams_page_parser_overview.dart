@@ -67,6 +67,20 @@ AcademicCourseTableSnapshot? _parseCourseTable(
       );
     }
   }
+  final activityEntries = _parseCourseTableActivities(snapshot.body);
+  if (activityEntries.isNotEmpty) {
+    activityEntries.sort((a, b) {
+      final weekdayCompare = a.weekday.compareTo(b.weekday);
+      if (weekdayCompare != 0) return weekdayCompare;
+      return a.startUnit.compareTo(b.startUnit);
+    });
+    return AcademicCourseTableSnapshot(
+      termName: _findTermName(document.body?.text ?? snapshot.body),
+      entries: List.unmodifiable(activityEntries),
+      fetchedAt: DateTime.now(),
+      sourceUri: snapshot.finalUri,
+    );
+  }
   return null;
 }
 
@@ -215,23 +229,23 @@ AcademicExamSnapshot? _parseExams(AcademicEamsHttpSnapshot? snapshot) {
     final headers = table.headers
         .map((header) => header.toLowerCase())
         .toList();
-    if (!_containsAny(headers, ['课程名称', '课程']) ||
-        !_containsAny(headers, ['考试时间', '时间'])) {
+    if (!_containsAny(headers, ['课程名称', '课程', 'course name']) ||
+        !_containsAny(headers, ['考试时间', '时间', 'exam time', 'time'])) {
       continue;
     }
 
     final records = <AcademicExamRecord>[];
     for (final row in table.rows) {
       final rowMap = _rowToMap(table.headers, row);
-      final courseName = _pickValue(rowMap, ['课程名称', '课程']);
+      final courseName = _pickValue(rowMap, ['课程名称', '课程', 'Course Name']);
       if (courseName == null || courseName.isEmpty) continue;
       records.add(
         AcademicExamRecord(
           courseName: courseName,
-          examTime: _pickValue(rowMap, ['考试时间', '时间']),
-          location: _pickValue(rowMap, ['考试地点', '地点']),
-          seatNumber: _pickValue(rowMap, ['座位号', '座位']),
-          status: _pickValue(rowMap, ['状态', '备注']),
+          examTime: _pickValue(rowMap, ['考试时间', '时间', 'Exam Time', 'Time']),
+          location: _pickValue(rowMap, ['考试地点', '地点', 'Exam Room', 'Place']),
+          seatNumber: _pickValue(rowMap, ['座位号', '座位', 'Seat No', 'Seat']),
+          status: _pickValue(rowMap, ['状态', '备注', 'Status', 'Remark']),
           rawCells: row,
         ),
       );
@@ -257,26 +271,34 @@ AcademicCourseOfferingSearchResult? _parseCourseOfferings(
     final headers = table.headers
         .map((header) => header.toLowerCase())
         .toList();
-    if (!_containsAny(headers, ['课程名称', '课程']) ||
-        !_containsAny(headers, ['教师', '老师', '任课教师'])) {
+    if (!_containsAny(headers, ['课程名称', '课程', 'course name']) ||
+        !_containsAny(headers, ['教师', '老师', '任课教师', 'teacher'])) {
       continue;
     }
     final records = <AcademicCourseOfferingRecord>[];
     for (final row in table.rows) {
       final rowMap = _rowToMap(table.headers, row);
-      final courseName = _pickValue(rowMap, ['课程名称', '课程']);
+      final courseName = _pickValue(rowMap, ['课程名称', '课程', 'Course Name']);
       if (courseName == null || courseName.isEmpty) continue;
       records.add(
         AcademicCourseOfferingRecord(
           courseName: courseName,
-          courseCode: _pickValue(rowMap, ['课程代码', '课程编号']),
-          teacher: _pickValue(rowMap, ['教师', '老师', '任课教师']),
-          credit: _parseDouble(_pickValue(rowMap, ['学分'])),
-          capacity: _parseInt(_pickValue(rowMap, ['容量', '课容量', '人数上限'])),
-          department: _pickValue(rowMap, ['开课院系', '院系', '学院']),
-          scheduleText: _pickValue(rowMap, ['上课时间', '时间', '课表']),
-          locationText: _pickValue(rowMap, ['地点', '教室', '上课地点']),
-          termName: _pickValue(rowMap, ['学期', '学年学期']),
+          courseCode: _pickValue(rowMap, ['课程代码', '课程编号', 'Course Code']),
+          teacher: _pickValue(rowMap, ['教师', '老师', '任课教师', 'Teacher']),
+          credit: _parseDouble(_pickValue(rowMap, ['学分', 'Credit'])),
+          capacity: _parseInt(
+            _pickValue(rowMap, ['容量', '课容量', '人数上限', 'Capacity']),
+          ),
+          department: _pickValue(rowMap, ['开课院系', '院系', '学院', 'Department']),
+          scheduleText: _pickValue(
+            rowMap,
+            ['上课时间', '时间', '课表', 'Schedule', 'Time'],
+          ),
+          locationText: _pickValue(
+            rowMap,
+            ['地点', '教室', '上课地点', 'Place', 'Classroom'],
+          ),
+          termName: _pickValue(rowMap, ['学期', '学年学期', 'Term']),
           rawCells: row,
         ),
       );
@@ -343,26 +365,42 @@ List<AcademicGradeRecord> _parseGradeRecords(String body) {
     final headers = table.headers
         .map((header) => header.toLowerCase())
         .toList();
-    if (!_containsAny(headers, ['课程名称', '课程']) ||
-        !_containsAny(headers, ['成绩', '分数', '总评'])) {
+    if (!_containsAny(headers, ['课程名称', '课程', 'course name']) ||
+        !_containsAny(headers, ['成绩', '分数', '总评', 'grade', 'final'])) {
       continue;
     }
 
     final records = <AcademicGradeRecord>[];
     for (final row in table.rows) {
       final rowMap = _rowToMap(table.headers, row);
-      final courseName = _pickValue(rowMap, ['课程名称', '课程']);
+      final courseName = _pickValue(rowMap, ['课程名称', '课程', 'Course Name']);
       if (courseName == null || courseName.isEmpty) continue;
       records.add(
         AcademicGradeRecord(
           courseName: courseName,
-          courseCode: _pickValue(rowMap, ['课程代码', '课程编号']),
-          termName: _pickValue(rowMap, ['学年学期', '学期']),
-          scoreText: _pickValue(rowMap, ['总评成绩', '成绩', '分数', '最终成绩']) ?? '',
-          credit: _parseDouble(_pickValue(rowMap, ['学分'])),
-          gradePoint: _parseDouble(_pickValue(rowMap, ['绩点', 'GP', 'gpa'])),
-          processScoreText: _pickValue(rowMap, ['平时成绩', '过程成绩', '过程化成绩']),
-          totalScoreText: _pickValue(rowMap, ['总评成绩', '最终成绩']),
+          courseCode: _pickValue(rowMap, ['课程代码', '课程编号', 'Course Code']),
+          termName: _pickValue(
+            rowMap,
+            ['学年学期', '学期', 'Academic Year & Semester', 'Term'],
+          ),
+          scoreText:
+              _pickValue(
+                rowMap,
+                ['总评成绩', '成绩', '分数', '最终成绩', '总评', '最终', 'Grade', 'Final'],
+              ) ??
+              '',
+          credit: _parseDouble(_pickValue(rowMap, ['学分', 'Credit'])),
+          gradePoint: _parseDouble(
+            _pickValue(rowMap, ['绩点', 'GP', 'gpa', 'Grade Point']),
+          ),
+          processScoreText: _pickValue(
+            rowMap,
+            ['平时成绩', '过程成绩', '过程化成绩', 'Process Grade'],
+          ),
+          totalScoreText: _pickValue(
+            rowMap,
+            ['总评成绩', '最终成绩', '总评', '最终', 'Grade', 'Final'],
+          ),
           rawCells: row,
         ),
       );

@@ -25,6 +25,7 @@ import 'http_service.dart';
 import 'storage_service.dart';
 
 part 'campus_card_gateway.dart';
+part 'campus_card_flow.dart';
 part 'campus_card_page_parser.dart';
 
 /// 教务首页依赖的校园卡查询接口，便于 widget 测试替换。
@@ -115,17 +116,17 @@ class CampusCardService implements CampusCardBalanceClient {
 
   /// 同类 epay 系统常见余额页；真实页面结构以运行时解析为准。
   static final Uri defaultHomeUri = Uri.parse(
-    'https://card.sspu.edu.cn/epay/myepay/index',
+    'http://card.sspu.edu.cn/epay/myepay/index',
   );
 
   /// 同类 epay 系统常见交易记录页。
   static final Uri defaultTransactionIndexUri = Uri.parse(
-    'https://card.sspu.edu.cn/epay/consume/index',
+    'http://card.sspu.edu.cn/epay/consume/index',
   );
 
   /// 同类 epay 系统常见交易记录查询接口。
   static final Uri defaultTransactionQueryUri = Uri.parse(
-    'https://card.sspu.edu.cn/epay/consume/query',
+    'http://card.sspu.edu.cn/epay/consume/query',
   );
 
   /// 校园卡余额默认自动刷新间隔，单位分钟。
@@ -273,6 +274,7 @@ class CampusCardService implements CampusCardBalanceClient {
           loginResult.sessionSnapshot;
       entrySnapshot = await _openEntryWithSession(sessionSnapshot);
     }
+    entrySnapshot = await _resolveBusinessEntrySnapshot(entrySnapshot);
 
     if (_isAuthenticationRequired(entrySnapshot)) {
       return _buildResult(
@@ -331,138 +333,4 @@ class CampusCardService implements CampusCardBalanceClient {
     );
   }
 
-  Future<CampusCardHttpSnapshot> _openEntryWithSession(
-    AcademicLoginSessionSnapshot? sessionSnapshot,
-  ) async {
-    await _gateway.resetSession(sessionSnapshot?.cookieHeadersByHost ?? {});
-    return _gateway.openEntryPage(entranceUri, timeout);
-  }
-
-  Future<void> _appendPageIfAvailable(
-    List<CampusCardHttpSnapshot> snapshots,
-    Uri pageUri,
-  ) async {
-    try {
-      final snapshot = await _gateway.fetchPage(pageUri, timeout);
-      if (_isAuthenticationRequired(snapshot) || _isUnavailable(snapshot)) {
-        return;
-      }
-      snapshots.add(snapshot);
-    } on DioException catch (_) {
-      return;
-    } on TimeoutException catch (_) {
-      return;
-    }
-  }
-
-  Future<CampusCardHttpSnapshot?> _queryTransactionsIfAvailable(
-    CampusCardHttpSnapshot transactionIndexSnapshot, {
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    try {
-      final fields = _buildTransactionQueryFields(
-        transactionIndexSnapshot.body,
-        startDate: startDate,
-        endDate: endDate,
-      );
-      final snapshot = await _gateway.queryTransactions(
-        queryUri: transactionQueryUri,
-        fields: fields,
-        timeout: timeout,
-      );
-      if (_isAuthenticationRequired(snapshot) || _isUnavailable(snapshot)) {
-        return null;
-      }
-      return snapshot;
-    } on DioException catch (_) {
-      return null;
-    } on TimeoutException catch (_) {
-      return null;
-    }
-  }
-
-  Map<String, String> _buildTransactionQueryFields(
-    String transactionIndexBody, {
-    DateTime? startDate,
-    DateTime? endDate,
-  }) {
-    final csrf = _extractCsrf(transactionIndexBody);
-    final fields = {
-      'aaxmlrequest': 'true',
-      'pageNo': '1',
-      'tabNo': '0',
-      'pager.offset': '0',
-      'tradename': '',
-      'starttime': startDate == null ? '' : _formatDate(startDate),
-      'endtime': endDate == null ? '' : _formatDate(endDate),
-      'timetype': '1',
-      '_tradedirect': '',
-    };
-    if (csrf != null) fields['_csrf'] = csrf;
-    return fields;
-  }
-
-  String? _extractCsrf(String body) {
-    final document = html_parser.parse(body);
-    final meta = document.querySelector('meta[name="_csrf"]');
-    final token = meta?.attributes['content']?.trim();
-    if (token != null && token.isNotEmpty) return token;
-    final input = document.querySelector('input[name="_csrf"]');
-    final inputToken = input?.attributes['value']?.trim();
-    return inputToken == null || inputToken.isEmpty ? null : inputToken;
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year.toString().padLeft(4, '0')}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-  }
-
-  bool _isAuthenticationRequired(CampusCardHttpSnapshot snapshot) {
-    final host = snapshot.finalUri.host.toLowerCase();
-    final path = snapshot.finalUri.path.toLowerCase();
-    final normalizedBody = _normalizeText(snapshot.body);
-    return (host == 'id.sspu.edu.cn' && path.contains('/cas/login')) ||
-        normalizedBody.contains('登录 - 上海第二工业大学') ||
-        normalizedBody.contains('j_spring_cas_security_check') ||
-        normalizedBody.contains('id="fm1"');
-  }
-
-  bool _isUnavailable(CampusCardHttpSnapshot snapshot) {
-    final statusCode = snapshot.statusCode;
-    if (statusCode != null && statusCode >= 400) return true;
-    final normalizedBody = _normalizeText(snapshot.body);
-    return normalizedBody.contains('forbidden') ||
-        normalizedBody.contains('error') ||
-        normalizedBody.contains('错误页面');
-  }
-
-  String _normalizeText(String text) {
-    return text.replaceAll('\u00a0', ' ').replaceAll(RegExp(r'\s+'), ' ');
-  }
-
-  CampusCardQueryResult _buildResult(
-    CampusCardQueryStatus status, {
-    required String message,
-    required String detail,
-    Uri? finalUri,
-    CampusNetworkStatus? campusNetworkStatus,
-    CampusCardSnapshot? snapshot,
-  }) {
-    return CampusCardQueryResult(
-      status: status,
-      message: message,
-      detail: detail,
-      checkedAt: DateTime.now(),
-      entranceUri: entranceUri,
-      finalUri: finalUri,
-      campusNetworkStatus: campusNetworkStatus,
-      snapshot: snapshot,
-    );
-  }
-
-  int _normalizeAutoRefreshInterval(int minutes) {
-    return minutes <= 0 ? defaultAutoRefreshIntervalMinutes : minutes;
-  }
 }

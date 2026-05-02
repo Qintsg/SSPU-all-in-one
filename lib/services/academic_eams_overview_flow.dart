@@ -118,10 +118,15 @@ extension _AcademicEamsOverviewFlow on AcademicEamsService {
     final featureSnapshots = <_AcademicFeature, AcademicEamsHttpSnapshot>{};
     final warnings = <String>[];
 
-    final courseSnapshot = await _fetchRequiredFeature(
+    final rawCourseSnapshot = await _fetchRequiredFeature(
       feature: _AcademicFeature.courseTable,
       featureUris: featureUris,
       warnings: warnings,
+    );
+    final courseSnapshot = await _resolveFeatureSnapshot(
+      _AcademicFeature.courseTable,
+      rawCourseSnapshot,
+      warnings,
     );
     if (scope == _AcademicFetchScope.courseTableOnly &&
         courseSnapshot == null) {
@@ -174,6 +179,7 @@ extension _AcademicEamsOverviewFlow on AcademicEamsService {
         featureSnapshots,
         warnings,
       );
+      await _resolveOptionalFeatureSnapshots(featureSnapshots, warnings);
     }
 
     final allSnapshots = [homeSnapshot, ...featureSnapshots.values];
