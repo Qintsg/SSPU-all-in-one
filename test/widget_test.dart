@@ -143,6 +143,8 @@ void main() {
               emailAutoRefreshIntervalMinutes: 30,
               studentReportAutoRefreshEnabled: true,
               studentReportAutoRefreshIntervalMinutes: 30,
+              academicEamsAutoRefreshEnabled: true,
+              academicEamsAutoRefreshIntervalMinutes: 30,
               onCampusNetworkDetectionIntervalChanged: (_) async {},
               onSportsAttendanceAutoRefreshChanged: (_) async {},
               onSportsAttendanceAutoRefreshIntervalChanged: (_) async {},
@@ -152,6 +154,8 @@ void main() {
               onEmailAutoRefreshIntervalChanged: (_) async {},
               onStudentReportAutoRefreshChanged: (_) async {},
               onStudentReportAutoRefreshIntervalChanged: (_) async {},
+              onAcademicEamsAutoRefreshChanged: (_) async {},
+              onAcademicEamsAutoRefreshIntervalChanged: (_) async {},
               onOpenDepartmentRefreshSettings: () => selectedShortcut = 3,
               onOpenTeachingRefreshSettings: () => selectedShortcut = 4,
               onOpenWechatRefreshSettings: () => selectedShortcut = 5,
@@ -167,8 +171,9 @@ void main() {
     expect(find.text('校园卡余额自动刷新'), findsOneWidget);
     expect(find.text('学校邮箱自动刷新'), findsOneWidget);
     expect(find.text('第二课堂学分自动刷新'), findsOneWidget);
+    expect(find.text('本专科教务自动刷新'), findsOneWidget);
     expect(find.text('15 分钟'), findsOneWidget);
-    expect(find.text('30 分钟'), findsNWidgets(3));
+    expect(find.text('30 分钟'), findsNWidgets(4));
     expect(find.text('1 小时'), findsOneWidget);
     expect(find.text('职能部门'), findsOneWidget);
     expect(find.text('教学单位'), findsOneWidget);
