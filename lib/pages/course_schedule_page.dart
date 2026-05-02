@@ -19,6 +19,9 @@ class CourseSchedulePage extends StatefulWidget {
   /// 本专科教务只读服务，测试中可替换为 fake。
   final AcademicEamsClient? academicEamsService;
 
+  /// 从教务中心摘要页带入的初始课表结果。
+  final AcademicEamsQueryResult? initialResult;
+
   /// 测试专用：覆盖自动刷新开关。
   final bool? autoRefreshEnabledOverride;
 
@@ -28,6 +31,7 @@ class CourseSchedulePage extends StatefulWidget {
   const CourseSchedulePage({
     super.key,
     this.academicEamsService,
+    this.initialResult,
     this.autoRefreshEnabledOverride,
     this.autoRefreshIntervalOverride,
   });
@@ -51,6 +55,7 @@ class _CourseSchedulePageState extends State<CourseSchedulePage> {
   @override
   void initState() {
     super.initState();
+    _result = widget.initialResult;
     _loadAutoRefreshSettings();
   }
 

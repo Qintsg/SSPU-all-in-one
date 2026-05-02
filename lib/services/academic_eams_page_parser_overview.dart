@@ -161,8 +161,10 @@ AcademicProgramCompletionSnapshot? _deriveProgramCompletion(
       ...grades.historyRecords,
     ]) {
       if (!grade.isPassed) continue;
-      final key = _normalizeMatchKey(grade.courseCode ?? grade.courseName);
-      if (key.isNotEmpty) passedKeys.add(key);
+      final codeKey = _normalizeMatchKey(grade.courseCode ?? '');
+      final nameKey = _normalizeMatchKey(grade.courseName);
+      if (codeKey.isNotEmpty) passedKeys.add(codeKey);
+      if (nameKey.isNotEmpty) passedKeys.add(nameKey);
     }
   }
 
@@ -173,8 +175,11 @@ AcademicProgramCompletionSnapshot? _deriveProgramCompletion(
   var pendingCredits = 0.0;
 
   for (final course in plan.courses) {
-    final key = _normalizeMatchKey(course.courseCode ?? course.courseName);
-    final passed = key.isNotEmpty && passedKeys.contains(key);
+    final codeKey = _normalizeMatchKey(course.courseCode ?? '');
+    final nameKey = _normalizeMatchKey(course.courseName);
+    final passed =
+        (codeKey.isNotEmpty && passedKeys.contains(codeKey)) ||
+        (nameKey.isNotEmpty && passedKeys.contains(nameKey));
     final moduleName = course.moduleName ?? course.category ?? '未分组模块';
     moduleBuckets.putIfAbsent(moduleName, () => []).add(course);
     final credit = course.credit ?? 0;
@@ -193,8 +198,11 @@ AcademicProgramCompletionSnapshot? _deriveProgramCompletion(
     var completedModuleCredits = 0.0;
     var totalCredits = 0.0;
     for (final course in courses) {
-      final key = _normalizeMatchKey(course.courseCode ?? course.courseName);
-      final passed = key.isNotEmpty && passedKeys.contains(key);
+      final codeKey = _normalizeMatchKey(course.courseCode ?? '');
+      final nameKey = _normalizeMatchKey(course.courseName);
+      final passed =
+          (codeKey.isNotEmpty && passedKeys.contains(codeKey)) ||
+          (nameKey.isNotEmpty && passedKeys.contains(nameKey));
       final credit = course.credit ?? 0;
       totalCredits += credit;
       if (passed) {
@@ -290,14 +298,20 @@ AcademicCourseOfferingSearchResult? _parseCourseOfferings(
             _pickValue(rowMap, ['容量', '课容量', '人数上限', 'Capacity']),
           ),
           department: _pickValue(rowMap, ['开课院系', '院系', '学院', 'Department']),
-          scheduleText: _pickValue(
-            rowMap,
-            ['上课时间', '时间', '课表', 'Schedule', 'Time'],
-          ),
-          locationText: _pickValue(
-            rowMap,
-            ['地点', '教室', '上课地点', 'Place', 'Classroom'],
-          ),
+          scheduleText: _pickValue(rowMap, [
+            '上课时间',
+            '时间',
+            '课表',
+            'Schedule',
+            'Time',
+          ]),
+          locationText: _pickValue(rowMap, [
+            '地点',
+            '教室',
+            '上课地点',
+            'Place',
+            'Classroom',
+          ]),
           termName: _pickValue(rowMap, ['学期', '学年学期', 'Term']),
           rawCells: row,
         ),
@@ -379,28 +393,42 @@ List<AcademicGradeRecord> _parseGradeRecords(String body) {
         AcademicGradeRecord(
           courseName: courseName,
           courseCode: _pickValue(rowMap, ['课程代码', '课程编号', 'Course Code']),
-          termName: _pickValue(
-            rowMap,
-            ['学年学期', '学期', 'Academic Year & Semester', 'Term'],
-          ),
+          termName: _pickValue(rowMap, [
+            '学年学期',
+            '学期',
+            'Academic Year & Semester',
+            'Term',
+          ]),
           scoreText:
-              _pickValue(
-                rowMap,
-                ['总评成绩', '成绩', '分数', '最终成绩', '总评', '最终', 'Grade', 'Final'],
-              ) ??
+              _pickValue(rowMap, [
+                '总评成绩',
+                '成绩',
+                '分数',
+                '最终成绩',
+                '总评',
+                '最终',
+                'Grade',
+                'Final',
+              ]) ??
               '',
           credit: _parseDouble(_pickValue(rowMap, ['学分', 'Credit'])),
           gradePoint: _parseDouble(
             _pickValue(rowMap, ['绩点', 'GP', 'gpa', 'Grade Point']),
           ),
-          processScoreText: _pickValue(
-            rowMap,
-            ['平时成绩', '过程成绩', '过程化成绩', 'Process Grade'],
-          ),
-          totalScoreText: _pickValue(
-            rowMap,
-            ['总评成绩', '最终成绩', '总评', '最终', 'Grade', 'Final'],
-          ),
+          processScoreText: _pickValue(rowMap, [
+            '平时成绩',
+            '过程成绩',
+            '过程化成绩',
+            'Process Grade',
+          ]),
+          totalScoreText: _pickValue(rowMap, [
+            '总评成绩',
+            '最终成绩',
+            '总评',
+            '最终',
+            'Grade',
+            'Final',
+          ]),
           rawCells: row,
         ),
       );

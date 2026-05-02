@@ -129,6 +129,9 @@ void main() {
 
   testWidgets('自动刷新设置分区显示校园网检测和快捷入口', (WidgetTester tester) async {
     var selectedShortcut = 0;
+    await tester.binding.setSurfaceSize(const Size(1000, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(
       FluentApp(
         home: ScaffoldPage(

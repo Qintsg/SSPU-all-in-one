@@ -114,7 +114,7 @@ void main() {
     expect(result.snapshot?.profile?.name, '张三');
     expect(result.snapshot?.courseTable?.entries.length, 1);
     expect(result.snapshot?.grades?.historyRecords.length, 1);
-    expect(result.snapshot?.programCompletion?.completedCredits, 3);
+    expect(result.snapshot?.programCompletion?.completedCredits, 7);
     expect(result.snapshot?.exams?.records.single.location, '综合楼 A201');
     expect(result.snapshot?.hasCourseOfferingEntry, isTrue);
     expect(result.snapshot?.hasFreeClassroomEntry, isTrue);

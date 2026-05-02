@@ -267,6 +267,7 @@ class _AcademicPageState extends State<AcademicPage> {
                 FluentPageRoute(
                   builder: (_) => CourseSchedulePage(
                     academicEamsService: _academicEamsService,
+                    initialResult: _academicEamsResult,
                     autoRefreshEnabledOverride: _academicEamsAutoRefreshEnabled,
                     autoRefreshIntervalOverride:
                         _academicEamsAutoRefreshIntervalMinutes,
