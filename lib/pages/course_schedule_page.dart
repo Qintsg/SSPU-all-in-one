@@ -106,6 +106,7 @@ class _CourseSchedulePageState extends State<CourseSchedulePage> {
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
+    final canPop = Navigator.of(context).canPop();
     final snapshot = _result?.snapshot;
     final courseTable = snapshot?.courseTable;
 
@@ -115,11 +116,13 @@ class _CourseSchedulePageState extends State<CourseSchedulePage> {
         commandBar: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Button(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('返回'),
-            ),
-            const SizedBox(width: FluentSpacing.s),
+            if (canPop) ...[
+              Button(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('返回'),
+              ),
+              const SizedBox(width: FluentSpacing.s),
+            ],
             FilledButton(
               key: const Key('course-schedule-refresh'),
               onPressed: _isLoading ? null : _loadCourseTable,

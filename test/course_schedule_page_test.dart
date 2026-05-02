@@ -37,6 +37,7 @@ void main() {
     expect(find.textContaining('自动刷新已开启'), findsOneWidget);
     expect(find.text('高等数学'), findsOneWidget);
     expect(find.textContaining('周一 第1-2节'), findsOneWidget);
+    expect(find.text('返回'), findsNothing);
   });
 
   testWidgets('课程表页面展示缺少 OA 密码提示', (tester) async {
@@ -56,6 +57,29 @@ void main() {
 
     expect(find.text('请先保存 OA 账号密码'), findsOneWidget);
     expect(find.textContaining('刷新 OA/CAS 会话'), findsOneWidget);
+  });
+
+  testWidgets('课程表页面作为二级页面打开时显示返回按钮', (tester) async {
+    await tester.pumpWidget(
+      FluentApp(
+        home: Navigator(
+          onGenerateRoute: (_) =>
+              FluentPageRoute(builder: (_) => const SizedBox.shrink()),
+        ),
+      ),
+    );
+
+    final context = tester.element(find.byType(SizedBox));
+    Navigator.of(context).push(
+      FluentPageRoute(
+        builder: (_) => CourseSchedulePage(
+          academicEamsService: _FakeAcademicEamsClient(result: _successResult),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('返回'), findsOneWidget);
   });
 }
 
