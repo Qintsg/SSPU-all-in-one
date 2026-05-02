@@ -68,6 +68,14 @@ class StorageKeys {
   static const String studentReportAutoRefreshIntervalMinutes =
       'student_report_auto_refresh_interval_minutes';
 
+  /// 本专科教务只读能力自动刷新开关。
+  static const String academicEamsAutoRefreshEnabled =
+      'academic_eams_auto_refresh_enabled';
+
+  /// 本专科教务只读能力自动刷新间隔（分钟）。
+  static const String academicEamsAutoRefreshIntervalMinutes =
+      'academic_eams_auto_refresh_interval_minutes';
+
   /// 结构化数据前缀（JSON 序列化存储）。
   static const String dataPrefix = 'data_';
 }

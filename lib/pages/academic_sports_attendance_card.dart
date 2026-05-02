@@ -121,6 +121,7 @@ class AcademicSportsAttendanceCard extends StatelessWidget {
                   Tooltip(
                     message: '手动刷新体育考勤',
                     child: IconButton(
+                      key: const Key('academic-sports-refresh'),
                       icon: isLoading
                           ? const SizedBox(
                               width: 14,

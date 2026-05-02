@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 
 import 'pages/about_page.dart';
 import 'pages/academic_page.dart';
+import 'pages/course_schedule_page.dart';
 import 'pages/email_page.dart';
 import 'pages/home_page.dart';
 import 'pages/info_page.dart';
@@ -60,6 +61,11 @@ class _AppShellState extends State<AppShell> {
       title: '教务',
       icon: FluentIcons.education,
       body: AcademicPage(),
+    ),
+    const _AppDestination(
+      title: '课表',
+      icon: FluentIcons.calendar,
+      body: CourseSchedulePage(),
     ),
     const _AppDestination(
       title: '信息',
@@ -118,7 +124,7 @@ class _AppShellState extends State<AppShell> {
           onChanged: (index) => setState(() => _selectedIndex = index),
           // 自动响应屏幕宽度切换显示模式
           displayMode: PaneDisplayMode.auto,
-          items: destinations.take(5).map(_buildPaneItem).toList(),
+          items: destinations.take(6).map(_buildPaneItem).toList(),
           footerItems: _buildFooterItems(destinations),
         ),
       ),
@@ -139,7 +145,7 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
       ),
-      ...destinations.skip(5).map(_buildPaneItem),
+      ...destinations.skip(6).map(_buildPaneItem),
     ];
   }
 

@@ -232,6 +232,12 @@ mixin _SettingsPageLayout on State<SettingsPage>, _SettingsPageActions {
           onStudentReportAutoRefreshChanged: _onStudentReportAutoRefreshChanged,
           onStudentReportAutoRefreshIntervalChanged:
               _onStudentReportAutoRefreshIntervalChanged,
+          academicEamsAutoRefreshEnabled: _academicEamsAutoRefreshEnabled,
+          academicEamsAutoRefreshIntervalMinutes:
+              _academicEamsAutoRefreshIntervalMinutes,
+          onAcademicEamsAutoRefreshChanged: _onAcademicEamsAutoRefreshChanged,
+          onAcademicEamsAutoRefreshIntervalChanged:
+              _onAcademicEamsAutoRefreshIntervalChanged,
           onOpenDepartmentRefreshSettings: () =>
               setState(() => _selectedTab = 3),
           onOpenTeachingRefreshSettings: () => setState(() => _selectedTab = 4),

@@ -12,6 +12,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/channel_config.dart';
+import '../services/academic_eams_service.dart';
 import '../services/app_exit_service.dart';
 import '../services/academic_credentials_service.dart';
 import '../services/campus_card_service.dart';
@@ -135,6 +136,15 @@ class _SettingsPageState extends State<SettingsPage>
   @override
   int _studentReportAutoRefreshIntervalMinutes =
       StudentReportService.defaultAutoRefreshIntervalMinutes;
+
+  /// 本专科教务自动刷新开关。
+  @override
+  bool _academicEamsAutoRefreshEnabled = false;
+
+  /// 本专科教务自动刷新间隔，单位分钟。
+  @override
+  int _academicEamsAutoRefreshIntervalMinutes =
+      AcademicEamsService.defaultAutoRefreshIntervalMinutes;
 
   /// 当前选中的设置分区索引。
   /// 0=常规设置 1=自动刷新设置 2=安全设置 3=职能部门 4=教学单位 5=微信推文

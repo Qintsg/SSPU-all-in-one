@@ -119,6 +119,7 @@ class AcademicStudentReportCard extends StatelessWidget {
                   Tooltip(
                     message: '手动刷新第二课堂学分',
                     child: IconButton(
+                      key: const Key('academic-student-report-refresh'),
                       icon: isLoading
                           ? const SizedBox(
                               width: 14,

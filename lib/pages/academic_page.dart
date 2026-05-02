@@ -11,12 +11,16 @@ import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../models/academic_eams.dart';
 import '../models/sports_attendance.dart';
 import '../models/student_report.dart';
+import '../services/academic_eams_service.dart';
 import '../services/sports_attendance_service.dart';
 import '../services/student_report_service.dart';
 import '../theme/fluent_tokens.dart';
+import 'course_schedule_page.dart';
 
+part 'academic_eams_summary_card.dart';
 part 'academic_sports_attendance_card.dart';
 part 'academic_student_report_card.dart';
 
@@ -41,6 +45,15 @@ class AcademicPage extends StatefulWidget {
   /// 测试专用：覆盖第二课堂学分自动刷新间隔。
   final int? studentReportAutoRefreshIntervalOverride;
 
+  /// 本专科教务只读服务，测试中可替换为 fake。
+  final AcademicEamsClient? academicEamsService;
+
+  /// 测试专用：覆盖本专科教务自动刷新开关。
+  final bool? academicEamsAutoRefreshEnabledOverride;
+
+  /// 测试专用：覆盖本专科教务自动刷新间隔。
+  final int? academicEamsAutoRefreshIntervalOverride;
+
   const AcademicPage({
     super.key,
     this.sportsAttendanceService,
@@ -49,6 +62,9 @@ class AcademicPage extends StatefulWidget {
     this.sportsAttendanceAutoRefreshIntervalOverride,
     this.studentReportAutoRefreshEnabledOverride,
     this.studentReportAutoRefreshIntervalOverride,
+    this.academicEamsService,
+    this.academicEamsAutoRefreshEnabledOverride,
+    this.academicEamsAutoRefreshIntervalOverride,
   });
 
   @override
@@ -56,6 +72,13 @@ class AcademicPage extends StatefulWidget {
 }
 
 class _AcademicPageState extends State<AcademicPage> {
+  AcademicEamsQueryResult? _academicEamsResult;
+  bool _isLoadingAcademicEams = false;
+  bool _academicEamsAutoRefreshEnabled = false;
+  int _academicEamsAutoRefreshIntervalMinutes =
+      AcademicEamsService.defaultAutoRefreshIntervalMinutes;
+  Timer? _academicEamsAutoRefreshTimer;
+
   SportsAttendanceQueryResult? _sportsAttendanceResult;
   bool _isLoadingSportsAttendance = false;
   bool _sportsAttendanceAutoRefreshEnabled = false;
@@ -78,18 +101,70 @@ class _AcademicPageState extends State<AcademicPage> {
     return widget.studentReportService ?? StudentReportService.instance;
   }
 
+  AcademicEamsClient get _academicEamsService {
+    return widget.academicEamsService ?? AcademicEamsService.instance;
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadAcademicEamsAutoRefreshSettings();
     _loadSportsAttendanceAutoRefreshSettings();
     _loadStudentReportAutoRefreshSettings();
   }
 
   @override
   void dispose() {
+    _academicEamsAutoRefreshTimer?.cancel();
     _sportsAttendanceAutoRefreshTimer?.cancel();
     _studentReportAutoRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  /// 读取本专科教务自动刷新设置；未启用时不主动访问教务系统。
+  Future<void> _loadAcademicEamsAutoRefreshSettings() async {
+    final service = widget.academicEamsService is AcademicEamsService
+        ? widget.academicEamsService as AcademicEamsService
+        : AcademicEamsService.instance;
+    final enabled =
+        widget.academicEamsAutoRefreshEnabledOverride ??
+        await service.isAutoRefreshEnabled();
+    final interval =
+        widget.academicEamsAutoRefreshIntervalOverride ??
+        await service.getAutoRefreshIntervalMinutes();
+    if (!mounted) return;
+    setState(() {
+      _academicEamsAutoRefreshEnabled = enabled;
+      _academicEamsAutoRefreshIntervalMinutes = interval;
+    });
+    _restartAcademicEamsAutoRefreshTimer();
+    if (enabled) unawaited(_loadAcademicEamsOverview());
+  }
+
+  /// 读取本专科教务摘要；失败时在卡片中展示明确状态。
+  Future<void> _loadAcademicEamsOverview() async {
+    if (_isLoadingAcademicEams) return;
+    setState(() => _isLoadingAcademicEams = true);
+
+    final result = await _academicEamsService.fetchOverview();
+    if (!mounted) return;
+    setState(() {
+      _academicEamsResult = result;
+      _isLoadingAcademicEams = false;
+    });
+  }
+
+  /// 根据设置重建本专科教务自动刷新定时器。
+  void _restartAcademicEamsAutoRefreshTimer() {
+    _academicEamsAutoRefreshTimer?.cancel();
+    _academicEamsAutoRefreshTimer = null;
+    if (!_academicEamsAutoRefreshEnabled) return;
+    final intervalMinutes = _academicEamsAutoRefreshIntervalMinutes;
+    if (intervalMinutes <= 0) return;
+    _academicEamsAutoRefreshTimer = Timer.periodic(
+      Duration(minutes: intervalMinutes),
+      (_) => _loadAcademicEamsOverview(),
+    );
   }
 
   /// 读取体育部自动刷新设置；未启用时不主动访问体育部系统。
@@ -180,18 +255,39 @@ class _AcademicPageState extends State<AcademicPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-
     return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('教务中心')),
       children: [
+        AcademicEamsSummaryCard(
+              result: _academicEamsResult,
+              isLoading: _isLoadingAcademicEams,
+              autoRefreshEnabled: _academicEamsAutoRefreshEnabled,
+              onRefresh: _loadAcademicEamsOverview,
+              onOpenCourseSchedule: () => Navigator.of(context).push(
+                FluentPageRoute(
+                  builder: (_) => CourseSchedulePage(
+                    academicEamsService: _academicEamsService,
+                    autoRefreshEnabledOverride: _academicEamsAutoRefreshEnabled,
+                    autoRefreshIntervalOverride:
+                        _academicEamsAutoRefreshIntervalMinutes,
+                  ),
+                ),
+              ),
+            )
+            .animate()
+            .fadeIn(
+              duration: FluentDuration.slow,
+              curve: FluentEasing.decelerate,
+            )
+            .slideY(begin: 0.05, end: 0),
+        const SizedBox(height: FluentSpacing.m),
         AcademicSportsAttendanceCard(
               result: _sportsAttendanceResult,
               isLoading: _isLoadingSportsAttendance,
               autoRefreshEnabled: _sportsAttendanceAutoRefreshEnabled,
               onRefresh: _loadSportsAttendance,
             )
-            .animate()
+            .animate(delay: 80.ms)
             .fadeIn(
               duration: FluentDuration.slow,
               curve: FluentEasing.decelerate,
@@ -204,21 +300,6 @@ class _AcademicPageState extends State<AcademicPage> {
               autoRefreshEnabled: _studentReportAutoRefreshEnabled,
               onRefresh: _loadStudentReport,
             )
-            .animate(delay: 80.ms)
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
-        const SizedBox(height: FluentSpacing.m),
-        _buildServiceCard(
-              context,
-              icon: FluentIcons.education,
-              color: theme.accentColor,
-              title: '课表查询',
-              description: '查看本学期课程表，支持按周次、课程名筛选',
-              items: ['本周课程', '完整课表', '课程搜索'],
-            )
             .animate(delay: 160.ms)
             .fadeIn(
               duration: FluentDuration.slow,
@@ -226,120 +307,16 @@ class _AcademicPageState extends State<AcademicPage> {
             )
             .slideY(begin: 0.05, end: 0),
         const SizedBox(height: FluentSpacing.m),
-        _buildServiceCard(
-              context,
-              icon: FluentIcons.certificate,
-              color: theme.resources.systemFillColorSuccess,
-              title: '成绩查询',
-              description: '查看历史成绩与绩点统计，支持按学期筛选',
-              items: ['本学期成绩', '历史成绩', 'GPA 统计'],
-            )
-            .animate(delay: 240.ms)
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
-        const SizedBox(height: FluentSpacing.m),
-        _buildServiceCard(
-              context,
-              icon: FluentIcons.calendar,
-              color: theme.resources.systemFillColorCaution,
-              title: '考试安排',
-              description: '查看即将到来的考试时间、地点、座位号',
-              items: ['近期考试', '所有考试'],
-            )
-            .animate(delay: 320.ms)
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
-        const SizedBox(height: FluentSpacing.m),
-        _buildServiceCard(
-              context,
-              icon: FluentIcons.feedback,
-              color: theme.resources.systemFillColorSolidNeutral,
-              title: '教学评价',
-              description: '在线完成教学评价，查看评价状态',
-              items: ['待评价课程', '已完成评价'],
-            )
-            .animate(delay: 400.ms)
-            .fadeIn(
-              duration: FluentDuration.slow,
-              curve: FluentEasing.decelerate,
-            )
-            .slideY(begin: 0.05, end: 0),
-        const SizedBox(height: FluentSpacing.l),
         const InfoBar(
-          title: Text('部分功能开发中'),
-          content: Text('体育部课外活动考勤和第二课堂学分已接入；课表、成绩、考试与教学评价仍为功能规划预览。'),
+          title: Text('只读边界'),
+          content: Text(
+            '本专科教务仅接入个人信息、课表、成绩、考试、培养计划、开课检索和空闲教室等只读能力；'
+            '不提供选课、退课、调课、教学评价、提交申请或任何状态变更入口。',
+          ),
           severity: InfoBarSeverity.info,
           isLong: true,
         ),
       ],
-    );
-  }
-
-  /// 构建单个服务功能卡片。
-  Widget _buildServiceCard(
-    BuildContext context, {
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String description,
-    required List<String> items,
-  }) {
-    final theme = FluentTheme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(FluentSpacing.xl),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: isDark ? 0.15 : 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: color, size: 20),
-                ),
-                const SizedBox(width: FluentSpacing.m),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: theme.typography.bodyStrong),
-                      const SizedBox(height: FluentSpacing.xxs),
-                      Text(
-                        description,
-                        style: theme.typography.caption?.copyWith(
-                          color: theme.resources.textFillColorSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(FluentIcons.chevron_right, size: 12),
-              ],
-            ),
-            const SizedBox(height: FluentSpacing.m),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: items
-                  .map((item) => Button(child: Text(item), onPressed: () {}))
-                  .toList(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

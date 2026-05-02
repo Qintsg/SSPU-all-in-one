@@ -40,6 +40,12 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   /// 第二课堂学分自动刷新间隔，单位分钟。
   final int studentReportAutoRefreshIntervalMinutes;
 
+  /// 本专科教务自动刷新开关。
+  final bool academicEamsAutoRefreshEnabled;
+
+  /// 本专科教务自动刷新间隔，单位分钟。
+  final int academicEamsAutoRefreshIntervalMinutes;
+
   /// 校园网 / VPN 状态检测间隔修改回调。
   final Future<void> Function(int minutes)
   onCampusNetworkDetectionIntervalChanged;
@@ -72,6 +78,13 @@ class SettingsAutoRefreshSection extends StatelessWidget {
   final Future<void> Function(int minutes)
   onStudentReportAutoRefreshIntervalChanged;
 
+  /// 本专科教务自动刷新开关修改回调。
+  final Future<void> Function(bool enabled) onAcademicEamsAutoRefreshChanged;
+
+  /// 本专科教务自动刷新间隔修改回调。
+  final Future<void> Function(int minutes)
+  onAcademicEamsAutoRefreshIntervalChanged;
+
   /// 跳转职能部门自动刷新设置。
   final VoidCallback onOpenDepartmentRefreshSettings;
 
@@ -92,6 +105,8 @@ class SettingsAutoRefreshSection extends StatelessWidget {
     required this.emailAutoRefreshIntervalMinutes,
     required this.studentReportAutoRefreshEnabled,
     required this.studentReportAutoRefreshIntervalMinutes,
+    required this.academicEamsAutoRefreshEnabled,
+    required this.academicEamsAutoRefreshIntervalMinutes,
     required this.onCampusNetworkDetectionIntervalChanged,
     required this.onSportsAttendanceAutoRefreshChanged,
     required this.onSportsAttendanceAutoRefreshIntervalChanged,
@@ -101,6 +116,8 @@ class SettingsAutoRefreshSection extends StatelessWidget {
     required this.onEmailAutoRefreshIntervalChanged,
     required this.onStudentReportAutoRefreshChanged,
     required this.onStudentReportAutoRefreshIntervalChanged,
+    required this.onAcademicEamsAutoRefreshChanged,
+    required this.onAcademicEamsAutoRefreshIntervalChanged,
     required this.onOpenDepartmentRefreshSettings,
     required this.onOpenTeachingRefreshSettings,
     required this.onOpenWechatRefreshSettings,
@@ -146,6 +163,8 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             _buildEmailAutoRefreshRow(context),
             const SizedBox(height: FluentSpacing.m),
             _buildStudentReportAutoRefreshRow(context),
+            const SizedBox(height: FluentSpacing.m),
+            _buildAcademicEamsAutoRefreshRow(context),
           ],
         ),
       ),
@@ -445,6 +464,64 @@ class SettingsAutoRefreshSection extends StatelessWidget {
             ? (value) {
                 if (value != null) {
                   onStudentReportAutoRefreshIntervalChanged(value);
+                }
+              }
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildAcademicEamsAutoRefreshRow(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return buildResponsiveSettingsRow(
+      context: context,
+      icon: FluentIcons.education,
+      title: Text('本专科教务自动刷新', style: theme.typography.bodyStrong),
+      subtitle: Text(
+        '控制教务中心本专科教务摘要和独立课程表页面的自动读取；需要校园网或学校 VPN 与 OA 登录，关闭后仍可在页面中手动刷新',
+        style: theme.typography.caption,
+      ),
+      trailing: Wrap(
+        spacing: FluentSpacing.s,
+        runSpacing: FluentSpacing.s,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          ToggleSwitch(
+            checked: academicEamsAutoRefreshEnabled,
+            onChanged: (value) => onAcademicEamsAutoRefreshChanged(value),
+          ),
+          _buildAcademicEamsIntervalComboBox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAcademicEamsIntervalComboBox() {
+    final enabledIntervalOptions = Map<int, String>.fromEntries(
+      kIntervalOptions.entries.where((entry) => entry.key > 0),
+    );
+    final selectedValue =
+        enabledIntervalOptions.containsKey(
+          academicEamsAutoRefreshIntervalMinutes,
+        )
+        ? academicEamsAutoRefreshIntervalMinutes
+        : 30;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: ComboBox<int>(
+        isExpanded: true,
+        value: selectedValue,
+        items: enabledIntervalOptions.entries
+            .map(
+              (entry) =>
+                  ComboBoxItem<int>(value: entry.key, child: Text(entry.value)),
+            )
+            .toList(),
+        onChanged: academicEamsAutoRefreshEnabled
+            ? (value) {
+                if (value != null) {
+                  onAcademicEamsAutoRefreshIntervalChanged(value);
                 }
               }
             : null,

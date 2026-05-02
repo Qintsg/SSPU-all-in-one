@@ -71,6 +71,12 @@ mixin _SettingsPageActions on State<SettingsPage> {
   int get _studentReportAutoRefreshIntervalMinutes;
   set _studentReportAutoRefreshIntervalMinutes(int value);
 
+  bool get _academicEamsAutoRefreshEnabled;
+  set _academicEamsAutoRefreshEnabled(bool value);
+
+  int get _academicEamsAutoRefreshIntervalMinutes;
+  set _academicEamsAutoRefreshIntervalMinutes(int value);
+
   MessageStateService get _messageState;
 
   /// 加载页面级设置状态。
@@ -108,6 +114,10 @@ mixin _SettingsPageActions on State<SettingsPage> {
         .isAutoRefreshEnabled();
     final studentReportAutoRefreshInterval = await StudentReportService.instance
         .getAutoRefreshIntervalMinutes();
+    final academicEamsAutoRefreshEnabled = await AcademicEamsService.instance
+        .isAutoRefreshEnabled();
+    final academicEamsAutoRefreshInterval = await AcademicEamsService.instance
+        .getAutoRefreshIntervalMinutes();
 
     if (!mounted) return;
     setState(() {
@@ -132,6 +142,8 @@ mixin _SettingsPageActions on State<SettingsPage> {
       _studentReportAutoRefreshEnabled = studentReportAutoRefreshEnabled;
       _studentReportAutoRefreshIntervalMinutes =
           studentReportAutoRefreshInterval;
+      _academicEamsAutoRefreshEnabled = academicEamsAutoRefreshEnabled;
+      _academicEamsAutoRefreshIntervalMinutes = academicEamsAutoRefreshInterval;
       _isLoading = false;
     });
   }
@@ -272,6 +284,20 @@ mixin _SettingsPageActions on State<SettingsPage> {
     await StudentReportService.instance.setAutoRefreshIntervalMinutes(minutes);
     if (!mounted) return;
     setState(() => _studentReportAutoRefreshIntervalMinutes = minutes);
+  }
+
+  /// 修改本专科教务自动刷新开关。
+  Future<void> _onAcademicEamsAutoRefreshChanged(bool enabled) async {
+    await AcademicEamsService.instance.setAutoRefreshEnabled(enabled);
+    if (!mounted) return;
+    setState(() => _academicEamsAutoRefreshEnabled = enabled);
+  }
+
+  /// 修改本专科教务自动刷新间隔。
+  Future<void> _onAcademicEamsAutoRefreshIntervalChanged(int minutes) async {
+    await AcademicEamsService.instance.setAutoRefreshIntervalMinutes(minutes);
+    if (!mounted) return;
+    setState(() => _academicEamsAutoRefreshIntervalMinutes = minutes);
   }
 
   /// 切换密码保护。
