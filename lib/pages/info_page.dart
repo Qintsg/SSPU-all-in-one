@@ -53,6 +53,9 @@ class _InfoPageState extends State<InfoPage> {
   /// 筛选：来源名称（null 表示不筛选）
   MessageSourceName? _filterSourceName;
 
+  /// 筛选：微信公众号名称（null 表示不筛选）
+  String? _filterWechatMpName;
+
   /// 筛选：内容分类（null 表示不筛选）
   MessageCategory? _filterCategory;
 
@@ -241,6 +244,10 @@ class _InfoPageState extends State<InfoPage> {
   /// 根据当前来源类型获取可选的来源名称列表
   List<MessageSourceName> _getAvailableSourceNames() =>
       _getInfoAvailableSourceNames(this);
+
+  /// 根据已加载微信推文获取可选的公众号名称列表
+  List<String> _getAvailableWechatMpNames() =>
+      _getInfoAvailableWechatMpNames(this);
 
   /// 根据当前来源名称获取可选的内容分类列表
   List<MessageCategory> _getAvailableCategories() =>

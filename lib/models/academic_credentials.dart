@@ -23,6 +23,9 @@ class AcademicCredentialsStatus {
   /// OA 账号，也就是学工号。
   final String oaAccount;
 
+  /// 由学工号派生的学校邮箱账号，格式为“学工号@sspu.edu.cn”。
+  final String emailAccount;
+
   /// 是否已保存 OA 账号密码。
   final bool hasOaPassword;
 
@@ -34,6 +37,7 @@ class AcademicCredentialsStatus {
 
   const AcademicCredentialsStatus({
     required this.oaAccount,
+    required this.emailAccount,
     required this.hasOaPassword,
     required this.hasSportsQueryPassword,
     required this.hasEmailPassword,
@@ -42,6 +46,7 @@ class AcademicCredentialsStatus {
   /// 空状态，用于页面初始值和存储不可用时的保守展示。
   const AcademicCredentialsStatus.empty()
     : oaAccount = '',
+      emailAccount = '',
       hasOaPassword = false,
       hasSportsQueryPassword = false,
       hasEmailPassword = false;

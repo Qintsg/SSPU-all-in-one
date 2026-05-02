@@ -15,8 +15,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sspu_all_in_one/app.dart';
 import 'package:sspu_all_in_one/controllers/settings_wechat_controller.dart';
 import 'package:sspu_all_in_one/pages/webview_page.dart';
+import 'package:sspu_all_in_one/services/campus_network_status_service.dart';
 import 'package:sspu_all_in_one/services/storage_service.dart';
 import 'package:sspu_all_in_one/services/wxmp_config_service.dart';
+import 'package:sspu_all_in_one/widgets/settings_auto_refresh_section.dart';
 import 'package:sspu_all_in_one/widgets/settings_wechat_section.dart';
 
 /// 等待目标组件出现，避免页面异步加载尚未完成时提前断言。
@@ -72,6 +74,117 @@ void main() {
       debugDefaultTargetPlatformOverride = previousTargetPlatform;
       await resetMobileView(tester);
     }
+  });
+
+  testWidgets('桌面导航在设置上方显示校园网状态徽标', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    StorageService.debugUseSharedPreferencesStorageForTesting(true);
+    final previousTargetPlatform = debugDefaultTargetPlatformOverride;
+    final service = CampusNetworkStatusService(
+      probe: (uri, timeout) async {
+        return CampusNetworkProbeResult(
+          reachable: true,
+          statusCode: 200,
+          detail: '已访问 ${uri.host}，HTTP 200',
+        );
+      },
+    );
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+
+    try {
+      await tester.pumpWidget(
+        FluentApp(home: AppShell(campusNetworkStatusService: service)),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // 校园网徽标由可注入服务驱动，避免组件测试依赖真实校园网环境。
+      expect(
+        find.byKey(const Key('campus-network-status-indicator')),
+        findsOneWidget,
+      );
+      expect(find.text('校园网/VPN'), findsOneWidget);
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const Key('campus-network-status-indicator')),
+            )
+            .dy,
+        lessThan(tester.getTopLeft(find.text('设置')).dy),
+      );
+
+      // 首页入场动画会保留短计时器，测试结束前推进时间以清理动画状态。
+      await tester.pump(const Duration(milliseconds: 300));
+    } finally {
+      debugDefaultTargetPlatformOverride = previousTargetPlatform;
+      StorageService.debugUseSharedPreferencesStorageForTesting(null);
+      SharedPreferences.setMockInitialValues({});
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      await tester.binding.setSurfaceSize(null);
+    }
+  });
+
+  testWidgets('自动刷新设置分区显示校园网检测和快捷入口', (WidgetTester tester) async {
+    var selectedShortcut = 0;
+    await tester.binding.setSurfaceSize(const Size(1000, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      FluentApp(
+        home: ScaffoldPage(
+          content: SingleChildScrollView(
+            child: SettingsAutoRefreshSection(
+              campusNetworkDetectionIntervalMinutes: 15,
+              sportsAttendanceAutoRefreshEnabled: true,
+              sportsAttendanceAutoRefreshIntervalMinutes: 30,
+              campusCardAutoRefreshEnabled: true,
+              campusCardAutoRefreshIntervalMinutes: 60,
+              emailAutoRefreshEnabled: true,
+              emailAutoRefreshIntervalMinutes: 30,
+              studentReportAutoRefreshEnabled: true,
+              studentReportAutoRefreshIntervalMinutes: 30,
+              academicEamsAutoRefreshEnabled: true,
+              academicEamsAutoRefreshIntervalMinutes: 30,
+              onCampusNetworkDetectionIntervalChanged: (_) async {},
+              onSportsAttendanceAutoRefreshChanged: (_) async {},
+              onSportsAttendanceAutoRefreshIntervalChanged: (_) async {},
+              onCampusCardAutoRefreshChanged: (_) async {},
+              onCampusCardAutoRefreshIntervalChanged: (_) async {},
+              onEmailAutoRefreshChanged: (_) async {},
+              onEmailAutoRefreshIntervalChanged: (_) async {},
+              onStudentReportAutoRefreshChanged: (_) async {},
+              onStudentReportAutoRefreshIntervalChanged: (_) async {},
+              onAcademicEamsAutoRefreshChanged: (_) async {},
+              onAcademicEamsAutoRefreshIntervalChanged: (_) async {},
+              onOpenDepartmentRefreshSettings: () => selectedShortcut = 3,
+              onOpenTeachingRefreshSettings: () => selectedShortcut = 4,
+              onOpenWechatRefreshSettings: () => selectedShortcut = 5,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('校园网 / VPN 状态检测'), findsOneWidget);
+    expect(find.text('体育查询自动刷新'), findsOneWidget);
+    expect(find.text('校园卡余额自动刷新'), findsOneWidget);
+    expect(find.text('学校邮箱自动刷新'), findsOneWidget);
+    expect(find.text('第二课堂学分自动刷新'), findsOneWidget);
+    expect(find.text('本专科教务自动刷新'), findsOneWidget);
+    expect(find.text('15 分钟'), findsOneWidget);
+    expect(find.text('30 分钟'), findsNWidgets(4));
+    expect(find.text('1 小时'), findsOneWidget);
+    expect(find.text('职能部门'), findsOneWidget);
+    expect(find.text('教学单位'), findsOneWidget);
+    expect(find.text('微信推文'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(Button, '前往设置').first);
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(selectedShortcut, 3);
   });
 
   testWidgets('WebView 遇到无效链接时显示错误页', (WidgetTester tester) async {
@@ -199,10 +312,11 @@ class _NarrowSettingsNavigation extends StatelessWidget {
             isExpanded: true,
             items: const [
               ComboBoxItem(value: 0, child: Text('常规设置')),
-              ComboBoxItem(value: 1, child: Text('安全设置')),
-              ComboBoxItem(value: 2, child: Text('职能部门')),
-              ComboBoxItem(value: 3, child: Text('教学单位')),
-              ComboBoxItem(value: 4, child: Text('微信推文')),
+              ComboBoxItem(value: 1, child: Text('自动刷新设置')),
+              ComboBoxItem(value: 2, child: Text('安全设置')),
+              ComboBoxItem(value: 3, child: Text('职能部门')),
+              ComboBoxItem(value: 4, child: Text('教学单位')),
+              ComboBoxItem(value: 5, child: Text('微信推文')),
             ],
             onChanged: (_) {},
           ),

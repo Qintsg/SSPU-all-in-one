@@ -63,6 +63,9 @@ dependencies:
   # HTML 解析，用于网页内容提取
   html: ^0.15.5
 
+  # GBK / GB2312 解码，用于体育部查询系统旧版页面
+  gbk_codec: ^0.4.0
+
   # 声明式动画，用于页面入场与交互微动效
   flutter_animate: ^4.5.2
 
@@ -71,6 +74,9 @@ dependencies:
 
   # 读取应用版本号与包信息，避免关于页手写版本常量
   package_info_plus: ^10.1.0
+
+  # 邮箱协议客户端，用于学校邮箱 IMAP / POP 只读收信和 SMTP 认证校验
+  enough_mail: ^2.1.7
 
 dev_dependencies:
   flutter_test:

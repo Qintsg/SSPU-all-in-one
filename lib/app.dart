@@ -12,11 +12,15 @@ import 'package:flutter/foundation.dart';
 
 import 'pages/about_page.dart';
 import 'pages/academic_page.dart';
+import 'pages/course_schedule_page.dart';
+import 'pages/email_page.dart';
 import 'pages/home_page.dart';
 import 'pages/info_page.dart';
 import 'pages/quick_links_page.dart';
 import 'pages/settings_page.dart';
+import 'services/campus_network_status_service.dart';
 import 'theme/fluent_tokens.dart';
+import 'widgets/campus_network_status_indicator.dart';
 
 /// 仅移动端原生平台需要启用竖屏底部导航。
 bool get _supportsMobileBottomNavigation {
@@ -34,7 +38,10 @@ class AppShell extends StatefulWidget {
   /// 手动上锁回调
   final VoidCallback? onLock;
 
-  const AppShell({super.key, this.onLock});
+  /// 校园网 / VPN 状态检测服务，允许测试或后续平台实现注入。
+  final CampusNetworkStatusService? campusNetworkStatusService;
+
+  const AppShell({super.key, this.onLock, this.campusNetworkStatusService});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -56,9 +63,19 @@ class _AppShellState extends State<AppShell> {
       body: AcademicPage(),
     ),
     const _AppDestination(
+      title: '课表',
+      icon: FluentIcons.calendar,
+      body: CourseSchedulePage(),
+    ),
+    const _AppDestination(
       title: '信息',
       icon: FluentIcons.info,
       body: InfoPage(),
+    ),
+    const _AppDestination(
+      title: '邮箱',
+      icon: FluentIcons.mail,
+      body: EmailPage(),
     ),
     const _AppDestination(
       title: '跳转',
@@ -107,11 +124,29 @@ class _AppShellState extends State<AppShell> {
           onChanged: (index) => setState(() => _selectedIndex = index),
           // 自动响应屏幕宽度切换显示模式
           displayMode: PaneDisplayMode.auto,
-          items: destinations.take(4).map(_buildPaneItem).toList(),
-          footerItems: destinations.skip(4).map(_buildPaneItem).toList(),
+          items: destinations.take(6).map(_buildPaneItem).toList(),
+          footerItems: _buildFooterItems(destinations),
         ),
       ),
     );
+  }
+
+  List<NavigationPaneItem> _buildFooterItems(
+    List<_AppDestination> destinations,
+  ) {
+    return [
+      PaneItemWidgetAdapter(
+        key: const Key('campus-network-status-pane-item'),
+        applyPadding: false,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 8, 8),
+          child: CampusNetworkStatusIndicator(
+            service: widget.campusNetworkStatusService,
+          ),
+        ),
+      ),
+      ...destinations.skip(6).map(_buildPaneItem),
+    ];
   }
 
   PaneItem _buildPaneItem(_AppDestination destination) {

@@ -40,7 +40,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('微信推文重复来源标签只展示一次并显示账号名和微信号', (tester) async {
+  testWidgets('微信推文只展示来源类型和公众号名称标签', (tester) async {
     const message = MessageItem(
       id: 'wechat-1',
       title: '微信测试标题',
@@ -58,10 +58,10 @@ void main() {
 
     expect(find.text('微信推文'), findsOneWidget);
     expect(find.text('青春二工大'), findsOneWidget);
-    expect(find.text('微信号：ssputw'), findsOneWidget);
+    expect(find.text('微信号：ssputw'), findsNothing);
   });
 
-  testWidgets('微信账号名和微信号缺失时展示明确 fallback', (tester) async {
+  testWidgets('微信账号名缺失时展示明确 fallback', (tester) async {
     const message = MessageItem(
       id: 'wechat-2',
       title: '微信 fallback 测试',
@@ -76,7 +76,7 @@ void main() {
 
     expect(find.text('微信推文'), findsOneWidget);
     expect(find.text('公众号名称未知'), findsOneWidget);
-    expect(find.text('微信号未知'), findsOneWidget);
+    expect(find.text('微信号未知'), findsNothing);
   });
 
   testWidgets('非微信消息仍展示所有不同来源和分类标签', (tester) async {

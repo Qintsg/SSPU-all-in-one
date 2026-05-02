@@ -66,11 +66,46 @@ void main() {
 
     expect(find.text('教务凭据'), findsOneWidget);
     expect(find.text('数据均加密存储在本地，不会上传至云端；密码框留空时不修改已保存密码。'), findsOneWidget);
+    expect(find.text('验证 OA 登录'), findsOneWidget);
     expect(find.text('20260001'), findsOneWidget);
+    expect(find.text('学校邮箱账号：20260001@sspu.edu.cn'), findsOneWidget);
     expect(find.text('已填写'), findsNWidgets(3));
     expect(find.text('oa-pass'), findsNothing);
     expect(find.text('sports-pass'), findsNothing);
     expect(find.text('mail-pass'), findsNothing);
+  });
+
+  testWidgets('安全设置页可触发 OA 登录校验并展示缺少账号提示', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      FluentApp(
+        home: ScaffoldPage(
+          content: SingleChildScrollView(
+            child: SettingsSecuritySection(
+              isPasswordEnabled: false,
+              onPasswordProtectionChanged: (_) {},
+              onChangePassword: () {},
+              isQuickAuthEnabled: false,
+              isQuickAuthAvailable: false,
+              isQuickAuthBusy: false,
+              onQuickAuthChanged: (_) {},
+              onLock: null,
+              onClearMessageCache: () {},
+              onClearAllData: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('验证 OA 登录'));
+
+    await tester.ensureVisible(find.text('验证 OA 登录'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('验证 OA 登录'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请先保存学工号（OA账号）'), findsOneWidget);
   });
 
   testWidgets('系统快速验证在可用时显示开关，不可用时显示密码兜底提示', (tester) async {

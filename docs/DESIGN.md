@@ -1,6 +1,6 @@
 # SSPU All-in-One 设计文档
 
-> 版本：v0.2.2-alpha+4 | 最后更新：2026-04-25
+> 版本：v0.2.2-alpha+4 | 最后更新：2026-05-01
 
 ---
 
@@ -27,6 +27,7 @@ SSPU All-in-One 是面向上海第二工业大学（SSPU）师生的校园综合
 | 加密 | crypto / flutter_secure_storage | ^3.0.6 / ^8.1.0 | 应用锁密码哈希与可解密凭据安全存储 |
 | 系统认证 | local_auth | ^3.0.1 | 可选系统快速验证，作为应用锁密码的本机认证辅助入口 |
 | 网络请求 | dio | ^5.8.0+1 | 官网与公众号平台 HTTP 抓取 |
+| 邮箱协议 | enough_mail | ^2.1.7 | 学校邮箱 IMAP / POP 只读收信与 SMTP 登录校验 |
 | 桌面集成 | window_manager / tray_manager | ^0.5.1 | 桌面窗口控制与系统托盘 |
 | Windows WebView | flutter_inappwebview | ^6.1.5 | 文章页与公众号平台登录页 |
 | 应用信息 | package_info_plus | ^10.1.0 | 运行时版本号与构建号读取 |
@@ -48,12 +49,12 @@ SSPU All-in-One 是面向上海第二工业大学（SSPU）师生的校园综合
 ├─────────────────────────────────────────────────────────────┤
 │                         AppShell                             │
 │       Desktop NavigationView + Mobile BottomNavigation       │
-├─────────────┬─────────────┬─────────────┬─────────────┬─────┤
-│  HomePage   │ AcademicPage│  InfoPage   │QuickLinks   │ ... │
-│  最新消息    │ 教务预览页   │ 官网/微信聚合 │ YAML 快捷跳转 │     │
-├─────────────┴─────────────┴─────────────┴─────────────┴─────┤
-│ Services: Password / MessageState / InfoRefresh / Wxmp /    │
-│ AutoRefresh / Notification / Storage / AppExit / AppInfo    │
+├─────────────┬─────────────┬─────────────┬─────────────┬─────────────┬─────┤
+│  HomePage   │ AcademicPage│ CourseSchedule │  InfoPage   │QuickLinks   │ ... │
+│  最新消息    │ 教务摘要页   │ 独立课程表页    │ 官网/微信聚合 │ YAML 快捷跳转 │     │
+├─────────────┴─────────────┴─────────────┴─────────────┴─────────────┴─────┤
+│ Services: Password / MessageState / CampusNetwork / Wxmp /  │
+│ InfoRefresh / AutoRefresh / Notification / Storage / AppInfo│
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -114,10 +115,14 @@ _initApp()
 |--------|------|------|----------|
 | 主页 | `FluentIcons.home` | 主区域 | `HomePage` |
 | 教务中心 | `FluentIcons.education` | 主区域 | `AcademicPage` |
+| 课程表 | `FluentIcons.calendar` | 主区域 | `CourseSchedulePage` |
 | 信息中心 | `FluentIcons.info` | 主区域 | `InfoPage` |
+| 学校邮箱 | `FluentIcons.mail` | 主区域 | `EmailPage` |
 | 快速跳转 | `FluentIcons.link` | 主区域 | `QuickLinksPage` |
 | 设置 | `FluentIcons.settings` | 底部 footer | `SettingsPage` |
 | 关于 | `FluentIcons.info_solid` | 底部 footer | `AboutPage` |
+
+应用桌面 / 平板侧边导航在“设置”上方显示校园网 / VPN 状态徽标，启动后自动检测一次，点击徽标可重新检测。当前默认通过只读访问 `https://tygl.sspu.edu.cn/` 判断校园受限资源是否可达。
 
 ### 3.2 显示模式
 
@@ -157,15 +162,17 @@ _initApp()
 
 **文件**：`lib/pages/academic_page.dart`
 
-**当前状态**：功能预览页
+**当前状态**：已接入多套真实只读教务服务
 
-**当前状态说明**：
-- 课表查询与展示
-- 成绩查询（按学期筛选）
-- 考试安排
-- GPA 计算器
-- 学分统计
-- 当前以服务卡片形式展示规划入口，尚未接入真实教务系统
+**当前状态说明**：已接入体育部考勤、第二课堂学分和本专科教务摘要三类只读服务。受限服务查询前统一执行校园网 / VPN 前置检测，不可达时不提交密码、不刷新 OA 会话；教学评价等写入型功能保持关闭。
+
+### 4.2.1 课程表页面（CourseSchedulePage）
+
+**文件**：`lib/pages/course_schedule_page.dart`
+
+**当前状态**：已实现独立课程表页
+
+**已实现能力**：作为主导航独立页面展示当前学期课表，复用本专科教务自动刷新配置，并在凭据、校园网 / VPN 或课表不可用时显示明确状态。页面仅展示课程名称、时间、地点、教师和周次，不提供选课、退课、调课等写入入口。
 
 ### 4.3 信息中心（InfoPage）
 
@@ -194,6 +201,14 @@ _initApp()
 - 根据名称自动推断图标与强调色
 - 点击后通过默认浏览器打开外部链接
 
+### 4.4.1 学校邮箱（EmailPage）
+
+**文件**：`lib/pages/email_page.dart`
+
+**当前状态**：已实现只读收信与协议校验
+
+**已实现能力**：使用学工号派生学校邮箱账号，通过 IMAP / POP 只读读取最近邮件，并通过 SMTP 仅校验登录状态。页面展示标题、发件人、时间、正文摘要和正文快照，不提供发送、回复、转发、删除、移动、标记已读或修改文件夹入口。
+
 ### 4.5 设置页（SettingsPage）
 
 **文件**：`lib/pages/settings_page.dart`
@@ -208,19 +223,17 @@ _initApp()
 - **消息推送总开关**：控制自动刷新后的桌面通知
 - **勿扰时段**：设置开始/结束时间，通知服务按时间窗静默
 
-#### 4.5.2 安全设置
+#### 4.5.2 自动刷新设置
 
-- **密码保护开关**：`ToggleSwitch` 控制启用/禁用
-  - 开启时弹出"设置密码"对话框
-  - 关闭时弹出"移除密码"对话框（需验证当前密码）
-- **修改密码**：仅在已设置密码时显示，需验证旧密码
-- **系统快速验证**：仅在密码保护已开启且 Android / iOS / macOS / Windows 设备支持系统认证时显示开关；不可用或未配置时显示密码兜底提示，不改变手动密码解锁语义
-- **立即上锁**：不退出应用，直接回到锁定页
-- **教务凭据**：保存学工号、OA 密码、体育部查询密码和邮箱密码，密码框回访时保持为空，仅显示“已填写 / 未填写”
-- **清理信息中心缓存**：只清理消息缓存与已读状态
-- **清除所有本地数据**：清空状态文件、教务安全存储项并退出应用
+集中配置校园网 / VPN 状态检测、体育查询、校园卡余额、学校邮箱、第二课堂学分和本专科教务的自动刷新开关与间隔。默认不自动访问受限服务，关闭后仍可在对应页面手动刷新；职能部门、教学单位、微信推文保留快捷入口跳转到对应设置面板。
 
-#### 4.5.3 消息推送设置
+#### 4.5.3 安全设置
+
+- **密码保护**：支持启用、移除、修改密码、立即上锁和系统快速验证兜底提示
+- **教务凭据**：保存学工号、OA 密码、体育部查询密码和邮箱密码；学校邮箱账号固定由学工号派生
+- **数据清理**：支持清理信息中心缓存或清除所有本地数据
+
+#### 4.5.4 消息推送设置
 
 - **职能部门**：按渠道分组展示开关、刷新间隔、分类开关
 - **教学单位**：按学院 / 中心分组管理抓取与筛选
@@ -462,43 +475,13 @@ ContentDialog: 输入当前密码
 
 ## 8. 目录结构
 
-```
-lib/
-├── main.dart                         # 应用入口、平台初始化、EULA/锁定流程
-├── app.dart                          # 桌面导航与移动端底部导航
-├── controllers/
-│   └── settings_wechat_controller.dart
-├── models/                           # 渠道配置、消息模型、微信矩阵模型
-├── pages/
-│   ├── home_page.dart
-│   ├── academic_page.dart
-│   ├── info_page.dart
-│   ├── quick_links_page.dart
-│   ├── settings_page.dart
-│   ├── about_page.dart
-│   ├── lock_page.dart
-│   ├── webview_page.dart
-│   └── wxmp_login_page.dart
-├── services/                         # 持久化、抓取、自动刷新、通知、退出、版本信息
-├── theme/                            # Fluent 2 token 体系
-├── utils/                            # WebView 环境、时间工具、微信匹配工具
-└── widgets/                          # 设置分区、频道列表、响应式与消息项组件
-```
+核心目录包括 `lib/main.dart`、`lib/app.dart`、`lib/controllers/`、`lib/models/`、`lib/pages/`、`lib/services/`、`lib/theme/`、`lib/utils/` 和 `lib/widgets/`。页面、服务和模型按功能继续拆分，超长文件默认继续解耦。
 
 ---
 
 ## 9. 待实现功能清单
 
-| 优先级 | 功能 | 涉及页面 | 依赖 |
-|--------|------|----------|------|
-| P0 | 教务真实接口接入 | AcademicPage | 教务系统鉴权与接口/网页抓取 |
-| P0 | Android / 桌面 Release 持续集成完善 | 构建流程 | GitHub Actions / 平台签名材料 |
-| P1 | 信息中心抓取源继续扩充 | InfoPage | 新站点解析规则 |
-| P1 | 主页卡片扩展为可配置摘要面板 | HomePage | 本地状态与组件抽象 |
-| P1 | 快速跳转支持用户自定义与排序 | QuickLinksPage | 本地配置写回 |
-| P2 | 多语言支持 | 全局 | flutter_localizations |
-| P2 | 数据导出/备份 | SettingsPage | 文件系统 |
-| P2 | 发布安装器与签名公证完善 | 各平台 | 平台证书与打包工具 |
+后续重点包括 Android / 桌面 Release 持续集成完善、信息中心抓取源扩充、主页可配置摘要面板、快速跳转用户自定义与排序、多语言支持、数据导出 / 备份，以及安装器与签名公证完善。
 
 ---
 

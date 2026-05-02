@@ -16,26 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_data_directory_service.dart';
 
-/// 存储键名常量。
-/// 新增存储项时在此添加键名，保持集中管理。
-class StorageKeys {
-  StorageKeys._();
-
-  /// 密码哈希。
-  static const String passwordHash = 'app_password_hash';
-
-  /// 系统快速验证开关，仅表示用户是否允许使用本机系统认证解锁应用。
-  static const String quickAuthEnabled = 'app_quick_auth_enabled';
-
-  /// EULA 接受状态。
-  static const String eulaAccepted = 'eula_accepted';
-
-  /// 关闭行为偏好（ask / minimize / exit）。
-  static const String closeBehavior = 'close_behavior';
-
-  /// 结构化数据前缀（JSON 序列化存储）。
-  static const String dataPrefix = 'data_';
-}
+part 'storage_keys.dart';
 
 /// 统一数据存储服务。
 /// 通过一个 JSON 文件保存设置、认证缓存、文章缓存与集合索引。

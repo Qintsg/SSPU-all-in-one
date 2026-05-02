@@ -6,19 +6,40 @@
  * @Date : 2026-04-18
  */
 
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../models/campus_card.dart';
 import '../models/message_item.dart';
+import '../services/campus_card_service.dart';
 import '../services/message_state_service.dart';
 import '../theme/fluent_tokens.dart';
 import '../utils/webview_env.dart';
 import '../widgets/responsive_layout.dart';
 import 'webview_page.dart';
 
+part 'home_campus_card_balance_card.dart';
+part 'home_campus_card_detail_page.dart';
+
 /// 主页
 /// 展示欢迎信息与最新消息列表
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  /// 校园卡余额查询服务，测试中可替换为 fake。
+  final CampusCardBalanceClient? campusCardService;
+
+  /// 测试专用：覆盖校园卡余额自动刷新开关。
+  final bool? campusCardAutoRefreshEnabledOverride;
+
+  /// 测试专用：覆盖校园卡余额自动刷新间隔。
+  final int? campusCardAutoRefreshIntervalOverride;
+
+  const HomePage({
+    super.key,
+    this.campusCardService,
+    this.campusCardAutoRefreshEnabledOverride,
+    this.campusCardAutoRefreshIntervalOverride,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,10 +49,28 @@ class _HomePageState extends State<HomePage> {
   /// 最新消息列表（最多 5 条）
   List<MessageItem> _latestMessages = [];
 
+  CampusCardQueryResult? _campusCardResult;
+  bool _isLoadingCampusCard = false;
+  bool _campusCardAutoRefreshEnabled = false;
+  int _campusCardAutoRefreshIntervalMinutes =
+      CampusCardService.defaultAutoRefreshIntervalMinutes;
+  Timer? _campusCardAutoRefreshTimer;
+
+  CampusCardBalanceClient get _campusCardService {
+    return widget.campusCardService ?? CampusCardService.instance;
+  }
+
   @override
   void initState() {
     super.initState();
     _loadLatestMessages();
+    _loadCampusCardAutoRefreshSettings();
+  }
+
+  @override
+  void dispose() {
+    _campusCardAutoRefreshTimer?.cancel();
+    super.dispose();
   }
 
   /// 从本地存储加载消息并取前 5 条
@@ -42,6 +81,52 @@ class _HomePageState extends State<HomePage> {
     if (mounted) {
       setState(() => _latestMessages = all.take(5).toList());
     }
+  }
+
+  /// 读取校园卡自动刷新设置；默认不主动访问 OA / 校园卡系统。
+  Future<void> _loadCampusCardAutoRefreshSettings() async {
+    final enabled =
+        widget.campusCardAutoRefreshEnabledOverride ??
+        await CampusCardService.instance.isAutoRefreshEnabled();
+    final interval =
+        widget.campusCardAutoRefreshIntervalOverride ??
+        await CampusCardService.instance.getAutoRefreshIntervalMinutes();
+    if (!mounted) return;
+    setState(() {
+      _campusCardAutoRefreshEnabled = enabled;
+      _campusCardAutoRefreshIntervalMinutes = interval;
+    });
+    _restartCampusCardAutoRefreshTimer();
+    if (enabled) unawaited(_loadCampusCard());
+  }
+
+  /// 读取校园卡余额、状态和交易记录。
+  Future<void> _loadCampusCard({DateTime? startDate, DateTime? endDate}) async {
+    if (_isLoadingCampusCard) return;
+    setState(() => _isLoadingCampusCard = true);
+
+    final result = await _campusCardService.fetchCampusCard(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    if (!mounted) return;
+    setState(() {
+      _campusCardResult = result;
+      _isLoadingCampusCard = false;
+    });
+  }
+
+  /// 根据设置重建校园卡余额自动刷新定时器。
+  void _restartCampusCardAutoRefreshTimer() {
+    _campusCardAutoRefreshTimer?.cancel();
+    _campusCardAutoRefreshTimer = null;
+    if (!_campusCardAutoRefreshEnabled) return;
+    final intervalMinutes = _campusCardAutoRefreshIntervalMinutes;
+    if (intervalMinutes <= 0) return;
+    _campusCardAutoRefreshTimer = Timer.periodic(
+      Duration(minutes: intervalMinutes),
+      (_) => _loadCampusCard(),
+    );
   }
 
   @override
@@ -114,6 +199,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )
                 .animate()
+                .fadeIn(
+                  duration: FluentDuration.slow,
+                  curve: FluentEasing.decelerate,
+                )
+                .slideY(begin: 0.05, end: 0),
+
+            const SizedBox(height: FluentSpacing.l),
+
+            _buildCampusCardBalanceCard(context)
+                .animate(delay: 100.ms)
                 .fadeIn(
                   duration: FluentDuration.slow,
                   curve: FluentEasing.decelerate,
